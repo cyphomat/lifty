@@ -54,9 +54,9 @@ input[type=password],input[type=text]{
 .today{margin-top:18px}
 .today .kicker{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:650}
 .today .name{font-size:26px;font-weight:700;margin:4px 0 12px;letter-spacing:-.02em}
-.today ul{list-style:none;padding:0;margin:0 0 4px}
-.today li{display:flex;justify-content:space-between;padding:7px 0;border-top:1px solid var(--line)}
-.today li span:last-child{font-variant-numeric:tabular-nums;font-weight:650}
+.card ul{list-style:none;padding:0;margin:0 0 4px}
+.card li{display:flex;justify-content:space-between;padding:7px 0;border-top:1px solid var(--line)}
+.card li span:last-child{font-variant-numeric:tabular-nums;font-weight:650}
 
 .week{display:flex;flex-direction:column;gap:8px}
 .slot{

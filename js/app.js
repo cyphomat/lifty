@@ -329,4 +329,11 @@ $('rest-skip').onclick = stopRest;
 window.addEventListener('online', flushQueue);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 
-if (S.getToken()) load(); else show('setup');
+// Kein Aufblitzen des Setup-Screens, wenn schon ein Token da ist.
+if (S.getToken()) {
+  show('home');
+  $('today').innerHTML = '<div class="kicker">Einen Moment</div><div class="name">Lade…</div>';
+  load();
+} else {
+  show('setup');
+}
