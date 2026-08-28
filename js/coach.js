@@ -265,16 +265,20 @@ export function spruchWaehlen(situation, tag, eigene) {
   const meine = VOICE[situation] || [];
   const seine = (eigene && (eigene[situation] || eigene.alle)) || [];
   if (!seine.length && !meine.length) return '';
-  if (!seine.length) return meine[hash(tag + situation) % meine.length];
-  if (!meine.length) return seine[hash(tag + situation) % seine.length];
+  // Eine Lawine, zwei Entscheidungen aus verschiedenen Bits: das unterste
+  // fuer den Muenzwurf, die oberen fuer die Auswahl. Der rohe Hash klumpt
+  // bei fortlaufenden Daten — dann kaeme dreimal hintereinander dasselbe.
+  const h = mische(hash(tag + situation));
+  const wahl = (liste) => liste[(h >>> 8) % liste.length];
+
+  if (!seine.length) return wahl(meine);
+  if (!meine.length) return wahl(seine);
 
   // Mischen statt ersetzen. Nicht ueber die Poolgroesse, sondern ueber eine
   // Muenze: sonst gingen zwei eigene Zeilen zwischen dreissig fremden unter,
   // und genau die eigenen sind der Grund, warum sich das nach jemandem
   // anfuehlt statt nach Software.
-  return mische(hash(tag + situation)) % 2
-    ? seine[hash(tag + situation) % seine.length]
-    : meine[hash(tag + situation) % meine.length];
+  return (h & 1) ? wahl(seine) : wahl(meine);
 }
 
 /* ---------------------------------------------------------------

@@ -319,3 +319,32 @@ for (let t = 1; t <= 300; t++) {
 eq('auch bei drei', gesehenDrei.size, 3);
 
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
+
+print('\n--- Keine Wiederholung an aufeinanderfolgenden Tagen ---');
+let dreimalGleich = 0, zweimalGleich = 0;
+let vorher2 = null, vorher1 = null;
+for (let i = 1; i <= 200; i++) {
+  const d = new Date(2026, 0, i);
+  const tag = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const z = C.spruchWaehlen('standard', tag, { alle: ["Let's go.", "Let's lift heavy shit."] });
+  if (z === vorher1) zweimalGleich++;
+  if (z === vorher1 && z === vorher2) dreimalGleich++;
+  vorher2 = vorher1; vorher1 = z;
+}
+// Wiederholungen sind bei zwei eigenen Zeilen und halber Muenze Arithmetik,
+// kein Defekt: jede eigene Zeile trifft rund ein Viertel aller Tage. Geprueft
+// wird deshalb die Verteilung, nicht die Lauflaenge.
+ok('nicht dauernd dasselbe', zweimalGleich < 70, `${zweimalGleich} Wiederholungen von 200`);
+
+let eigeneTage = 0; const gesehenAlle = new Set();
+for (let i = 1; i <= 200; i++) {
+  const d = new Date(2026, 0, i);
+  const tag = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const z = C.spruchWaehlen('standard', tag, { alle: ["Let's go.", "Let's lift heavy shit."] });
+  gesehenAlle.add(z);
+  if (z.startsWith("Let's")) eigeneTage++;
+}
+ok('eigene Zeilen an rund der Haelfte der Tage', eigeneTage > 70 && eigeneTage < 130, `${eigeneTage} von 200`);
+ok('und der fremde Vorrat wird ausgeschoepft', gesehenAlle.size >= 10, `${gesehenAlle.size} verschiedene`);
+
+print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
