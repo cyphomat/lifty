@@ -887,6 +887,17 @@ function renderCharts(logs) {
 function renderListe(logs) {
   const sortiert = [...logs].sort((a, b) => b.date.localeCompare(a.date));
   $('history-body').innerHTML = sortiert.length ? sortiert.map(l => {
+    if (l.type === 'maxout') {
+      const name = (config.lifts[l.lift] || {}).name || l.lift;
+      return `<div class="hist maxout"><div class="d">${l.date} · MAX-OUT · ${name.toUpperCase()}</div>
+        <div class="l">${l.weight} kg × ${l.reps}${l.e1rm ? ` — geschätztes Maximum ${l.e1rm} kg` : ''}</div></div>`;
+    }
+    if (l.type === 'anpassung') {
+      const g = Object.entries(l.gewichte || {})
+        .map(([id, w]) => `${(config.lifts[id] || {}).name || id} ${P.fmtWeight(w)}`).join(' · ');
+      return `<div class="hist anpassung"><div class="d">${l.date} · ARBEITSGEWICHTE ANGEPASST</div>
+        <div class="l">${g}${l.grund ? `<br><span style="color:var(--dim)">${l.grund}</span>` : ''}</div></div>`;
+    }
     if (l.type && l.type !== 'strength') {
       const m = l.dauerSekunden ? `${Math.floor(l.dauerSekunden / 60)}:${String(l.dauerSekunden % 60).padStart(2, '0')}` : '—';
       return `<div class="hist wod"><div class="d">${l.date} · WOD · ${m}</div>

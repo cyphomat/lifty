@@ -222,3 +222,37 @@ eq('ohne Bereich kein Ziel', P.wattBereich(null, 240), null);
 eq('unvollstaendiger Bereich ergibt nichts', P.wattBereich([0.88], 240), null);
 
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
+
+print('\n--- Anpassung der Arbeitsgewichte ---');
+let ang = P.initialState(config);
+ang.lifts.squat.fails = 2;
+ang = P.applyLog(ang, config, {
+  date:'2026-08-28', type:'anpassung', grund:'Wiedereinstieg war zu vorsichtig',
+  gewichte:{ squat:65, bench:47.5, deadlift:80 }
+});
+eq('Kniebeuge gesetzt', ang.lifts.squat.weight, 65);
+eq('Bank gesetzt', ang.lifts.bench.weight, 47.5);
+eq('Kreuzheben gesetzt', ang.lifts.deadlift.weight, 80);
+eq('Fehlerzaehler zurueckgesetzt', ang.lifts.squat.fails, 0);
+eq('nicht genannte Uebung unveraendert', ang.lifts.row.weight, 32.5);
+eq('A/B-Wechsel unberuehrt', ang.next, 'A');
+eq('steht in der Historie', ang.history[0].type, 'anpassung');
+eq('mit Begruendung', ang.history[0].grund, 'Wiedereinstieg war zu vorsichtig');
+eq('krumme Werte werden gerundet',
+   P.applyLog(P.initialState(config), config, { date:'x', type:'anpassung', gewichte:{ squat:63.9 } }).lifts.squat.weight, 65);
+eq('nie unter Hantelgewicht',
+   P.applyLog(P.initialState(config), config, { date:'x', type:'anpassung', gewichte:{ squat:5 } }).lifts.squat.weight, 20);
+
+print('\n--- Und danach laeuft die Progression normal weiter ---');
+const kette = [
+  { date:'2026-08-28', type:'anpassung', gewichte:{ squat:65, bench:47.5, row:45 } },
+  { date:'2026-08-31', workout:'A', type:'strength',
+    lifts:[win('squat',65), win('bench',47.5), win('row',45)] }
+];
+const nachher = P.deriveState(config, kette);
+eq('Kniebeuge steigt von der neuen Basis', nachher.lifts.squat.weight, 67.5);
+eq('nur die Krafteinheit dreht den Wechsel', nachher.next, 'B');
+eq('und alles bleibt ableitbar',
+   JSON.stringify(P.deriveState(config, [kette[1], kette[0]]).lifts), JSON.stringify(nachher.lifts));
+
+print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

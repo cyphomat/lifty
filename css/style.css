@@ -481,3 +481,7 @@ button.raus:active{border-color:var(--amber)}
 .skal .erkl{margin:9px 0 0;color:var(--fg);font-size:13.5px;line-height:1.6}
 .skal-titel{margin:12px 0 0;font-family:var(--mono);font-size:10.5px;letter-spacing:.15em;
   text-transform:uppercase;color:var(--muted)}
+.hist.maxout{border-left:2px solid var(--lime)}
+.hist.maxout .d{color:var(--lime)}
+.hist.anpassung{border-left:2px solid var(--amber)}
+.hist.anpassung .d{color:var(--amber)}

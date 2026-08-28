@@ -35,6 +35,23 @@ export function isSuccess(entry, target) {
 export function applyLog(state, config, log) {
   const next = JSON.parse(JSON.stringify(state)); // bewusst kein structuredClone: aeltere iOS-Safari kennen es nicht
 
+  // Eine Anpassung setzt Arbeitsgewichte ausdruecklich neu — etwa wenn der
+  // Wiedereinstieg zu vorsichtig angesetzt war. Sie steht als Log-Datei da
+  // und ist damit reproduzierbar; state.json direkt zu ueberschreiben wuerde
+  // die Ableitbarkeit zerstoeren, auf der alles andere aufbaut.
+  if (log.type === 'anpassung') {
+    for (const [id, gewicht] of Object.entries(log.gewichte || {})) {
+      const l = next.lifts[id];
+      if (!l || !gewicht) continue;
+      l.weight = Math.max(config.bar, roundTo(gewicht, config.rounding));
+      l.fails = 0;
+    }
+    next.updated = new Date().toISOString();
+    next.history = [...(next.history || []),
+      { date: log.date, type: 'anpassung', grund: log.grund || '' }].slice(-100);
+    return next;                                    // A/B-Wechsel unberuehrt
+  }
+
   // Ein Max-Out ist ein Krafttest, kein Programmschritt. Er dreht den
   // A/B-Wechsel nicht weiter. Nur wenn du das Ergebnis ausdruecklich
   // uebernimmst, steht das im Log — und ist damit reproduzierbar.
