@@ -67,6 +67,17 @@ async function load() {
       return show('setup');
     }
   }
+  // Fahrten und Form aus dem Zwischenspeicher, damit Interferenz und
+  // Formhinweis auch ohne Netz stehen. Beides wird gleich aufgefrischt,
+  // aber ein leerer Bildschirm im Funkloch waere die schlechtere Antwort.
+  const zwischen = S.cached();
+  if (zwischen.fahrten && zwischen.fahrten.length) {
+    alleFahrten = zwischen.fahrten;
+    stoerung = C.interferenz(zwischen.fahrten);
+  }
+  if (zwischen.form) form = zwischen.form;
+  if (zwischen.eftp) eftp = zwischen.eftp;
+
   await flushQueue();
   renderHome();
   show('home');
@@ -118,6 +129,7 @@ async function loadIntervals() {
     form = C.formLage(ICU.letzteForm(roh));
     const mitFtp = [...roh].filter(w => w.eftp).sort((a, b) => b.date.localeCompare(a.date))[0];
     eftp = mitFtp ? Math.round(mitFtp.eftp) : null;
+    S.cache({ form, eftp });
     renderBodyTrend();
     renderHome();
   } catch (e) {

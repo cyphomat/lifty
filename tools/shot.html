@@ -69,8 +69,12 @@ const logs = [
   einheit(tage(2),'B',80,40,100)
 ];
 
+const vorStunden = h => { const d = new Date(Date.now() - h*3600000); const z=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}:00`; };
+
 const fahrten = [
-  { id:'a1', date:tage(1),  name:'Zwift — Watopia Flat',  minutes:55, km:31.5, load:78 },
+  { id:'a1', date:tage(0), zeit:vorStunden(3), name:'Zwift — VO2max Blocks', minutes:50, km:24, load:96 },
+  { id:'a1b', date:tage(1),  name:'Zwift — Watopia Flat',  minutes:55, km:31.5, load:78 },
   { id:'a2', date:tage(4),  name:'Feierabendrunde',        minutes:90, km:52,   load:121 },
   { id:'a3', date:tage(8),  name:'Zwift — Alpe du Zwift',  minutes:70, km:22,   load:96 },
   { id:'a4', date:tage(15), name:'Lange Runde',            minutes:150,km:88,   load:180 },
@@ -88,7 +92,12 @@ const state = {
 
 localStorage.clear();
 localStorage.setItem('lifty.token', 'demo');
-localStorage.setItem('lifty.cache', JSON.stringify({ config, state, fahrten }));
+localStorage.setItem('lifty.cache', JSON.stringify({
+  config, state, fahrten,
+  form: { form: 5, stufe: 'frisch', fitness: 52, ermuedung: 47,
+          text: 'Ausgeruht. Wenn ein Tag für einen Versuch am oberen Ende taugt, dann dieser.' },
+  eftp: 243
+}));
 localStorage.setItem('lifty.logs', JSON.stringify({ zeit: Date.now(), logs }));
 localStorage.setItem('lifty.icu.key', 'demo');
 localStorage.setItem('lifty.icu.athlete', 'i000000');
