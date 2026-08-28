@@ -1106,3 +1106,41 @@ function renderRad() {
       </div>`).join('')}
     ${sortiert.length > 20 ? `<p class="fine">${sortiert.length - 20} weitere nicht gezeigt.</p>` : ''}`;
 }
+
+/* ================= Darstellung ================= */
+
+const THEMA_KEY = 'lifty.theme';
+
+/** 'auto' folgt dem System, sonst die ausdrückliche Wahl. */
+function themaWahl() { return localStorage.getItem(THEMA_KEY) || 'dunkel'; }
+
+function themaAnwenden() {
+  const wahl = themaWahl();
+  const hell = wahl === 'hell' ||
+    (wahl === 'auto' && window.matchMedia('(prefers-color-scheme: light)').matches);
+  if (hell) document.documentElement.setAttribute('data-theme', 'light');
+  else document.documentElement.removeAttribute('data-theme');
+  const m = document.querySelector('meta[name=theme-color]');
+  if (m) m.setAttribute('content', hell ? '#eceff4' : '#04060a');
+  renderThemenSchalter();
+}
+
+function renderThemenSchalter() {
+  const wahl = themaWahl();
+  document.querySelectorAll('.themen button').forEach(b =>
+    b.classList.toggle('an', b.dataset.thema === wahl));
+}
+
+document.querySelectorAll('.themen button').forEach(b => {
+  b.onclick = () => {
+    localStorage.setItem(THEMA_KEY, b.dataset.thema);
+    themaAnwenden();
+    banner(`DARSTELLUNG: ${b.textContent.toUpperCase()}`, 'ok', 2000);
+  };
+});
+
+// Systemwechsel mitbekommen, solange 'System' gewählt ist.
+window.matchMedia('(prefers-color-scheme: light)')
+  .addEventListener('change', () => { if (themaWahl() === 'auto') themaAnwenden(); });
+
+themaAnwenden();
