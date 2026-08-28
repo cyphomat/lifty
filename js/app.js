@@ -827,8 +827,16 @@ function renderCharts(logs) {
     const delta = letzter.weight - punkte[0].weight;
     // Zweite Linie: das geschaetzte Maximum steigt auch dann, wenn du bei
     // gleichem Gewicht mehr Wiederholungen schaffst.
-    const maxPunkte = ST.serieE1rm(logs, id);
-    const spMax = maxPunkte.length > 1 ? ST.sparkline(maxPunkte, 300, 60, 4) : null;
+    // Wichtig: Untergrenzen aus Arbeitssaetzen und Max-Out-Werte NICHT in
+    // eine Linie mischen. Sonst sieht ein Wechsel der Datenquelle wie ein
+    // Rueckschritt aus. Gemeinsame Skala, aber Linie nur durch die
+    // Untergrenzen; Max-Outs stehen als eigene Punkte daneben.
+    const alleMax = ST.serieE1rm(logs, id);
+    const spMax = alleMax.length > 1 ? ST.sparkline(alleMax, 300, 60, 4) : null;
+    const untere = spMax ? spMax.koord.filter(k => !k.belastbar) : [];
+    const tests = spMax ? spMax.koord.filter(k => k.belastbar) : [];
+    const linieUnten = untere.length > 1
+      ? untere.map((k, i) => `${i ? 'L' : 'M'}${k.x.toFixed(1)},${k.y.toFixed(1)}`).join(' ') : null;
     return `<div class="chart">
       <div class="h"><span class="t">${config.lifts[id].name}</span>
         <span class="r">${P.fmtWeight(letzter.weight)} ${delta > 0 ? `▲ +${delta}` : delta < 0 ? `▼ ${delta}` : ''}</span></div>
@@ -836,14 +844,17 @@ function renderCharts(logs) {
         <path d="${sp.flaeche}" fill="rgba(0,229,255,.13)"/>
         <path d="${sp.linie}" fill="none" stroke="var(--cyan)" stroke-width="2"
               stroke-linejoin="round" stroke-linecap="round"/>
-        ${spMax ? `<path d="${spMax.linie}" fill="none" stroke="var(--magenta)" stroke-width="1.5"
-              stroke-dasharray="4 3" stroke-linejoin="round" opacity=".85"/>` : ''}
+        ${linieUnten ? `<path d="${linieUnten}" fill="none" stroke="var(--magenta)" stroke-width="1.5"
+              stroke-dasharray="4 3" stroke-linejoin="round" opacity=".8"/>` : ''}
+        ${tests.map(k => `<circle cx="${k.x.toFixed(1)}" cy="${k.y.toFixed(1)}" r="4"
+              fill="var(--magenta)"/>`).join('')}
         ${sp.koord.map(k => `<circle cx="${k.x.toFixed(1)}" cy="${k.y.toFixed(1)}" r="2.5"
               fill="${k.success === false ? 'var(--amber)' : 'var(--cyan)'}"/>`).join('')}
       </svg>
       <div class="h" style="margin:6px 0 0">
         <span class="t">${sp.min} kg</span>
-        ${spMax ? `<span class="t" style="color:var(--magenta)">Max. ≈ ${spMax.max} kg</span>` : ''}
+        ${linieUnten ? `<span class="t" style="color:var(--magenta)">mind. ≈ ${
+          Math.max(...untere.map(k => k.weight))} kg${tests.length ? ' · ● Max-Out' : ''}</span>` : ''}
         <span class="t">${sp.max} kg</span></div>
     </div>`;
   }).join('');
