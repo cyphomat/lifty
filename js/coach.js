@@ -333,8 +333,10 @@ export function erfolge(vorher, nachher, config, log, alleLogs = [], heute = new
   for (const g of gestiegen) {
     const schwelle = Math.floor(g.neu / 10) * 10;
     if (schwelle > g.alt && schwelle <= g.neu && schwelle >= 40) {
+      // Bewusst ohne Artikel: "im Kniebeuge" waere falsch, "in der Kniebeuge"
+      // braeuchte ein Genus je Uebung. Der Doppelpunkt loest beides.
       out.push({ art: 'rund', rang: 1, lift: g.id,
-        text: `${schwelle} kg im ${config.lifts[g.id].name} — erste Mal über dieser Marke seit dem Wiedereinstieg.` });
+        text: `${config.lifts[g.id].name}: ${schwelle} kg — erstmals über dieser Marke seit dem Wiedereinstieg.` });
     }
   }
 

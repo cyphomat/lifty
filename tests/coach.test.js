@@ -256,3 +256,15 @@ ok('zehnte Einheit insgesamt',
    C.erfolge(vorEinheit, nachEinheit, cfgE, logE, zehn, new Date(2026,8,10)).some(x=>x.art==='anzahl'));
 
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
+
+print('\n--- Keine falschen Artikel in erzeugten Saetzen ---');
+const alleTexte = [
+  ...C.erfolge(vorEinheit, nachEinheit, cfgE, logE, [logE], new Date(2026,8,10)),
+  ...C.erfolge(vorRef, nachRef, cfgE, logE, [logE], new Date(2026,8,10)),
+  ...C.meilensteine(stM, cfgM, new Date(2026,7,27))
+].map(x => x.text).join(' ');
+ok('nirgends "im Kniebeuge"', !alleTexte.includes('im Kniebeuge'), alleTexte.slice(0,120));
+ok('nirgends "der Bankdrücken"', !alleTexte.includes('der Bankdrücken'));
+ok('nirgends "erste Mal"', !alleTexte.includes('erste Mal'), alleTexte.slice(0,120));
+
+print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
