@@ -19,16 +19,16 @@ const szene = p.get('szene') || 'home';
 const thema = p.get('thema') || 'dunkel';
 
 const config = {
-  version: 1, bar: 20, rounding: 2.5,
+  version: 1, bar: 20, rounding: 2.5, motto: 'Lift Heavy Shit',
   plates: [25, 20, 15, 10, 5, 2.5, 1.25],
   intervals: { loadProMinute: { strength: 0.8, wod: 1.4 } },
   deload: { afterFails: 3, factor: 0.9 },
   lifts: {
-    squat:    { name: 'Kniebeuge',       increment: 2.5, start: 47.5, reference: 100 },
-    bench:    { name: 'Bankdrücken',     increment: 2.5, start: 35,   reference: 75 },
-    row:      { name: 'Rudern',          increment: 2.5, start: 32.5, reference: 70 },
-    ohp:      { name: 'Schulterdrücken', increment: 2.5, start: 25,   reference: 50 },
-    deadlift: { name: 'Kreuzheben',      increment: 5,   start: 60,   reference: 130 }
+    squat:    { name: 'Back Squat',       increment: 2.5, start: 47.5, reference: 100 },
+    bench:    { name: 'Bench Press',     increment: 2.5, start: 35,   reference: 75 },
+    row:      { name: 'Barbell Row',          increment: 2.5, start: 32.5, reference: 70 },
+    ohp:      { name: 'Strict Press', increment: 2.5, start: 25,   reference: 50 },
+    deadlift: { name: 'Deadlift',      increment: 5,   start: 60,   reference: 130 }
   },
   workouts: {
     A: [{ lift:'squat', sets:5, reps:5 }, { lift:'bench', sets:5, reps:5 }, { lift:'row', sets:5, reps:5 }],
