@@ -168,7 +168,7 @@ function renderIcuStatus() {
     Letzte Fahrt vor <b class="num" style="color:${lange ? 'var(--amber)' : 'var(--cyan)'}">${tage} Tagen</b>
     — ${icu.letzte.name} · ${icu.letzte.minutes} Min · ${icu.letzte.km} km.
     ${icu.anzahl} Fahrt${icu.anzahl === 1 ? '' : 'en'} in 90 Tagen.
-    ${lange ? '<br>Das Rad ruht länger als das Eisen. Eine ruhige Stunde in Zone 2 kostet dich keine Erholung für die Kniebeuge.' : ''}
+    ${lange ? '<br>Das Rad ruht länger als das Eisen. Eine ruhige Stunde in Zone 2 kostet dich keine Erholung für den Beintag.' : ''}
   </p>`;
 }
 
@@ -854,7 +854,7 @@ function renderStats(logs) {
         <div class="s">Last × Wiederholungen</div></div>
       <div class="stat"><div class="n">Pro Woche</div><div class="v">${s.proWoche ?? '—'}</div>
         <div class="s">${s.von ? `seit ${s.von}` : 'noch keine Daten'}</div></div>
-      <div class="stat"><div class="n">Bestwert Kniebeuge</div>
+      <div class="stat"><div class="n">Bestwert ${(config.lifts.squat || {}).name || "Squat"}</div>
         <div class="v">${s.best.squat ? P.fmtWeight(s.best.squat.weight) : '—'}</div>
         <div class="s">${s.best.squat ? s.best.squat.date : 'noch keiner'}</div></div>
     </div>`;

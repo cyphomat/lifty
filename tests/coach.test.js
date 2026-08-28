@@ -164,7 +164,7 @@ eq('leere Liste faellt auf meine zurueck',
 
 print('\n--- Meilensteine ---');
 const cfgM = {
-  lifts: { squat:{name:'Kniebeuge',reference:80}, bench:{name:'Bankdrücken',reference:60} },
+  lifts: { squat:{name:'Back Squat',reference:80}, bench:{name:'Bench Press',reference:60} },
   records: { programm: {
     squat: { bestesEinzel:140, datum:'2021-08-27' },
     bench: { bestesEinzel:60, datum:'2020-03-15' } } }
@@ -214,7 +214,7 @@ print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========
 
 print('\n--- Minierfolge ---');
 const cfgE = { lifts: {
-  squat:{name:'Kniebeuge',reference:80}, bench:{name:'Bankdrücken',reference:60}, row:{name:'Rudern',reference:55} } };
+  squat:{name:'Back Squat',reference:80}, bench:{name:'Bench Press',reference:60}, row:{name:'Barbell Row',reference:55} } };
 const vorEinheit = { lifts:{ squat:{weight:67.5}, bench:{weight:47.5}, row:{weight:45} } };
 const nachEinheit = { lifts:{ squat:{weight:70},   bench:{weight:50},   row:{weight:47.5} } };
 const logE = { date:'2026-09-10', workout:'A', type:'strength', lifts:[
@@ -263,8 +263,10 @@ const alleTexte = [
   ...C.erfolge(vorRef, nachRef, cfgE, logE, [logE], new Date(2026,8,10)),
   ...C.meilensteine(stM, cfgM, new Date(2026,7,27))
 ].map(x => x.text).join(' ');
-ok('nirgends "im Kniebeuge"', !alleTexte.includes('im Kniebeuge'), alleTexte.slice(0,120));
-ok('nirgends "der Bankdrücken"', !alleTexte.includes('der Bankdrücken'));
+ok('keine Uebung mit vorangestelltem Artikel',
+   !/\b(im|in der|beim|der|die|das) (Back Squat|Bench Press|Barbell Row|Strict Press|Deadlift)\b/.test(alleTexte),
+   alleTexte.slice(0,140));
+ok('Uebungsnamen englisch', alleTexte.includes('Back Squat') || alleTexte.includes('Bench Press'), alleTexte.slice(0,140));
 ok('nirgends "erste Mal"', !alleTexte.includes('erste Mal'), alleTexte.slice(0,120));
 
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

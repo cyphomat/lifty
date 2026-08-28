@@ -73,7 +73,7 @@ print('\n--- Jede Uebung hat eine Skalierung ---');
 eq('keine Uebung ohne Alternative',
    W.MOVES.filter(m => !m.skalierung || !m.skalierung.length).length, 0);
 const klimm = W.MOVES.find(m => m.id === 'pullup');
-ok('Klimmzuege nennen Ring Rows zuerst', klimm.skalierung[0].includes('Ring Rows'), klimm.skalierung[0]);
+ok('Pull-ups nennen Ring Rows zuerst', klimm.skalierung[0].includes('Ring Rows'), klimm.skalierung[0]);
 ok('mehrere Stufen', klimm.skalierung.length >= 3, klimm.skalierung.length);
 ok('Skalierungen kommen im erzeugten WOD mit',
    W.generateWod(state, 7).teile.every(t => Array.isArray(t.skalierung)));
@@ -82,12 +82,12 @@ print('\n--- Ausgeschlossene Uebungen tauchen nicht auf ---');
 const ohne = { wod: { aus: ['pullup'] } };
 let klimmzuege = 0;
 for (let s = 1; s <= 400; s++) {
-  if (W.generateWod(state, s, ohne).teile.some(t => t.name === 'Klimmzüge')) klimmzuege++;
+  if (W.generateWod(state, s, ohne).teile.some(t => t.name === 'Pull-ups')) klimmzuege++;
 }
-eq('Klimmzuege ueber 400 Seeds: nie', klimmzuege, 0);
+eq('Pull-ups ueber 400 Seeds: nie', klimmzuege, 0);
 let ohneAusschluss = 0;
 for (let s = 1; s <= 400; s++) {
-  if (W.generateWod(state, s).teile.some(t => t.name === 'Klimmzüge')) ohneAusschluss++;
+  if (W.generateWod(state, s).teile.some(t => t.name === 'Pull-ups')) ohneAusschluss++;
 }
 ok('ohne Ausschluss kommen sie sehr wohl vor', ohneAusschluss > 10, ohneAusschluss);
 

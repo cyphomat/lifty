@@ -119,7 +119,7 @@ function intensitaet(situation, workout) {
     return { stufe: 'hart', label: 'HART', text: 'Gleiche Last wie letztes Mal. Heute holst du sie dir.' };
   }
   if (workout === 'B') {
-    return { stufe: 'hart', label: 'SCHWER', text: 'Kreuzheben am Ende. Spar dir was auf, ein Satz muss reichen.' };
+    return { stufe: 'hart', label: 'SCHWER', text: 'Deadlift am Ende. Spar dir was auf, ein Satz muss reichen.' };
   }
   return { stufe: 'normal', label: 'SOLIDE', text: 'Fünf saubere Sätze pro Übung. Nicht mehr, nicht weniger.' };
 }
@@ -333,8 +333,8 @@ export function erfolge(vorher, nachher, config, log, alleLogs = [], heute = new
   for (const g of gestiegen) {
     const schwelle = Math.floor(g.neu / 10) * 10;
     if (schwelle > g.alt && schwelle <= g.neu && schwelle >= 40) {
-      // Bewusst ohne Artikel: "im Kniebeuge" waere falsch, "in der Kniebeuge"
-      // braeuchte ein Genus je Uebung. Der Doppelpunkt loest beides.
+      // Bewusst ohne Artikel: die Uebungsnamen sind englisch, ein deutscher
+      // Artikel davor waere immer falsch. Der Doppelpunkt loest das.
       out.push({ art: 'rund', rang: 1, lift: g.id,
         text: `${config.lifts[g.id].name}: ${schwelle} kg — erstmals über dieser Marke seit dem Wiedereinstieg.` });
     }

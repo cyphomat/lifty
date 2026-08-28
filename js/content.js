@@ -8,7 +8,7 @@ export const LIFT_INFO = {
     warum: 'Die größte Hebelwirkung auf deinen gesamten Körper. Beine, Rumpf, oberer Rücken — und der stärkste hormonelle Reiz, den du im Defizit kriegen kannst. Deshalb steht sie in beiden Workouts.',
     kadenz: '3 Sekunden runter, unten nicht abfedern, explosiv hoch.',
     cue: 'Bruch aus der Hüfte und den Knien gleichzeitig. Ellbogen unter die Stange, Brust bleibt offen.',
-    fehler: 'Hüfte schießt zuerst hoch — dann wird aus der Kniebeuge ein Good Morning.',
+    fehler: 'Hüfte schießt zuerst hoch — dann wird aus dem Squat ein Good Morning.',
     oly: 'Aus deinem Gewichtheben kennst du die aufrechte Front-Position. Halte im Back Squat denselben Oberkörperwinkel wie im Clean, dann überträgt es sich.'
   },
   bench: {
@@ -37,7 +37,7 @@ export const LIFT_INFO = {
   },
   deadlift: {
     tag: 'DEADLIFT',
-    warum: 'Nur ein Satz — mit Absicht. Kreuzheben kostet mehr Erholung als alles andere. Ein schwerer Satz reicht als Reiz, fünf würden deine Kniebeuge auffressen.',
+    warum: 'Nur ein Satz — mit Absicht. Deadlifts kosten mehr Erholung als alles andere. Ein schwerer Satz reicht als Reiz, fünf würden deine Kniebeuge auffressen.',
     kadenz: 'Spannung aufbauen, dann ohne Ruck. Jede Wiederholung neu ansetzen.',
     cue: 'Stange am Schienbein. Brust hoch, bevor die Hüfte kommt. Schieben, nicht ziehen.',
     fehler: 'Aus dem Boden reißen. Zieh die Stange erst auf Spannung, dann kommt die Bewegung.',
@@ -57,8 +57,8 @@ export const WARMUP = {
     { t: '10x',   was: 'Bandzüge nach außen',           detail: 'Schulter aufwecken, besonders vor Drücken.' }
   ],
   A: [
-    { t: '5x', was: 'Leere Stange Kniebeuge', detail: 'Tief, langsam, Position finden.' },
-    { t: '5x', was: 'Leere Stange Bankdrücken', detail: 'Schulterblätter setzen.' }
+    { t: '5x', was: 'Leere Stange Back Squat', detail: 'Tief, langsam, Position finden.' },
+    { t: '5x', was: 'Leere Stange Bench Press', detail: 'Schulterblätter setzen.' }
   ],
   B: [
     { t: '5x', was: 'Leere Stange Overhead', detail: 'Position über dem Kopf suchen.' },
@@ -83,11 +83,11 @@ export const SKILL = [
    Kraftprogression, und genau das willst du nicht.                */
 
 export const FINISHER = [
-  { name: 'Battle Ropes — Wellen', dosis: '8x 20 Sek an / 40 Sek Pause', warum: 'Hoher Puls, null Belastung für Knie und Wirbelsäule. Perfekt nach schwerem Beintag.' },
+  { name: 'Battle Ropes — Waves', dosis: '8x 20 Sek an / 40 Sek Pause', warum: 'Hoher Puls, null Belastung für Knie und Wirbelsäule. Perfekt nach schwerem Beintag.' },
   { name: 'Battle Ropes — Slams', dosis: '6x 15 Sek maximal', warum: 'Ganzkörper, explosiv. Der Rest vom Gewichtheber in dir.' },
-  { name: 'Battle Ropes — Wechselwellen', dosis: '5x 30 Sek', warum: 'Rumpf muss gegen die Rotation arbeiten. Unterschätzt.' },
-  { name: 'Farmer Walk', dosis: '4x 40 m schwer', warum: 'Griff, Rumpf, Haltung — alles, was das Kreuzheben trägt.' },
-  { name: 'Ruderergometer', dosis: '5x 250 m, 1 Min Pause', warum: 'Wenn die Seile besetzt sind.' }
+  { name: 'Battle Ropes — Alternating', dosis: '5x 30 Sek', warum: 'Rumpf muss gegen die Rotation arbeiten. Unterschätzt.' },
+  { name: 'Farmer Walk', dosis: '4x 40 m schwer', warum: 'Griff, Rumpf, Haltung — alles, was den Deadlift trägt.' },
+  { name: 'Row (Erg)', dosis: '5x 250 m, 1 Min Pause', warum: 'Wenn die Seile besetzt sind.' }
 ];
 
 /* ---------------------------------------------------------------
@@ -98,7 +98,7 @@ export const RIDE_INFO = {
   'Grundlage Z2': {
     intensitaet: 'locker',
     ftp: [0.56, 0.75],
-    warum: 'Baut das aerobe Fundament und verbrennt Fett, ohne deine Beine für die Kniebeuge zu ruinieren. Der wichtigste Teil deines Radumfangs — und der, den alle zu hart fahren.',
+    warum: 'Baut das aerobe Fundament und verbrennt Fett, ohne deine Beine für den Squat zu ruinieren. Der wichtigste Teil deines Radumfangs — und der, den alle zu hart fahren.',
     achtung: 'Wenn du dich unterhalten kannst, stimmt es. Wenn es sich gut anfühlt, ist es meistens zu hart.'
   },
   'Sweet Spot': {
