@@ -256,3 +256,21 @@ eq('und alles bleibt ableitbar',
    JSON.stringify(P.deriveState(config, [kette[1], kette[0]]).lifts), JSON.stringify(nachher.lifts));
 
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
+
+print('\n--- Zwei Logs am selben Tag: die Uhrzeit entscheidet ---');
+const einheitFrueh = { date:'2026-08-28', workout:'A', type:'strength',
+  started:'2026-08-28T08:02:27.632Z', finished:'2026-08-28T08:02:56.120Z',
+  lifts:[win('squat',47.5), win('bench',35), win('row',32.5)] };
+const anpassungSpaet = { date:'2026-08-28', type:'anpassung',
+  finished:'2026-08-28T14:00:00.000Z', gewichte:{ squat:65, bench:47.5, row:45 } };
+
+const reihenfolgeA = P.deriveState(config, [einheitFrueh, anpassungSpaet]);
+const reihenfolgeB = P.deriveState(config, [anpassungSpaet, einheitFrueh]);
+eq('Anpassung am Nachmittag gewinnt', reihenfolgeA.lifts.squat.weight, 65);
+eq('unabhaengig von der Dateireihenfolge', reihenfolgeB.lifts.squat.weight, 65);
+eq('vollstaendig identisch', JSON.stringify(reihenfolgeA.lifts), JSON.stringify(reihenfolgeB.lifts));
+
+const anpassungFrueh = { ...anpassungSpaet, finished:'2026-08-28T06:00:00.000Z' };
+eq('umgekehrt gewinnt die Einheit', P.deriveState(config, [anpassungFrueh, einheitFrueh]).lifts.squat.weight, 50);
+
+print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

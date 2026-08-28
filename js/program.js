@@ -101,7 +101,12 @@ export function applyLog(state, config, log) {
 
 /** Vollstaendige Neuberechnung aus allen Logs — die tragende Invariante. */
 export function deriveState(config, logs) {
-  const sorted = [...logs].sort((a, b) => a.date.localeCompare(b.date));
+  // Bei gleichem Datum entscheidet die Uhrzeit. Ohne diesen Stichentscheid
+  // haengt das Ergebnis von der Dateireihenfolge ab — und eine Anpassung am
+  // selben Tag wuerde je nach Zufall vor oder nach der Einheit greifen.
+  const zeit = l => l.finished || l.started || '';
+  const sorted = [...logs].sort((a, b) =>
+    a.date.localeCompare(b.date) || zeit(a).localeCompare(zeit(b)));
   return sorted.reduce((s, log) => applyLog(s, config, log), initialState(config));
 }
 
