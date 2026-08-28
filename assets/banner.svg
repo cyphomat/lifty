@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 340" width="1200" height="340" role="img" aria-label="lifty">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#071019"/>
+      <stop offset="1" stop-color="#04060a"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="50%" cy="8%" r="62%">
+      <stop offset="0" stop-color="#00e5ff" stop-opacity=".26"/>
+      <stop offset="1" stop-color="#00e5ff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rule" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#00e5ff"/>
+      <stop offset="1" stop-color="#ff2d95"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#ffffff" stroke-opacity=".035" stroke-width="1"/>
+    </pattern>
+    <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse">
+      <rect width="4" height="1.4" fill="#000" fill-opacity=".22"/>
+    </pattern>
+    <filter id="neon" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="10" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="340" fill="url(#sky)"/>
+  <rect width="1200" height="340" fill="url(#grid)"/>
+  <rect width="1200" height="340" fill="url(#halo)"/>
+
+  <!-- Eckklammern -->
+  <path d="M34 34h84M34 34v56" fill="none" stroke="#00e5ff" stroke-opacity=".55" stroke-width="2"/>
+  <path d="M1166 306h-84M1166 306v-56" fill="none" stroke="#ff2d95" stroke-opacity=".55" stroke-width="2"/>
+
+  <!-- Hantel -->
+  <g transform="translate(600 128)" fill="#00e5ff" filter="url(#soft)">
+    <rect x="-118" y="-5" width="236" height="10" rx="1"/>
+    <rect x="-96"  y="-30" width="17" height="60" rx="2"/>
+    <rect x="79"   y="-30" width="17" height="60" rx="2"/>
+    <rect x="-124" y="-19" width="13" height="38" rx="2" fill-opacity=".72"/>
+    <rect x="111"  y="-19" width="13" height="38" rx="2" fill-opacity=".72"/>
+  </g>
+
+  <text x="600" y="232" text-anchor="middle" filter="url(#neon)"
+        font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+        font-size="92" font-weight="700" letter-spacing="20" fill="#00e5ff">LIFTY</text>
+
+  <text x="600" y="272" text-anchor="middle"
+        font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+        font-size="16" letter-spacing="7" fill="#69809a">5×5 · ZWIFT · BATTLE ROPES</text>
+
+  <text x="600" y="302" text-anchor="middle"
+        font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+        font-size="12.5" letter-spacing="3.4" fill="#3d4f63">KEIN BUILD · KEINE ABHÄNGIGKEITEN · KEIN SERVER</text>
+
+  <rect x="0" y="336" width="1200" height="4" fill="url(#rule)"/>
+  <rect width="1200" height="340" fill="url(#scan)"/>
+</svg>
