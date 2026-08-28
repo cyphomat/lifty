@@ -20,11 +20,11 @@
 
 ```mermaid
 flowchart LR
-  Z["🚴 Zwift"] --> S["Strava"]
+  Z["Zwift"] --> S["Strava"]
   S --> I["intervals.icu"]
-  I -. "nur lesen" .-> A
-  A["<b>lifty</b><br/>GitHub Pages"] <--> D[("lifty-data<br/>privates Repo")]
-  P["📱 iPhone<br/>Homescreen"] --> A
+  I -. nur lesen .-> A
+  A["lifty<br/>GitHub Pages"] <--> D[("lifty-data<br/>privates Repo")]
+  P["iPhone<br/>Homescreen"] --> A
 
   classDef fremd fill:#0b1119,stroke:#3d4f63,color:#69809a
   classDef eigen fill:#0b1119,stroke:#00e5ff,color:#00e5ff
