@@ -133,3 +133,45 @@ const alt = S.radWochen([{ date:'2020-01-01', minutes:60, load:50 }], 4, new Dat
 eq('zu alte Fahrten fallen raus', alt.reduce((s,x)=>s+x.last,0), 0);
 
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
+
+print('\n--- Trainingskalender ---');
+const kLogs = [
+  { date:'2026-08-24', type:'strength' },
+  { date:'2026-08-26', type:'strength' },
+  { date:'2026-08-27', type:'wod' },
+  { date:'2026-06-01', type:'strength' }
+];
+const kFahrten = [{ date:'2026-08-25' }, { date:'2026-08-26' }];
+const kal = S.kalender(kLogs, kFahrten, 4, new Date(2026, 7, 28));
+eq('vier Wochen ergeben 28 Tage', kal.tage.length, 28);
+eq('beginnt an einem Montag', new Date(kal.von + 'T12:00:00').getDay(), 1);
+const tag = d => kal.tage.find(t => t.date === d);
+eq('Krafttag erkannt', tag('2026-08-24').kraft, true);
+eq('Radtag erkannt', tag('2026-08-25').rad, true);
+eq('beides am selben Tag', tag('2026-08-26').kraft && tag('2026-08-26').rad, true);
+eq('WOD getrennt gefuehrt', tag('2026-08-27').wod, true);
+eq('und nicht als Kraft gezaehlt', tag('2026-08-27').kraft, false);
+eq('heute ist markiert', tag('2026-08-28').heute, true);
+eq('morgen liegt in der Zukunft', tag('2026-08-29').zukunft, true);
+eq('zu alte Eintraege tauchen nicht auf', kal.tage.filter(t=>t.date==='2026-06-01').length, 0);
+eq('leere Daten ergeben trotzdem ein Raster', S.kalender([], [], 4, new Date(2026,7,28)).tage.length, 28);
+
+print('\n--- Wochenlast aus beiden Welten ---');
+const wLogs = [
+  { date:'2026-08-26', type:'strength', started:'2026-08-26T17:00:00Z', finished:'2026-08-26T17:50:00Z' },
+  { date:'2026-08-27', type:'wod', dauerSekunden: 600 },
+  { date:'2026-08-25', type:'maxout', lift:'squat', weight:100, reps:1 }
+];
+const wFahrten = [{ date:'2026-08-26', load:78 }, { date:'2026-08-24', load:120 }];
+const wl = S.wochenLast(wLogs, wFahrten, 4, new Date(2026, 7, 28));
+eq('vier Wochen', wl.length, 4);
+const dieseWoche = wl[3];
+eq('Kraft: 50 Min x 0,8 plus WOD 10 Min x 1,4', dieseWoche.kraft, 40 + 14);
+eq('Rad summiert', dieseWoche.rad, 198);
+eq('Gesamt ist die Summe', dieseWoche.gesamt, 54 + 198);
+eq('Max-Out zaehlt nicht mit', S.wochenLast([wLogs[2]], [], 4, new Date(2026,7,28))[3].kraft, 0);
+eq('ohne Dauer keine Kraftlast',
+   S.wochenLast([{date:'2026-08-26',type:'strength'}], [], 4, new Date(2026,7,28))[3].kraft, 0);
+eq('leere Daten ergeben leere Wochen', S.wochenLast([], [], 6, new Date(2026,7,28)).filter(w=>w.gesamt>0).length, 0);
+
+print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

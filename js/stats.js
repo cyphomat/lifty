@@ -236,3 +236,81 @@ export function radWochen(rides = [], wochen = 12, heute = new Date()) {
   }
   return eimer;
 }
+
+/* ---------------------------------------------------------------
+   Trainingskalender. Regelmaessigkeit ist Daniels erklaertes Ziel —
+   und nichts zeigt sie so unbestechlich wie ein Raster, in dem die
+   Luecken genauso sichtbar sind wie die Treffer.                   */
+
+const tagesKey = d =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+const montagVon = d => {
+  const m = new Date(d);
+  m.setHours(0, 0, 0, 0);
+  m.setDate(m.getDate() - ((m.getDay() + 6) % 7));
+  return m;
+};
+
+export function kalender(logs = [], fahrten = [], wochen = 26, heute = new Date()) {
+  const start = montagVon(heute);
+  start.setDate(start.getDate() - (wochen - 1) * 7);
+
+  const kraft = new Set(), wod = new Set(), rad = new Set();
+  for (const l of logs) {
+    if (!l.date) continue;
+    if (l.type === 'wod') wod.add(l.date);
+    else if (!l.type || l.type === 'strength') kraft.add(l.date);
+  }
+  for (const f of fahrten) if (f.date) rad.add(f.date);
+
+  const tage = [];
+  const heuteKey = tagesKey(heute);
+  for (let i = 0; i < wochen * 7; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const key = tagesKey(d);
+    tage.push({
+      date: key,
+      kraft: kraft.has(key),
+      wod: wod.has(key),
+      rad: rad.has(key),
+      zukunft: key > heuteKey,
+      heute: key === heuteKey
+    });
+  }
+  return { tage, wochen, von: tage[0].date, bis: tage[tage.length - 1].date };
+}
+
+/**
+ * Wochenlast aus beiden Welten. Kraft wird aus der Dauer geschaetzt — mit
+ * demselben Faktor wie bei der Uebertragung nach intervals.icu, damit die
+ * Zahlen hier und dort dieselben sind.
+ */
+export function wochenLast(logs = [], fahrten = [], wochen = 12, heute = new Date(), faktor = { strength: 0.8, wod: 1.4 }) {
+  const start = montagVon(heute);
+  const eimer = [];
+  for (let i = wochen - 1; i >= 0; i--) {
+    const m = new Date(start);
+    m.setDate(m.getDate() - i * 7);
+    eimer.push({ woche: tagesKey(m), kraft: 0, rad: 0 });
+  }
+  const index = new Map(eimer.map((e, i) => [e.woche, i]));
+  const eimerFuer = datum => index.get(tagesKey(montagVon(new Date(datum + 'T12:00:00'))));
+
+  for (const l of logs) {
+    if (!l.date || l.type === 'maxout' || l.type === 'anpassung') continue;
+    const i = eimerFuer(l.date);
+    if (i === undefined) continue;
+    const sek = l.dauerSekunden ||
+      (l.started && l.finished ? Math.round((new Date(l.finished) - new Date(l.started)) / 1000) : 0);
+    if (!sek) continue;
+    eimer[i].kraft += Math.round((sek / 60) * (l.type === 'wod' ? faktor.wod : faktor.strength));
+  }
+  for (const f of fahrten) {
+    if (!f.date) continue;
+    const i = eimerFuer(f.date);
+    if (i !== undefined) eimer[i].rad += f.load || 0;
+  }
+  return eimer.map(e => ({ ...e, gesamt: e.kraft + e.rad }));
+}

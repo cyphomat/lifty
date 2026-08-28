@@ -26,6 +26,7 @@ let form = null;                // Form aus intervals.icu (ctl - atl)
 let alleFahrten = [];           // Radfahrten der letzten 90 Tage
 let stoerung = null;            // Interferenz Rad -> Eisen
 let stimme = null;              // deine eigenen Zeilen aus stimme.json
+let gewichtsPunkte = [];        // Rohwerte fuer die Gewichtskurve
 let eftp = null;                // geschaetzte FTP, fuer Wattziele
 
 const $ = id => document.getElementById(id);
@@ -80,6 +81,7 @@ async function load() {
     stoerung = C.interferenz(zwischen.fahrten);
   }
   if (zwischen.form) form = zwischen.form;
+  if (zwischen.gewicht) gewichtsPunkte = zwischen.gewicht;
   if (zwischen.eftp) eftp = zwischen.eftp;
 
   await flushQueue();
@@ -129,6 +131,8 @@ async function loadIntervals() {
   try {
     const bis = new Date(), von = new Date(); von.setDate(von.getDate() - 90);
     const roh = await ICU.wellness(P.ymd(von), P.ymd(bis));
+    gewichtsPunkte = roh.filter(w => w.weight).map(w => ({ date: w.date, weight: w.weight }));
+    S.cache({ gewicht: gewichtsPunkte });
     trend = C.gewichtsTrend(roh);
     form = C.formLage(ICU.letzteForm(roh));
     const mitFtp = [...roh].filter(w => w.eftp).sort((a, b) => b.date.localeCompare(a.date))[0];
@@ -303,11 +307,27 @@ function renderWeek() {
 function renderBodyTrend() {
   if (!trend) { $('body-trend').innerHTML = ''; return; }
   const runter = trend.delta !== null && trend.delta < 0;
+
+  // Eine Zahl sagt, wo du stehst. Eine Kurve sagt, wohin es geht — und bei
+  // Koerpergewicht ist ausschliesslich Letzteres interessant.
+  const punkte = gewichtsPunkte.length > 1
+    ? ST.sparkline([...gewichtsPunkte].sort((a, b) => a.date.localeCompare(b.date)), 300, 56)
+    : null;
+
   $('body-trend').innerHTML = `
     <h2>Körpergewicht</h2>
     <div class="card">
       <div class="kicker">Aus intervals.icu · ${trend.n} Messungen</div>
       <div class="name">${trend.aktuell}<span style="font-size:20px"> kg</span></div>
+      ${punkte ? `<svg viewBox="0 0 300 56" preserveAspectRatio="none" aria-hidden="true"
+            style="display:block;width:100%;height:56px;margin-top:10px;overflow:visible">
+          <path d="${punkte.flaeche}" fill="${runter ? 'rgba(0,255,157,.13)' : 'rgba(255,176,32,.13)'}"/>
+          <path d="${punkte.linie}" fill="none" stroke="${runter ? 'var(--lime)' : 'var(--amber)'}"
+                stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        </svg>
+        <div style="display:flex;justify-content:space-between;margin-top:5px">
+          <span class="kicker">${punkte.min} kg</span><span class="kicker">${punkte.max} kg</span>
+        </div>` : ''}
       ${trend.delta !== null ? `<p class="fine" style="color:${runter ? 'var(--lime)' : 'var(--amber)'}">
         ${trend.delta > 0 ? '+' : ''}${trend.delta} kg im Zeitraum.
         ${runter ? 'Richtung stimmt. Solange die Gewichte auf der Stange steigen, verlierst du Fett und keine Muskeln — genau das ist das Ziel.'
@@ -558,6 +578,8 @@ async function renderHistory() {
   if (!config) {
     $('hist-summary').innerHTML = '';
     $('hist-prs').innerHTML = '';
+    $('hist-kalender').innerHTML = '';
+    $('hist-last').innerHTML = '';
     $('hist-charts').innerHTML = '';
     $('history-body').innerHTML =
       `<p class="lead">Noch keine Verbindung zu deinen Daten. Prüfe den GitHub-Token
@@ -566,6 +588,8 @@ async function renderHistory() {
   }
   $('hist-summary').innerHTML = '';
   $('hist-prs').innerHTML = '';
+  $('hist-kalender').innerHTML = '';
+  $('hist-last').innerHTML = '';
   $('hist-charts').innerHTML = '';
   $('hist-rad').innerHTML = '';
   $('history-body').innerHTML = '<p class="lead">Lade…</p>';
@@ -574,6 +598,8 @@ async function renderHistory() {
     alleLogs = logs;
     S.cacheLogs(logs);
     renderStats(logs);
+    renderKalender(logs);
+    renderLast(logs);
     renderPRs(logs);
     renderCharts(logs);
     renderRad();
@@ -584,6 +610,8 @@ async function renderHistory() {
     if (alt && alt.logs.length) {
       alleLogs = alt.logs;
       renderStats(alt.logs);
+      renderKalender(alt.logs);
+      renderLast(alt.logs);
       renderPRs(alt.logs);
       renderCharts(alt.logs);
       renderRad();
@@ -1397,4 +1425,83 @@ function meilensteinKarte() {
     <span class="kicker">${m[0].art === 'jahrestag' ? 'Aus deiner Geschichte' : 'Wendepunkt'}</span>
     <p>${m[0].text}</p>
   </div>`;
+}
+
+/* ================= Kalender und Last ================= */
+
+/**
+ * Trainingskalender. Regelmäßigkeit ist das erklärte Ziel — und nichts zeigt
+ * sie so unbestechlich wie ein Raster, in dem die Lücken genauso sichtbar
+ * sind wie die Treffer. Eine Spalte ist eine Woche, oben Montag.
+ */
+function renderKalender(logs) {
+  const box = $('hist-kalender');
+  if (!box) return;
+  const fahrten = alleFahrten.length ? alleFahrten : (S.cached().fahrten || []);
+  const k = ST.kalender(logs, fahrten, 26, new Date());
+
+  const zellen = k.tage.map(t => {
+    const was = [];
+    if (t.kraft) was.push('Kraft');
+    if (t.wod) was.push('WOD');
+    if (t.rad) was.push('Rad');
+    const klasse = [
+      'zelle',
+      t.zukunft ? 'zukunft' : '',
+      t.heute ? 'heute' : '',
+      t.kraft ? 'kraft' : '',
+      t.wod ? 'wod' : '',
+      t.rad ? 'rad' : ''
+    ].filter(Boolean).join(' ');
+    return `<span class="${klasse}" title="${t.date}${was.length ? ' — ' + was.join(' + ') : ''}"></span>`;
+  }).join('');
+
+  const tage = k.tage.filter(t => !t.zukunft);
+  const aktiv = tage.filter(t => t.kraft || t.wod || t.rad).length;
+  box.innerHTML = `
+    <div class="kalender">
+      <div class="raster">${zellen}</div>
+      <div class="legende">
+        <span><i class="kraft"></i> Kraft</span>
+        <span><i class="wod"></i> WOD</span>
+        <span><i class="rad"></i> Rad</span>
+        <span class="rechts">${aktiv} von ${tage.length} Tagen · ${Math.round(aktiv / tage.length * 100)} %</span>
+      </div>
+    </div>`;
+}
+
+/** Kraft und Rad gestapelt — die eine Kurve, wegen der beides zusammengehört. */
+function renderLast(logs) {
+  const box = $('hist-last');
+  if (!box) return;
+  const fahrten = alleFahrten.length ? alleFahrten : (S.cached().fahrten || []);
+  const faktor = (config.intervals && config.intervals.loadProMinute) || { strength: 0.8, wod: 1.4 };
+  const wochen = ST.wochenLast(logs, fahrten, 12, new Date(), faktor);
+  const max = Math.max(1, ...wochen.map(w => w.gesamt));
+
+  const breite = 300, hoehe = 74, luecke = 3;
+  const bw = (breite - luecke * (wochen.length - 1)) / wochen.length;
+  const balken = wochen.map((w, i) => {
+    const x = i * (bw + luecke);
+    const hK = (w.kraft / max) * hoehe;
+    const hR = (w.rad / max) * hoehe;
+    return `
+      ${w.rad ? `<rect x="${x.toFixed(1)}" y="${(hoehe - hR).toFixed(1)}" width="${bw.toFixed(1)}" height="${hR.toFixed(1)}"
+        fill="var(--magenta)" opacity=".85"><title>${w.woche} · Rad ${w.rad}</title></rect>` : ''}
+      ${w.kraft ? `<rect x="${x.toFixed(1)}" y="${(hoehe - hR - hK).toFixed(1)}" width="${bw.toFixed(1)}" height="${hK.toFixed(1)}"
+        fill="var(--cyan)" opacity=".9"><title>${w.woche} · Kraft ${w.kraft}</title></rect>` : ''}`;
+  }).join('');
+
+  const summeK = wochen.reduce((s, w) => s + w.kraft, 0);
+  const summeR = wochen.reduce((s, w) => s + w.rad, 0);
+  box.innerHTML = `
+    <div class="radbar">
+      <div class="h"><span class="t">Kraft und Rad, gestapelt</span>
+        <span class="r" style="color:var(--fg)">${summeK + summeR} gesamt</span></div>
+      <svg viewBox="0 0 ${breite} ${hoehe}" preserveAspectRatio="none" aria-hidden="true">${balken}</svg>
+      <div class="h" style="margin:7px 0 0">
+        <span class="t" style="color:var(--cyan)">■ Kraft ${summeK}</span>
+        <span class="t" style="color:var(--magenta)">■ Rad ${summeR}</span>
+        <span class="t">diese Woche →</span></div>
+    </div>`;
 }
