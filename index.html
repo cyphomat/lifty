@@ -49,6 +49,10 @@
   <div class="pad">
     <div id="directive"></div>
     <div id="today" class="card today"></div>
+    <div class="actions">
+      <button id="swap-workout" class="btn ghost small">Workout wechseln</button>
+      <button id="go-wod" class="btn small">Zufalls-WOD</button>
+    </div>
     <h2>Zurück auf Kurs</h2>
     <div id="progress"></div>
     <h2>Diese Woche</h2>
@@ -78,6 +82,23 @@
   </div>
 </section>
 
+<!-- ============ WOD ============ -->
+<section id="view-wod" class="view" hidden>
+  <header class="head">
+    <button id="wod-back" class="icon-btn" aria-label="Zurück">‹</button>
+    <h1>Zufalls-WOD</h1>
+    <button id="wod-reroll" class="icon-btn" aria-label="Neu würfeln">⟳</button>
+  </header>
+  <div class="pad" id="wod-body"></div>
+  <div class="pad">
+    <button id="wod-finish" class="btn" disabled>Abschließen</button>
+  </div>
+  <div id="stopwatch" class="rest" hidden>
+    <span><span class="lbl">LAUFZEIT</span><span id="sw-time" class="t">0:00</span></span>
+    <button id="sw-toggle">STOPP</button>
+  </div>
+</section>
+
 <!-- ============ DONE ============ -->
 <section id="view-done" class="view" hidden>
   <header class="head"><h1><span class="glow">geschafft</span></h1></header>
@@ -91,7 +112,12 @@
     <button id="hist-back" class="icon-btn" aria-label="Zurück">‹</button>
     <h1>Verlauf</h1>
   </header>
-  <div class="pad" id="history-body"></div>
+  <div class="pad">
+    <div id="hist-summary"></div>
+    <div id="hist-charts"></div>
+    <h2>Einheiten</h2>
+    <div id="history-body"></div>
+  </div>
   <div class="pad">
     <button id="rebuild" class="btn ghost">state.json neu berechnen</button>
     <button id="logout" class="btn ghost danger">Zugänge entfernen</button>

@@ -34,6 +34,16 @@ export function isSuccess(entry, target) {
  */
 export function applyLog(state, config, log) {
   const next = JSON.parse(JSON.stringify(state)); // bewusst kein structuredClone: aeltere iOS-Safari kennen es nicht
+
+  // Ein WOD ist Beiwerk, kein Programmschritt: es taucht in der Historie auf,
+  // darf aber weder Arbeitsgewichte noch den A/B-Wechsel anfassen. Sonst
+  // wuerde eine Spasseinheit die Progression verschieben.
+  if (log.type && log.type !== 'strength') {
+    next.updated = new Date().toISOString();
+    next.history = [...(next.history || []), { date: log.date, type: log.type, label: log.label || 'WOD' }].slice(-100);
+    return next;
+  }
+
   for (const entry of log.lifts) {
     const def = config.lifts[entry.lift];
     const cur = next.lifts[entry.lift];
@@ -53,7 +63,7 @@ export function applyLog(state, config, log) {
   next.next = log.workout === 'A' ? 'B' : 'A';
   next.derivedFrom = (next.derivedFrom || 0) + 1;
   next.updated = new Date().toISOString();
-  next.history = [...(next.history || []), { date: log.date, workout: log.workout }].slice(-100);
+  next.history = [...(next.history || []), { date: log.date, workout: log.workout, type: 'strength' }].slice(-100);
   return next;
 }
 
@@ -114,7 +124,8 @@ export function planWeek(state, config, today = new Date()) {
     // Nur Krafteinheiten kommen aus der eigenen Historie. Ob eine Radeinheit
     // gefahren wurde, weiss allein intervals.icu — sonst haekelt eine
     // Krafteinheit am Dienstag die Radeinheit desselben Tages ab.
-    const done = slot.type === 'strength' && (state.history || []).some(h => h.date === key);
+    const done = slot.type === 'strength' &&
+      (state.history || []).some(h => h.date === key && (h.type || 'strength') === 'strength');
 
     const item = {
       date: key,

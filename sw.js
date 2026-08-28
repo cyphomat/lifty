@@ -1,7 +1,7 @@
 // Nur die App-Huelle wird gecacht. Trainingsdaten laufen immer live ueber
 // die GitHub-API — veraltete Gewichte im Studio waeren schlimmer als ein Ladebalken.
-const CACHE = 'lifty-v3';
-const SHELL = ['./', 'index.html', 'css/style.css', 'js/app.js', 'js/program.js', 'js/store.js', 'js/intervals.js', 'js/coach.js', 'js/content.js', 'manifest.json'];
+const CACHE = 'lifty-v4';
+const SHELL = ['./', 'index.html', 'css/style.css', 'js/app.js', 'js/program.js', 'js/store.js', 'js/intervals.js', 'js/coach.js', 'js/content.js', 'js/wod.js', 'js/stats.js', 'manifest.json'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

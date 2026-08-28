@@ -3,13 +3,19 @@ import * as S from './store.js';
 import * as ICU from './intervals.js';
 import * as C from './coach.js';
 import { LIFT_INFO, WARMUP, SKILL, FINISHER, RIDE_INFO } from './content.js';
+import * as WOD from './wod.js';
+import * as ST from './stats.js';
 
 let config = null, state = null, stateSha = null, session = null;
 let ridesByDate = new Map(), letzterLog = null, trend = null;
 let restTimer = null, restLeft = 0;
+// Manuell gewaehltes Workout. Nur fuer diese eine Einheit — der Automat
+// bleibt die Wahrheit darueber, was eigentlich dran waere.
+let workoutOverride = null;
+let wod = null, wodSeed = 0, swTimer = null, swSek = 0, swLaeuft = false;
 
 const $ = id => document.getElementById(id);
-const VIEWS = ['setup', 'home', 'session', 'done', 'history'];
+const VIEWS = ['setup', 'home', 'session', 'wod', 'done', 'history'];
 const show = n => { VIEWS.forEach(v => $('view-' + v).hidden = v !== n); window.scrollTo(0, 0); };
 
 let bannerTimer = null;
@@ -79,9 +85,11 @@ function renderHome() {
     </div>
     <p class="spruch">${d.spruch}</p>`;
 
-  const plan = P.planWorkout(state, config);
+  const gewaehlt = workoutOverride || state.next;
+  const plan = P.planWorkout(state, config, gewaehlt);
+  $('swap-workout').textContent = `Stattdessen ${gewaehlt === 'A' ? 'B' : 'A'}`;
   $('today').innerHTML = `
-    <div class="kicker">Als Nächstes</div>
+    <div class="kicker">${workoutOverride ? 'Selbst gewählt' : 'Als Nächstes'}</div>
     <div class="name neon">WORKOUT ${plan.workout}</div>
     <ul>${plan.lifts.map(l => `
       <li><span>${l.name} <span class="num">${l.sets}×${l.reps}</span></span><span>${P.fmtWeight(l.weight)}</span></li>
@@ -160,7 +168,7 @@ function renderBodyTrend() {
 /* ============================ Einheit ============================ */
 
 function startSession() {
-  const plan = P.planWorkout(state, config);
+  const plan = P.planWorkout(state, config, workoutOverride || state.next);
   const d = C.directive(state, config, new Date(), letzterLog);
   session = {
     date: P.ymd(new Date()), started: new Date().toISOString(),
@@ -303,6 +311,7 @@ async function finishSession() {
   try { await commit(log); banner('GESPEICHERT', 'ok'); }
   catch { S.queue(log); banner('KEIN NETZ — WIRD NACHGETRAGEN', '', 6000); }
   session = null;
+  workoutOverride = null;
 }
 
 async function commit(log) {
@@ -339,13 +348,25 @@ function renderDone(before, log) {
 
 async function renderHistory() {
   show('history');
+  $('hist-summary').innerHTML = '';
+  $('hist-charts').innerHTML = '';
   $('history-body').innerHTML = '<p class="lead">Lade…</p>';
   try {
-    const logs = (await S.readAllLogs()).sort((a, b) => b.date.localeCompare(a.date));
-    $('history-body').innerHTML = logs.length ? logs.map(l => `
-      <div class="hist"><div class="d">${l.date} · WORKOUT ${l.workout}</div>
-        <div class="l">${l.lifts.map(e => `${config.lifts[e.lift].name} ${P.fmtWeight(e.weight)} (${e.reps.join('/')})`).join(' · ')}</div>
-      </div>`).join('') : '<p class="lead">Noch keine Einheit protokolliert.</p>';
+    const logs = await S.readAllLogs();
+    renderStats(logs);
+    renderCharts(logs);
+    const sortiert = [...logs].sort((a, b) => b.date.localeCompare(a.date));
+    $('history-body').innerHTML = sortiert.length ? sortiert.map(l => {
+      if (l.type && l.type !== 'strength') {
+        const m = l.dauerSekunden ? `${Math.floor(l.dauerSekunden / 60)}:${String(l.dauerSekunden % 60).padStart(2, '0')}` : '—';
+        return `<div class="hist wod"><div class="d">${l.date} · WOD · ${m}</div>
+          <div class="l">${l.label || ''}</div></div>`;
+      }
+      return `<div class="hist"><div class="d">${l.date} · WORKOUT ${l.workout}</div>
+        <div class="l">${(l.lifts || []).map(e =>
+          `${config.lifts[e.lift].name} ${P.fmtWeight(e.weight)} (${e.reps.join('/')})`).join(' · ')}</div>
+      </div>`;
+    }).join('') : '<p class="lead">Noch keine Einheit protokolliert.</p>';
   } catch (e) { $('history-body').innerHTML = `<p class="lead">${e.message}</p>`; }
 }
 
@@ -378,6 +399,17 @@ $('save-token').onclick = async () => {
   }
   load();
 };
+$('swap-workout').onclick = () => {
+  const jetzt = workoutOverride || state.next;
+  workoutOverride = jetzt === 'A' ? 'B' : 'A';
+  if (workoutOverride === state.next) workoutOverride = null;   // zurueck zum Automaten
+  renderHome();
+};
+$('go-wod').onclick = () => { starteWod(WOD.seedAus(P.ymd(new Date()))); };
+$('wod-back').onclick = () => { stopUhr(); show('home'); };
+$('wod-reroll').onclick = () => { starteWod((wodSeed * 7919 + 13) >>> 0); };
+$('wod-finish').onclick = wodAbschliessen;
+$('sw-toggle').onclick = () => swLaeuft ? stopUhr() : startUhr();
 $('go-history').onclick = renderHistory;
 $('hist-back').onclick = () => show('home');
 $('rebuild').onclick = rebuild;
@@ -397,3 +429,137 @@ if (S.getToken()) {
   $('today').innerHTML = '<div class="kicker">Verbinde</div><div class="name neon">···</div>';
   load();
 } else show('setup');
+
+/* ============================ Zufalls-WOD ============================
+   Bewusst getrennt vom 5x5: es wird als eigener Typ geloggt und beruehrt
+   weder Arbeitsgewichte noch den A/B-Wechsel.                          */
+
+function starteWod(seed) {
+  wodSeed = seed >>> 0;
+  wod = WOD.generateWod(state, wodSeed);
+  swSek = 0; stopUhr();
+  $('sw-time').textContent = '0:00';
+  $('wod-finish').disabled = true;
+  renderWod();
+  show('wod');
+}
+
+function renderWod() {
+  $('wod-body').innerHTML = `
+    <div class="card">
+      <div class="kicker">${wod.dauer ? `${wod.dauer} Minuten` : wod.runden > 1 ? `${wod.runden} Runden` : 'Auf Zeit'}</div>
+      <div class="wod-format">${wod.format.toUpperCase()}</div>
+      <p class="txt" style="color:var(--muted);margin:0 0 6px">${wod.beschreibung}</p>
+      ${wod.teile.map(t => `
+        <div class="wod-teil">
+          <span class="menge">${t.menge ? `${t.menge} ${t.einheit}` : '20/10'}</span>
+          <span class="bez"><b>${t.name}</b>
+            ${t.last ? `<span class="last">${P.fmtWeight(t.last)}</span>` : ''}
+            <span class="c">${t.cue}</span>
+          </span>
+        </div>`).join('')}
+    </div>
+    <button id="sw-start" class="btn">${swLaeuft ? 'Läuft…' : 'Uhr starten'}</button>
+    <p class="fine">Nicht zufrieden? Oben rechts neu würfeln. Das WOD zählt nicht in die 5x5-Progression —
+    es taucht in der Historie auf, verschiebt aber weder deine Gewichte noch den A/B-Wechsel.</p>`;
+  $('sw-start').onclick = startUhr;
+}
+
+function startUhr() {
+  if (swLaeuft) return;
+  swLaeuft = true;
+  $('stopwatch').hidden = false;
+  $('sw-toggle').textContent = 'STOPP';
+  $('wod-finish').disabled = false;
+  clearInterval(swTimer);
+  swTimer = setInterval(() => {
+    swSek++;
+    $('sw-time').textContent = `${Math.floor(swSek / 60)}:${String(swSek % 60).padStart(2, '0')}`;
+  }, 1000);
+  renderWod();
+}
+
+function stopUhr() {
+  swLaeuft = false;
+  clearInterval(swTimer);
+  $('sw-toggle').textContent = 'WEITER';
+  if (swSek === 0) $('stopwatch').hidden = true;
+}
+
+async function wodAbschliessen() {
+  stopUhr();
+  const log = {
+    date: P.ymd(new Date()),
+    type: 'wod',
+    label: WOD.wodLabel(wod),
+    dauerSekunden: swSek,
+    seed: wodSeed,
+    wod,
+    finished: new Date().toISOString()
+  };
+  state = P.applyLog(state, config, log);
+  S.cache({ state });
+  $('stopwatch').hidden = true;
+  $('done-body').innerHTML = `
+    <div class="card">
+      <div class="kicker">${log.date} · WOD</div>
+      <div class="name">${Math.floor(swSek / 60)}:${String(swSek % 60).padStart(2, '0')}</div>
+      <ul>${wod.teile.map(t => `<li><span>${t.name}</span><span>${t.menge ? `${t.menge} ${t.einheit}` : '20/10'}</span></li>`).join('')}</ul>
+    </div>
+    <p class="spruch">Kondition kostet nichts, solange sie am Ende steht. Deine Gewichte sind unberührt.</p>`;
+  show('done');
+  try { await commitWod(log); banner('GESPEICHERT', 'ok'); }
+  catch { S.queue(log); banner('KEIN NETZ — WIRD NACHGETRAGEN', '', 6000); }
+  wod = null;
+}
+
+async function commitWod(log) {
+  let path = `log/${log.date}-wod.json`;
+  let n = 2;
+  while (await S.readFile(path)) path = `log/${log.date}-wod-${n++}.json`;
+  await S.writeFile(path, log, `WOD am ${log.date}`);
+  const cur = await S.readFile('state.json');
+  await S.writeFile('state.json', state, `Zustand nach WOD ${log.date}`, cur ? cur.sha : stateSha);
+}
+
+/* ============================ Auswertung ============================ */
+
+function renderStats(logs) {
+  const s = ST.summary(logs);
+  const t = s.tonnage >= 1000 ? `${(s.tonnage / 1000).toFixed(1)} t` : `${s.tonnage} kg`;
+  $('hist-summary').innerHTML = `
+    <div class="stats">
+      <div class="stat"><div class="n">Einheiten</div><div class="v">${s.einheiten}</div>
+        <div class="s">${s.kraft} Kraft · ${s.wods} WOD</div></div>
+      <div class="stat"><div class="n">Bewegt</div><div class="v">${t}</div>
+        <div class="s">Last × Wiederholungen</div></div>
+      <div class="stat"><div class="n">Pro Woche</div><div class="v">${s.proWoche ?? '—'}</div>
+        <div class="s">${s.von ? `seit ${s.von}` : 'noch keine Daten'}</div></div>
+      <div class="stat"><div class="n">Bestwert Kniebeuge</div>
+        <div class="v">${s.best.squat ? P.fmtWeight(s.best.squat.weight) : '—'}</div>
+        <div class="s">${s.best.squat ? s.best.squat.date : 'noch keiner'}</div></div>
+    </div>`;
+}
+
+function renderCharts(logs) {
+  const teile = Object.keys(config.lifts).map(id => {
+    const punkte = ST.serie(logs, id);
+    if (punkte.length < 2) return '';
+    const sp = ST.sparkline(punkte, 300, 60);
+    const letzter = punkte[punkte.length - 1];
+    const delta = letzter.weight - punkte[0].weight;
+    return `<div class="chart">
+      <div class="h"><span class="t">${config.lifts[id].name}</span>
+        <span class="r">${P.fmtWeight(letzter.weight)} ${delta > 0 ? `▲ +${delta}` : delta < 0 ? `▼ ${delta}` : ''}</span></div>
+      <svg viewBox="0 0 300 60" preserveAspectRatio="none" aria-hidden="true">
+        <path d="${sp.flaeche}" fill="rgba(0,229,255,.13)"/>
+        <path d="${sp.linie}" fill="none" stroke="var(--cyan)" stroke-width="2"
+              stroke-linejoin="round" stroke-linecap="round"/>
+        ${sp.koord.map(k => `<circle cx="${k.x.toFixed(1)}" cy="${k.y.toFixed(1)}" r="2.5"
+              fill="${k.success === false ? 'var(--amber)' : 'var(--cyan)'}"/>`).join('')}
+      </svg>
+      <div class="h" style="margin:6px 0 0"><span class="t">${sp.min} kg</span><span class="t">${sp.max} kg</span></div>
+    </div>`;
+  }).join('');
+  $('hist-charts').innerHTML = teile || '<p class="fine">Verläufe erscheinen ab der zweiten Einheit je Übung.</p>';
+}

@@ -108,3 +108,27 @@ eq('42,3 -> 42,5', P.roundTo(42.3, 2.5), 42.5);
 eq('41,1 -> 40', P.roundTo(41.1, 2.5), 40);
 
 print(`\n========== ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
+
+print('\n--- Ein WOD darf die Progression nicht anfassen ---');
+let wodState = P.initialState(config);
+wodState = P.applyLog(wodState, config, {
+  date: '2026-09-02', type: 'wod', label: 'AMRAP 12', lifts: []
+});
+eq('Kniebeuge unveraendert', wodState.lifts.squat.weight, 47.5);
+eq('A/B-Wechsel unveraendert', wodState.next, 'A');
+eq('taucht trotzdem in der Historie auf', wodState.history.length, 1);
+eq('und ist als WOD markiert', wodState.history[0].type, 'wod');
+
+wodState = P.applyLog(wodState, config, {
+  date: '2026-09-03', workout: 'A', type: 'strength',
+  lifts: [win('squat', 47.5), win('bench', 35), win('row', 32.5)]
+});
+eq('Krafteinheit danach steigert normal', wodState.lifts.squat.weight, 50);
+eq('und dreht den Wechsel weiter', wodState.next, 'B');
+
+print('\n--- Ein WOD hakt keinen Kraft-Slot ab ---');
+const MI2 = new Date(2026, 8, 2);
+const nurWod = { ...P.initialState(config), history: [{ date: '2026-08-31', type: 'wod', label: 'AMRAP' }] };
+eq('Montag bleibt offen', P.planWeek(nurWod, config, MI2)[0].done, false);
+
+print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

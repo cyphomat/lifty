@@ -243,3 +243,35 @@ dialog::backdrop{background:rgba(2,5,9,.85)}
 .opt{font-size:10px;background:#0d1620;color:var(--cyan);padding:3px 8px;margin-left:8px;letter-spacing:.14em;border:1px solid var(--line)}
 
 @media (prefers-reduced-motion:reduce){ *{transition:none!important} body::after{display:none} }
+
+/* ── Aktionsleiste ────────────────────────────────────────── */
+.actions{display:flex;gap:9px;margin-top:12px}
+.actions .btn{margin-top:0;flex:1}
+.btn.small{padding:13px 8px;font-size:11px;letter-spacing:.14em}
+
+/* ── Zufalls-WOD ──────────────────────────────────────────── */
+.wod-format{font-size:26px;font-weight:800;font-family:var(--mono);color:var(--magenta);text-shadow:0 0 16px rgba(255,45,149,.45);margin:4px 0 6px}
+.wod-teil{border-top:1px solid var(--line);padding:12px 0;display:flex;gap:13px;align-items:baseline}
+.wod-teil .menge{font-family:var(--mono);font-weight:800;color:var(--cyan);min-width:74px;flex:none;font-size:17px}
+.wod-teil .bez{flex:1}
+.wod-teil .bez b{display:block;font-size:16px;color:var(--fg);font-weight:600}
+.wod-teil .bez .c{display:block;color:var(--muted);font-size:12.5px;margin-top:3px}
+.wod-teil .last{font-family:var(--mono);color:var(--amber);font-size:13px}
+#stopwatch{border-top-color:var(--magenta);box-shadow:0 -8px 40px rgba(255,45,149,.22)}
+#stopwatch .t{color:var(--magenta);text-shadow:0 0 16px rgba(255,45,149,.55)}
+#stopwatch button{border-color:var(--magenta);color:var(--magenta)}
+
+/* ── Historie ─────────────────────────────────────────────── */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:16px}
+.stat{background:var(--panel);border:1px solid var(--line);padding:12px 14px;
+  clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px)}
+.stat .n{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.15em;font-family:var(--mono)}
+.stat .v{font-size:24px;font-weight:800;font-family:var(--mono);color:var(--cyan);margin-top:3px}
+.stat .s{font-size:11.5px;color:var(--dim);font-family:var(--mono)}
+.chart{background:var(--panel);border:1px solid var(--line);padding:14px;margin-bottom:9px}
+.chart .h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.chart .h .t{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.chart .h .r{font-family:var(--mono);font-size:13px;color:var(--cyan);font-weight:700}
+.chart svg{display:block;width:100%;height:60px;overflow:visible}
+.hist.wod{border-left:2px solid var(--magenta)}
+.hist.wod .d{color:var(--magenta)}
