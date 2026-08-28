@@ -317,8 +317,8 @@ async function finishSession() {
 }
 
 async function commit(log) {
-  let path = `log/${log.date}.json`;
-  if (await S.readFile(path)) path = `log/${log.date}-2.json`;
+  let path = `${S.LOG_DIR}/${log.date}.json`;
+  if (await S.readFile(path)) path = `${S.LOG_DIR}/${log.date}-2.json`;
   await S.writeFile(path, log, `Einheit ${log.workout} am ${log.date}`);
   const cur = await S.readFile('state.json');
   await S.writeFile('state.json', state, `Zustand nach ${log.date}`, cur ? cur.sha : stateSha);
@@ -586,9 +586,9 @@ async function wodAbschliessen() {
 }
 
 async function commitWod(log) {
-  let path = `log/${log.date}-wod.json`;
+  let path = `${S.LOG_DIR}/${log.date}-wod.json`;
   let n = 2;
-  while (await S.readFile(path)) path = `log/${log.date}-wod-${n++}.json`;
+  while (await S.readFile(path)) path = `${S.LOG_DIR}/${log.date}-wod-${n++}.json`;
   await S.writeFile(path, log, `WOD am ${log.date}`);
   const cur = await S.readFile('state.json');
   await S.writeFile('state.json', state, `Zustand nach WOD ${log.date}`, cur ? cur.sha : stateSha);

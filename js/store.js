@@ -9,6 +9,10 @@ const LOGS_KEY = 'lifty.logs';
 
 export const OWNER = 'cyphomat';
 export const REPO = 'lifty-data';
+// Bewusst nicht "log": Inhaltsblocker, Netzwerkfilter und Firmen-WLANs
+// verwerfen Adressen mit diesem Wegstueck regelmaessig, weil dort sonst
+// Tracking-Daten abfliessen. Der Ordner heisst deshalb neutral.
+export const LOG_DIR = 'einheiten';
 
 export function getToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
 export function setToken(t) { localStorage.setItem(TOKEN_KEY, t.trim()); }
@@ -77,15 +81,25 @@ export async function writeFile(path, data, message, sha) {
   });
 }
 
-/** Alle Log-Dateien laden — nur fuer die Neuberechnung. */
+/**
+ * Alle Einheiten laden — ueber die Git-Trees-API statt ueber das
+ * Verzeichnislisting. Zwei Gruende: es ist eine Anfrage statt einer pro
+ * Datei, und die Adresse enthaelt kein Wegstueck, an dem Filter haengen.
+ * Der alte Ordnername wird mitgelesen, damit nichts verloren geht.
+ */
 export async function readAllLogs() {
-  const list = await api(`/repos/${OWNER}/${REPO}/contents/log?ref=main`);
-  if (!Array.isArray(list)) return [];
-  const files = list.filter(f => f.name.endsWith('.json') && f.name !== '.gitkeep');
+  const tree = await api(`/repos/${OWNER}/${REPO}/git/trees/main?recursive=1`);
+  if (!tree || !Array.isArray(tree.tree)) return [];
+  const dateien = tree.tree.filter(f =>
+    f.type === 'blob' && f.path.endsWith('.json') &&
+    (f.path.startsWith(`${LOG_DIR}/`) || f.path.startsWith('log/')));
+
   const out = [];
-  for (const f of files) {
-    const r = await readFile(`log/${f.name}`);
-    if (r) out.push(r.data);
+  for (const f of dateien) {
+    const blob = await api(`/repos/${OWNER}/${REPO}/git/blobs/${f.sha}`);
+    if (!blob || !blob.content) continue;
+    try { out.push(JSON.parse(b64decode(blob.content))); }
+    catch { /* eine kaputte Datei darf nicht den ganzen Verlauf kippen */ }
   }
   return out;
 }

@@ -131,3 +131,15 @@ GitHub Pages liefert alles mit `Cache-Control: max-age=600` aus. Ohne
 erzwungene Rückfrage beantwortet der HTTP-Cache des Browsers die Anfrage des
 Service Workers selbst — der Netz-zuerst-Ansatz wäre dann nur auf dem Papier
 vorhanden und Updates kämen bis zu zehn Minuten verspätet an.
+
+## Warum keine Adresse mehr `/log` enthält
+
+Ein Netzwerkfehler trat reproduzierbar nur beim Verzeichnislisting
+`contents/log` auf, während alle anderen Aufrufe durchgingen. Inhaltsblocker,
+Netzwerkfilter und Firmen-WLANs verwerfen Adressen mit diesem Wegstück
+regelmäßig — dort fließen sonst Tracking-Daten ab. In Safari sieht eine
+solche Blockade wie ein Netzwerkausfall aus („Load failed").
+
+Zwei Konsequenzen: der Ordner heißt jetzt `einheiten/`, und der Verlauf wird
+über `git/trees` und `git/blobs` gelesen statt über `contents/<ordner>`.
+Nebeneffekt: eine Anfrage für den ganzen Baum statt einer pro Datei.
