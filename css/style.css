@@ -285,5 +285,5 @@ dialog::backdrop{background:rgba(2,5,9,.85)}
 .conn .dot.aus{background:var(--dim)}
 .conn .dot.fehler{background:var(--red);box-shadow:0 0 8px var(--red)}
 .conn .b{flex:1}
-.conn .b .n{font-family:var(--mono);font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--fg)}
-.conn .b .s{color:var(--muted);font-size:13px;margin-top:3px}
+.conn .b .n{display:block;font-family:var(--mono);font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--fg)}
+.conn .b .s{display:block;color:var(--muted);font-size:13px;margin-top:3px}
