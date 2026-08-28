@@ -90,3 +90,35 @@ const t2 = S.neuePRs(prLogs, staerker);
 ok('eine schwerere saubere Einheit schon', t2.some(t=>t.feld==='arbeit'), JSON.stringify(t2.map(x=>x.feld)));
 
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
+
+print('\n--- Radfahrten zusammenfassen ---');
+const fahrten = [
+  { date:'2026-08-26', name:'Zwift', minutes:50, km:15.3, load:73 },
+  { date:'2026-08-19', name:'Watopia', minutes:60, km:28,  load:88 },
+  { date:'2026-08-12', name:'Feierabend', minutes:90, km:52, load:120 }
+];
+const rs = S.radStats(fahrten);
+eq('drei Fahrten', rs.anzahl, 3);
+eq('Minuten summiert', rs.minuten, 200);
+eq('Stunden gerundet', rs.stunden, 3.3);
+eq('Kilometer gerundet', rs.km, 95);
+eq('Last summiert', rs.last, 281);
+eq('Zeitraum', rs.von + '..' + rs.bis, '2026-08-12..2026-08-26');
+ok('Fahrten pro Woche plausibel', rs.proWoche > 0.5 && rs.proWoche < 2, rs.proWoche);
+eq('ohne Fahrten keine Panik', S.radStats([]).anzahl, 0);
+eq('und keine Last', S.radStats([]).last, 0);
+
+print('\n--- Wochenweise Last ---');
+const w = S.radWochen(fahrten, 4, new Date(2026, 7, 28));   // Fr, 28.08.2026
+eq('vier Wochen', w.length, 4);
+eq('letzte Woche enthaelt die juengste Fahrt', w[3].last, 73);
+eq('und genau eine Fahrt', w[3].fahrten, 1);
+ok('jede Woche hat einen Schluessel', w.every(x => /^\d{4}-\d{2}-\d{2}$/.test(x.woche)));
+eq('Summe ueber alle Eimer', w.reduce((s,x)=>s+x.last,0), 281);
+const leereWochen = S.radWochen([], 6, new Date(2026, 7, 28));
+eq('ohne Fahrten sechs leere Wochen', leereWochen.length, 6);
+eq('alle bei null', leereWochen.reduce((s,x)=>s+x.last,0), 0);
+const alt = S.radWochen([{ date:'2020-01-01', minutes:60, load:50 }], 4, new Date(2026, 7, 28));
+eq('zu alte Fahrten fallen raus', alt.reduce((s,x)=>s+x.last,0), 0);
+
+print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

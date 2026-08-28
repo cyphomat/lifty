@@ -333,3 +333,23 @@ dialog::backdrop{background:rgba(2,5,9,.85)}
 .formzeile .fd{display:block;font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:4px;letter-spacing:.06em}
 .schalter{display:flex;gap:9px;align-items:center;margin-top:10px;font-size:13px;color:var(--muted);cursor:pointer}
 .schalter input{width:auto;margin:0}
+
+/* ── Mehr als das Ziel ────────────────────────────────────── */
+.set.plus{background:rgba(0,229,255,.16);border-color:var(--cyan);color:var(--cyan);
+  box-shadow:inset 0 0 18px rgba(0,229,255,.16)}
+.picker-opts button.ziel{border-color:var(--lime);color:var(--lime)}
+.picker-opts button.mehr{border-color:rgba(0,229,255,.35);color:var(--cyan)}
+#picker{max-width:340px}
+.picker-opts{grid-template-columns:repeat(4,1fr)}
+
+/* ── Radfahrten ───────────────────────────────────────────── */
+.radbar{background:var(--panel);border:1px solid var(--line);padding:14px;margin-bottom:9px}
+.radbar svg{display:block;width:100%;height:64px;overflow:visible}
+.radbar .h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px}
+.radbar .h .t{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.radbar .h .r{font-family:var(--mono);font-size:13px;color:var(--magenta);font-weight:700}
+.fahrt{background:var(--panel);border:1px solid var(--line);border-left:2px solid var(--magenta);
+  padding:11px 14px;margin-bottom:7px}
+.fahrt .d{font-family:var(--mono);font-size:12.5px;color:var(--magenta);letter-spacing:.06em}
+.fahrt .n{font-size:14px;color:var(--fg);margin-top:3px}
+.fahrt .m{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:3px}

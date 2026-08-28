@@ -156,5 +156,13 @@ export async function pushAktivitaet(aktivitaet) {
 }
 
 const PUSH_KEY = 'lifty.icu.push';
-export function pushAktiv() { return localStorage.getItem(PUSH_KEY) === '1'; }
+/**
+ * An, solange nicht ausdruecklich abgeschaltet. Daniel hat die Uebertragung
+ * freigegeben; ein Schalter, den man erst suchen muss, wuerde die Funktion
+ * faktisch totlegen.
+ */
+export function pushAktiv() {
+  const v = localStorage.getItem(PUSH_KEY);
+  return v === null ? true : v === '1';
+}
 export function setPushAktiv(an) { localStorage.setItem(PUSH_KEY, an ? '1' : '0'); }

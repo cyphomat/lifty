@@ -154,3 +154,59 @@ export function neuePRs(logs, log) {
   }
   return treffer;
 }
+
+/* ---------------------------------------------------------------
+   Radfahrten. Kommen fertig aus intervals.icu, hier wird nur
+   zusammengefasst — nachgebaut wird dort nichts.                  */
+
+export function radStats(rides = []) {
+  const minuten = rides.reduce((s, r) => s + (r.minutes || 0), 0);
+  const km = rides.reduce((s, r) => s + (r.km || 0), 0);
+  const last = rides.reduce((s, r) => s + (r.load || 0), 0);
+  const daten = rides.map(r => r.date).sort();
+  let proWoche = null;
+  if (daten.length > 1) {
+    const tage = (new Date(daten[daten.length - 1]) - new Date(daten[0])) / 86400000;
+    proWoche = tage > 0 ? Math.round((rides.length / (tage / 7)) * 10) / 10 : null;
+  }
+  return {
+    anzahl: rides.length,
+    minuten,
+    stunden: Math.round((minuten / 60) * 10) / 10,
+    km: Math.round(km),
+    last: Math.round(last),
+    proWoche,
+    von: daten[0] || null,
+    bis: daten[daten.length - 1] || null
+  };
+}
+
+/** Wochenweise Last — zeigt Rhythmus und Lücken deutlicher als eine Liste. */
+export function radWochen(rides = [], wochen = 12, heute = new Date()) {
+  const montag = d => {
+    const m = new Date(d);
+    m.setHours(0, 0, 0, 0);
+    m.setDate(m.getDate() - ((m.getDay() + 6) % 7));
+    return m;
+  };
+  const key = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+  const eimer = [];
+  const start = montag(heute);
+  for (let i = wochen - 1; i >= 0; i--) {
+    const m = new Date(start);
+    m.setDate(m.getDate() - i * 7);
+    eimer.push({ woche: key(m), last: 0, minuten: 0, fahrten: 0 });
+  }
+  const index = new Map(eimer.map((e, i) => [e.woche, i]));
+
+  for (const r of rides) {
+    if (!r.date) continue;
+    const i = index.get(key(montag(new Date(r.date + 'T12:00:00'))));
+    if (i === undefined) continue;
+    eimer[i].last += r.load || 0;
+    eimer[i].minuten += r.minutes || 0;
+    eimer[i].fahrten += 1;
+  }
+  return eimer;
+}

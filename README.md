@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://cyphomat.github.io/lifty/"><img alt="App öffnen" src="https://img.shields.io/badge/App-cyphomat.github.io%2Flifty-00e5ff?style=for-the-badge&labelColor=0b1119"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/Tests-194%20grün-00ff9d?style=for-the-badge&labelColor=0b1119">
+  <img alt="Tests" src="https://img.shields.io/badge/Tests-211%20grün-00ff9d?style=for-the-badge&labelColor=0b1119">
   <img alt="Build" src="https://img.shields.io/badge/Build-keiner-ff2d95?style=for-the-badge&labelColor=0b1119">
   <img alt="Abhängigkeiten" src="https://img.shields.io/badge/Abhängigkeiten-0-69809a?style=for-the-badge&labelColor=0b1119">
 </p>
@@ -43,8 +43,8 @@ also werden sie gelesen statt nachgebaut.
 
 Umgekehrt kann lifty jede Krafteinheit als Aktivität nach intervals.icu schreiben.
 Damit liegt die gesamte Trainingslast in **einer** Fitness-Kurve statt in zwei
-getrennten Welten. Der Schalter dafür sitzt unter „Verbindungen" und ist
-standardmäßig aus — es ist ein fremdes Konto.
+getrennten Welten. Der Schalter sitzt unter „Verbindungen"; die Übertragung ist aktiv, solange
+sie nicht ausdrücklich abgeschaltet wird.
 
 Die Trainingslast wird aus der Dauer geschätzt und in der Beschreibung offen als
 Schätzung ausgewiesen. Ist keine Dauer bekannt, wird **nichts** übertragen: eine
@@ -102,6 +102,8 @@ dieselbe Mechanik, nur langsamer — A und B wechseln sich über zwei Wochen ab.
 | **Bestwerte** | Schwerster sauberer Satz, gemessenes Einzel, geschätztes Maximum. Abgeleitet, nicht gepflegt. |
 | **Max-Out** | Krafttest mit e1RM (Brzycki bis 6 Wdh., darüber Epley). Dreht den A/B-Wechsel nicht. |
 | **Form** | Aus intervals.icu: Fitness minus Ermüdung. Ein Hinweis in der Tagesansage — die App kürzt keine Gewichte eigenmächtig. |
+| **Radfahrten** | Im Verlauf: Fahrten, Stunden, Kilometer und die Wochenlast der letzten zwölf Wochen als Balken. |
+| **Wiederholungen** | Tippen zählt das Ziel. Lange drücken öffnet 0 bis 12 — auch über dem Ziel, denn ein starker Satz ist eine Information. |
 
 ---
 
@@ -159,7 +161,7 @@ $JSC --module-file=tests/stats.test.js
 $JSC --module-file=tests/intervals.test.js
 ```
 
-**194 Tests**, ausgeführt von der JS-Engine, die in macOS ohnehin steckt.
+**211 Tests**, ausgeführt von der JS-Engine, die in macOS ohnehin steckt.
 Kein Node, kein Framework, keine Installation.
 
 Sie decken ab, was still kaputtgehen kann: Progression, Deload, Streak,

@@ -23,6 +23,7 @@ let wod = null, wodSeed = 0, swTimer = null, swSek = 0, swLaeuft = false;
 let alleLogs = [];              // zuletzt geladene Einheiten, fuer Bestwerte
 let mo = { lift: 'squat' };     // laufender Krafttest
 let form = null;                // Form aus intervals.icu (ctl - atl)
+let alleFahrten = [];           // Radfahrten der letzten 90 Tage
 
 const $ = id => document.getElementById(id);
 const VERSION_KEY = 'lifty.version';
@@ -86,6 +87,8 @@ async function loadIntervals() {
     const bis = new Date(), von = new Date();
     von.setDate(von.getDate() - 90);
     const alle = await ICU.rides(P.ymd(von), P.ymd(bis));
+    alleFahrten = alle;
+    S.cache({ fahrten: alle });
 
     const monday = P.mondayOf(new Date());
     const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
@@ -364,7 +367,7 @@ function renderSession() {
       <div class="sets">
         ${Array.from({ length: l.sets }, (_, si) => {
           const r = l.done[si];
-          const cls = r === undefined ? '' : (r >= l.reps ? 'done' : 'partial');
+          const cls = r === undefined ? '' : (r > l.reps ? 'done plus' : r === l.reps ? 'done' : 'partial');
           return `<button class="set ${cls}" data-l="${li}" data-s="${si}">${r === undefined ? l.reps : r}</button>`;
         }).join('')}
       </div>
@@ -413,8 +416,13 @@ function recordSet(li, si, reps) {
 
 function openPicker(li, si) {
   const l = session.lifts[li], dlg = $('picker');
-  $('picker-title').textContent = `${l.name} · Satz ${si + 1}`;
-  $('picker-opts').innerHTML = Array.from({ length: l.reps + 1 }, (_, n) => `<button data-n="${n}">${n}</button>`).join('');
+  // Bewusst ueber das Ziel hinaus: manchmal geht mehr, und ein Satz mit acht
+  // Wiederholungen ist eine Information, die man nicht wegwerfen sollte —
+  // das geschaetzte Maximum lebt davon.
+  const max = config.repMax || 12;
+  $('picker-title').textContent = `${l.name} · Satz ${si + 1} · Ziel ${l.reps}`;
+  $('picker-opts').innerHTML = Array.from({ length: max + 1 }, (_, n) =>
+    `<button data-n="${n}" class="${n === l.reps ? 'ziel' : n > l.reps ? 'mehr' : ''}">${n}</button>`).join('');
   $('picker-opts').querySelectorAll('button').forEach(b => {
     b.onclick = () => { dlg.close(); recordSet(li, si, +b.dataset.n); };
   });
@@ -521,6 +529,7 @@ async function renderHistory() {
   $('hist-summary').innerHTML = '';
   $('hist-prs').innerHTML = '';
   $('hist-charts').innerHTML = '';
+  $('hist-rad').innerHTML = '';
   $('history-body').innerHTML = '<p class="lead">Lade…</p>';
   try {
     const logs = await S.readAllLogs();
@@ -529,6 +538,7 @@ async function renderHistory() {
     renderStats(logs);
     renderPRs(logs);
     renderCharts(logs);
+    renderRad();
     renderListe(logs);
   } catch (e) {
     // Lieber den letzten bekannten Stand zeigen als eine Sackgasse.
@@ -538,6 +548,7 @@ async function renderHistory() {
       renderStats(alt.logs);
       renderPRs(alt.logs);
       renderCharts(alt.logs);
+      renderRad();
       renderListe(alt.logs);
       banner('OFFLINE — STAND VOM ' + new Date(alt.zeit).toLocaleDateString('de-DE'), '', 5000);
     } else {
@@ -1030,4 +1041,68 @@ async function uebertrageNachIcu(log) {
   } catch (e) {
     banner(`INTERVALS.ICU: ${e.message}`, 'err', 7000);
   }
+}
+
+/* ================= Radfahrten ================= */
+
+/**
+ * Die Fahrten kommen fertig aus intervals.icu — hier werden sie nur
+ * sichtbar gemacht. Ohne diese Ansicht hat man zwei Trainingsleben
+ * und sieht immer nur eines davon.
+ */
+function renderRad() {
+  const box = $('hist-rad');
+  if (!box) return;
+
+  let fahrten = alleFahrten;
+  if (!fahrten.length) {
+    const c = S.cached();
+    if (c.fahrten && c.fahrten.length) fahrten = c.fahrten;
+  }
+
+  if (!ICU.isConfigured()) {
+    box.innerHTML = '<p class="fine">intervals.icu ist nicht verbunden — trag den Key oben unter „Verbindungen" ein.</p>';
+    return;
+  }
+  if (!fahrten.length) {
+    box.innerHTML = '<p class="fine">Keine Radeinheit in den letzten 90 Tagen.</p>';
+    return;
+  }
+
+  const st = ST.radStats(fahrten);
+  const wochen = ST.radWochen(fahrten, 12);
+  const maxLast = Math.max(1, ...wochen.map(w => w.last));
+  const breite = 300, hoehe = 64, luecke = 3;
+  const bw = (breite - luecke * (wochen.length - 1)) / wochen.length;
+
+  const balken = wochen.map((w, i) => {
+    const h = Math.max(w.last > 0 ? 2 : 0, (w.last / maxLast) * hoehe);
+    const x = i * (bw + luecke);
+    return `<rect x="${x.toFixed(1)}" y="${(hoehe - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}"
+      fill="${i === wochen.length - 1 ? 'var(--cyan)' : 'var(--magenta)'}" opacity="${w.last ? 0.85 : 0.25}"/>`;
+  }).join('');
+
+  const sortiert = [...fahrten].sort((a, b) => b.date.localeCompare(a.date));
+
+  box.innerHTML = `
+    <div class="stats">
+      <div class="stat"><div class="n">Fahrten</div><div class="v">${st.anzahl}</div>
+        <div class="s">${st.proWoche ?? '—'} pro Woche</div></div>
+      <div class="stat"><div class="n">Zeit im Sattel</div><div class="v">${st.stunden}<span style="font-size:14px"> h</span></div>
+        <div class="s">${st.km} km</div></div>
+    </div>
+    <div class="radbar">
+      <div class="h"><span class="t">Wochenlast · 12 Wochen</span><span class="r">${st.last} gesamt</span></div>
+      <svg viewBox="0 0 ${breite} ${hoehe}" preserveAspectRatio="none" aria-hidden="true">${balken}</svg>
+      <div class="h" style="margin:7px 0 0">
+        <span class="t">${wochen[0].woche.slice(5)}</span>
+        <span class="t">diese Woche</span></div>
+    </div>
+    ${sortiert.slice(0, 20).map(r => `
+      <div class="fahrt">
+        <div class="d">${r.date}${r.load ? ` · LOAD ${r.load}` : ''}</div>
+        <div class="n">${r.name}</div>
+        <div class="m">${r.minutes} Min · ${r.km} km</div>
+      </div>`).join('')}
+    ${sortiert.length > 20 ? `<p class="fine">${sortiert.length - 20} weitere nicht gezeigt.</p>` : ''}`;
 }
