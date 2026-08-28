@@ -158,6 +158,7 @@ Der Back Squat kommt in beiden Workouts vor und steigt daher doppelt so schnell.
 | **Offline** | Einheiten werden gepuffert. Verlauf und Radansicht zeigen den letzten Stand. |
 | **Selbstaktualisierend** | Prüft die Version beim Start und lädt sich genau einmal neu. |
 | **Hell und dunkel** | Umschalter System / Hell / Dunkel. Zwei echte Fassungen, keine Invertierung. |
+| **Handy und Mac** | Ab 900 px zwei Spalten, im Verlauf breitere Raster. Auf dem Handy stapeln sie sich — dieselbe Reihenfolge, dasselbe Bild. |
 
 ---
 
@@ -332,6 +333,22 @@ sh tools/screens.sh
 **Ein Fehler im Fehlerbehandler.** Der Rückfall auf den letzten Stand rief die Diagramme auf, die ihrerseits die Konfiguration brauchten — die in dem Moment fehlte. Ergebnis war ein hängendes „Lade…". Die unangenehmste Sorte: sie zeigt sich genau dann, wenn ohnehin schon etwas schiefläuft.
 
 **Ein linearer Hash.** Von zwei eigenen Zeilen erschien immer nur dieselbe. `h*31+c` ist in den untersten Bits linear — die Parität von `hash(x)` und `hash(salz+x)` hängt fest zusammen, egal wo man salzt. Münzwurf und Auswahl waren dadurch gekoppelt. Es brauchte eine Bit-Lawine, kein anderes Salz.
+
+---
+
+## Auf dem Mac
+
+Es ist eine Web-App — die URL genügt. Für ein eigenes Fenster mit Icon:
+
+- **Safari:** Ablage → *Zum Dock hinzufügen*
+- **Chrome:** Adressleiste → *Installieren*
+
+Token und Key liegen im `localStorage` und damit **pro Gerät**. Auf dem Mac
+werden sie einmal neu eingetragen; die Trainingsdaten kommen ohnehin aus dem
+Repo und sind überall dieselben.
+
+Was man nicht tun sollte: auf zwei Geräten **gleichzeitig** eine Einheit
+abschließen. Nacheinander ist problemlos.
 
 ---
 
