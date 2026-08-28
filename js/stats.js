@@ -79,3 +79,78 @@ export function sparkline(punkte, breite = 300, hoehe = 60, rand = 4) {
              ` L${koord[n - 1].x.toFixed(1)},${hoehe} Z`
   };
 }
+
+/* ---------------------------------------------------------------
+   PR-Verwaltung. Bewusst abgeleitet und nicht gepflegt — dieselbe
+   Invariante wie beim Zustand. Eine PR-Liste, die man von Hand
+   fortschreibt, ist nach dem ersten Tippfehler wertlos.           */
+
+import { e1rm, e1rmFormel } from './program.js';
+
+/**
+ * Bestwerte je Übung, aus allen Logs abgeleitet.
+ *   arbeit   schwerster sauber geschaffter Arbeitssatz
+ *   gemessen echter Einzelversuch aus einem Max-Out
+ *   maximum  bestes geschätztes Einer-Maximum, egal woher
+ */
+export function prs(logs = []) {
+  const out = {};
+  const merke = (lift, feld, wert) => {
+    out[lift] = out[lift] || { arbeit: null, gemessen: null, maximum: null };
+    const alt = out[lift][feld];
+    if (!alt || wert.vergleich > alt.vergleich) out[lift][feld] = wert;
+  };
+
+  for (const l of logs) {
+    if (l.type === 'maxout' && l.lift && l.weight) {
+      const wdh = l.reps || 1;
+      const geschaetzt = e1rm(l.weight, wdh);
+      if (wdh === 1) {
+        merke(l.lift, 'gemessen', { vergleich: l.weight, weight: l.weight, date: l.date });
+      }
+      if (geschaetzt) {
+        merke(l.lift, 'maximum', {
+          vergleich: geschaetzt, wert: geschaetzt, weight: l.weight, reps: wdh,
+          date: l.date, formel: e1rmFormel(wdh), quelle: 'Max-Out'
+        });
+      }
+      continue;
+    }
+    if ((l.type || 'strength') !== 'strength' || !Array.isArray(l.lifts)) continue;
+
+    for (const e of l.lifts) {
+      const beste = Math.max(0, ...(e.reps || []));
+      if (e.success) {
+        merke(e.lift, 'arbeit', { vergleich: e.weight, weight: e.weight, date: l.date, sets: e.sets, reps: e.target });
+      }
+      const geschaetzt = e1rm(e.weight, beste);
+      if (geschaetzt) {
+        merke(e.lift, 'maximum', {
+          vergleich: geschaetzt, wert: geschaetzt, weight: e.weight, reps: beste,
+          date: l.date, formel: e1rmFormel(beste), quelle: 'Trainingssatz'
+        });
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Was an dieser einen Einheit ein Bestwert war — gemessen gegen alles,
+ * was davor liegt. Für die Rückmeldung direkt nach dem Training.
+ */
+export function neuePRs(logs, log) {
+  const davor = prs(logs.filter(l => l.date < log.date));
+  const danach = prs([...logs.filter(l => l.date < log.date), log]);
+  const treffer = [];
+  for (const [lift, neu] of Object.entries(danach)) {
+    for (const feld of ['arbeit', 'gemessen', 'maximum']) {
+      const a = davor[lift] && davor[lift][feld];
+      const b = neu[feld];
+      if (b && (!a || b.vergleich > a.vergleich) && b.date === log.date) {
+        treffer.push({ lift, feld, wert: b });
+      }
+    }
+  }
+  return treffer;
+}

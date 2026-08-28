@@ -20,11 +20,13 @@ let restTimer = null, restLeft = 0;
 // bleibt die Wahrheit darueber, was eigentlich dran waere.
 let workoutOverride = null;
 let wod = null, wodSeed = 0, swTimer = null, swSek = 0, swLaeuft = false;
+let alleLogs = [];              // zuletzt geladene Einheiten, fuer Bestwerte
+let mo = { lift: 'squat' };     // laufender Krafttest
 
 const $ = id => document.getElementById(id);
 const VERSION_KEY = 'lifty.version';
 let laufendeVersion = localStorage.getItem(VERSION_KEY) || '—';
-const VIEWS = ['setup', 'home', 'session', 'wod', 'done', 'history'];
+const VIEWS = ['setup', 'home', 'session', 'wod', 'maxout', 'done', 'history'];
 const show = n => { VIEWS.forEach(v => $('view-' + v).hidden = v !== n); window.scrollTo(0, 0); };
 
 let bannerTimer = null;
@@ -266,7 +268,8 @@ function startSession() {
   session = {
     date: P.ymd(new Date()), started: new Date().toISOString(),
     workout: plan.workout,
-    lifts: plan.lifts.map(l => ({ ...l, done: [] }))
+    // planWeight bleibt stehen, damit sichtbar wird, was abweicht.
+    lifts: plan.lifts.map(l => ({ ...l, planWeight: l.weight, done: [] }))
   };
   $('session-title').textContent = `WORKOUT ${plan.workout}`;
 
@@ -308,8 +311,15 @@ function renderSession() {
   $('session-body').innerHTML = session.lifts.map((l, li) => {
     const i = LIFT_INFO[l.lift] || {};
     return `<div class="lift">
-      <div class="bar-head"><span class="ln">${i.tag || l.name}</span><span class="lw">${P.fmtWeight(l.weight)}</span></div>
-      ${i.kadenz ? `<p class="cue">${i.kadenz}</p>` : ''}
+      <div class="bar-head"><span class="ln">${i.tag || l.name}</span>
+        <span class="wadj">
+          <button data-w="${li}" data-d="-1" aria-label="leichter">−</button>
+          <span class="lw">${P.fmtWeight(l.weight)}</span>
+          <button data-w="${li}" data-d="1" aria-label="schwerer">+</button>
+        </span></div>
+      ${l.weight !== l.planWeight
+        ? `<p class="cue geaendert">Angepasst von ${P.fmtWeight(l.planWeight)} — so wird es protokolliert, und die Progression rechnet ab hier weiter.</p>`
+        : (i.kadenz ? `<p class="cue">${i.kadenz}</p>` : '')}
       <div class="sets">
         ${Array.from({ length: l.sets }, (_, si) => {
           const r = l.done[si];
@@ -329,6 +339,9 @@ function renderSession() {
   }).join('') + `<p class="fine">Tippen = ${session.lifts[0].reps} Wiederholungen geschafft. Lange drücken, wenn es weniger waren.</p>`;
 
   $('session-body').querySelectorAll('.set').forEach(bindSet);
+  $('session-body').querySelectorAll('.wadj button').forEach(b => {
+    b.onclick = () => aendereGewicht(+b.dataset.w, +b.dataset.d);
+  });
   $('finish').disabled = !session.lifts.every(l => l.done.length === l.sets && l.done.every(v => v !== undefined));
 }
 
@@ -383,6 +396,12 @@ function startRest(seconds) {
   }, 1000);
 }
 const stopRest = () => { clearInterval(restTimer); $('rest').hidden = true; };
+
+/** Pause im Lauf verstellen — 90 Sekunden passen nicht zu jedem Satz. */
+function verstellePause(delta) {
+  restLeft = Math.max(0, restLeft + delta);
+  $('rest-time').textContent = restLeft > 0 ? restLeft : 'LOS';
+}
 
 async function finishSession() {
   const log = {
@@ -448,6 +467,7 @@ async function renderHistory() {
   // quittieren statt mit einer Erklaerung.
   if (!config) {
     $('hist-summary').innerHTML = '';
+    $('hist-prs').innerHTML = '';
     $('hist-charts').innerHTML = '';
     $('history-body').innerHTML =
       `<p class="lead">Noch keine Verbindung zu deinen Daten. Prüfe den GitHub-Token
@@ -455,19 +475,24 @@ async function renderHistory() {
     return;
   }
   $('hist-summary').innerHTML = '';
+  $('hist-prs').innerHTML = '';
   $('hist-charts').innerHTML = '';
   $('history-body').innerHTML = '<p class="lead">Lade…</p>';
   try {
     const logs = await S.readAllLogs();
+    alleLogs = logs;
     S.cacheLogs(logs);
     renderStats(logs);
+    renderPRs(logs);
     renderCharts(logs);
     renderListe(logs);
   } catch (e) {
     // Lieber den letzten bekannten Stand zeigen als eine Sackgasse.
     const alt = S.cachedLogs();
     if (alt && alt.logs.length) {
+      alleLogs = alt.logs;
       renderStats(alt.logs);
+      renderPRs(alt.logs);
       renderCharts(alt.logs);
       renderListe(alt.logs);
       banner('OFFLINE — STAND VOM ' + new Date(alt.zeit).toLocaleDateString('de-DE'), '', 5000);
@@ -516,6 +541,13 @@ $('swap-workout').onclick = () => {
   renderHome();
 };
 $('go-wod').onclick = () => { starteWod(WOD.seedAus(P.ymd(new Date()))); };
+$('go-maxout').onclick = starteMaxout;
+$('mo-back').onclick = () => show('home');
+$('mo-weight').oninput = renderMaxoutErgebnis;
+$('mo-reps').oninput = renderMaxoutErgebnis;
+$('mo-save').onclick = speichereMaxout;
+$('rest-minus').onclick = () => verstellePause(-30);
+$('rest-plus').onclick = () => verstellePause(30);
 $('wod-back').onclick = () => { stopUhr(); show('home'); };
 $('wod-reroll').onclick = () => { starteWod((wodSeed * 7919 + 13) >>> 0); };
 $('wod-finish').onclick = wodAbschliessen;
@@ -758,4 +790,157 @@ function renderListe(logs) {
         `${(config.lifts[e.lift] || {}).name || e.lift} ${P.fmtWeight(e.weight)} (${(e.reps || []).join('/')})`).join(' · ')}</div>
     </div>`;
   }).join('') : '<p class="lead">Noch keine Einheit protokolliert.</p>';
+}
+
+
+/* ================= Gewicht waehrend des Trainings ================= */
+
+/**
+ * Die Stange lügt nicht: wenn 55 kg heute nicht gehen, wird 52,5 geloggt.
+ * Das Protokoll bildet ab, was passiert ist — und die Progression rechnet
+ * beim nächsten Mal von dort weiter, weil sie aus dem Log abgeleitet wird.
+ */
+function aendereGewicht(li, richtung) {
+  const l = session.lifts[li];
+  const schritt = config.lifts[l.lift].increment;
+  const neu = Math.max(config.bar, P.roundTo(l.weight + richtung * schritt, config.rounding));
+  if (neu === l.weight) return;
+  l.weight = neu;
+  const offen = [...$('session-body').querySelectorAll('details.info')].map(d => d.open);
+  renderSession();
+  $('session-body').querySelectorAll('details.info').forEach((d, i) => d.open = !!offen[i]);
+}
+
+/* ================= Max-Out ================= */
+
+function starteMaxout() {
+  mo = { lift: mo.lift || 'squat' };
+  $('mo-weight').value = '';
+  $('mo-reps').value = '1';
+  renderMaxoutLifts();
+  renderMaxoutErgebnis();
+  show('maxout');
+}
+
+function renderMaxoutLifts() {
+  $('mo-lifts').innerHTML = Object.entries(config.lifts).map(([id, def]) => `
+    <div class="w waehlbar ${id === mo.lift ? 'gewaehlt' : ''}" data-lift="${id}">
+      <div class="n">${def.name}</div>
+      <div class="v">${P.fmtWeight(state.lifts[id].weight)}</div>
+      <div class="f" style="color:var(--dim)">aktuelles Arbeitsgewicht</div>
+    </div>`).join('');
+  $('mo-lifts').querySelectorAll('[data-lift]').forEach(el => {
+    el.onclick = () => { mo.lift = el.dataset.lift; renderMaxoutLifts(); renderMaxoutErgebnis(); };
+  });
+}
+
+function renderMaxoutErgebnis() {
+  const w = parseFloat($('mo-weight').value);
+  const r = parseInt($('mo-reps').value, 10);
+  const max = P.e1rm(w, r);
+  const box = $('mo-result');
+
+  if (!max) {
+    box.innerHTML = `<p class="fine">Gewicht und Wiederholungen eintragen (1 bis 12).
+      Über 12 Wiederholungen ist jede Schätzung Kaffeesatz — dann gibt es bewusst keine.</p>`;
+    $('mo-save').disabled = true;
+    return;
+  }
+
+  const vorschlag = P.arbeitsgewichtAus(max, config.rounding, config.bar);
+  const jetzt = state.lifts[mo.lift].weight;
+  const formel = P.e1rmFormel(r);
+  const alt = alleLogs.length ? ST.prs(alleLogs)[mo.lift] : null;
+  const bisher = alt && alt.maximum ? alt.maximum.wert : null;
+
+  box.innerHTML = `
+    <div class="card">
+      <div class="kicker">Geschätztes Einer-Maximum · ${formel}</div>
+      <div class="name neon">${max}<span style="font-size:20px"> kg</span></div>
+      ${bisher ? `<p class="fine">${max > bisher
+        ? `<b style="color:var(--lime)">Neuer Bestwert.</b> Bisher ${bisher} kg.`
+        : `Bisheriger Bestwert: ${bisher} kg.`}</p>` : ''}
+      <ul>
+        <li><span>Arbeitsgewicht für 5×5 (80 %)</span><span>${P.fmtWeight(vorschlag)}</span></li>
+        <li><span>Aktuell eingestellt</span><span>${P.fmtWeight(jetzt)}</span></li>
+      </ul>
+      <label style="display:flex;gap:10px;align-items:flex-start;margin-top:12px;font-size:14px;color:var(--muted)">
+        <input type="checkbox" id="mo-apply" style="width:auto;margin:3px 0 0">
+        <span>Arbeitsgewicht auf <b style="color:var(--cyan)">${P.fmtWeight(vorschlag)}</b> setzen.
+        Ohne Haken bleibt alles, wie es ist — der Test wird nur protokolliert.</span>
+      </label>
+    </div>`;
+  $('mo-save').disabled = false;
+}
+
+async function speichereMaxout() {
+  const w = parseFloat($('mo-weight').value);
+  const r = parseInt($('mo-reps').value, 10);
+  const max = P.e1rm(w, r);
+  if (!max) return;
+  const uebernehmen = $('mo-apply') && $('mo-apply').checked;
+
+  const log = {
+    date: P.ymd(new Date()),
+    type: 'maxout',
+    lift: mo.lift,
+    weight: w,
+    reps: r,
+    e1rm: max,
+    formel: P.e1rmFormel(r),
+    finished: new Date().toISOString()
+  };
+  if (uebernehmen) log.newWorking = P.arbeitsgewichtAus(max, config.rounding, config.bar);
+
+  const vorher = state.lifts[mo.lift].weight;
+  state = P.applyLog(state, config, log);
+  S.cache({ state });
+
+  $('done-body').innerHTML = `
+    <div class="card">
+      <div class="kicker">${log.date} · Max-Out · ${config.lifts[mo.lift].name}</div>
+      <div class="name neon">${w} × ${r}</div>
+      <ul>
+        <li><span>Geschätztes Maximum (${log.formel})</span><span>${max} kg</span></li>
+        <li><span>Arbeitsgewicht</span><span>${uebernehmen
+          ? `${P.fmtWeight(vorher)} → ${P.fmtWeight(state.lifts[mo.lift].weight)}`
+          : `bleibt ${P.fmtWeight(vorher)}`}</span></li>
+      </ul>
+    </div>
+    <p class="spruch">Ein Maximum ist eine Momentaufnahme, kein Charakterzeugnis. Morgen zählt wieder der saubere Satz.</p>`;
+  show('done');
+
+  try { await commitMaxout(log); banner('GESPEICHERT', 'ok'); }
+  catch { S.queue(log); banner('KEIN NETZ — WIRD NACHGETRAGEN', '', 6000); }
+}
+
+async function commitMaxout(log) {
+  let path = `${S.LOG_DIR}/${log.date}-maxout-${log.lift}.json`;
+  let n = 2;
+  while (await S.readFile(path)) path = `${S.LOG_DIR}/${log.date}-maxout-${log.lift}-${n++}.json`;
+  await S.writeFile(path, log, `Max-Out ${config.lifts[log.lift].name} am ${log.date}`);
+  const cur = await S.readFile('state.json');
+  await S.writeFile('state.json', state, `Zustand nach Max-Out ${log.date}`, cur ? cur.sha : stateSha);
+}
+
+/* ================= Bestwerte ================= */
+
+function renderPRs(logs) {
+  const p = ST.prs(logs);
+  const zeilen = Object.entries(config.lifts).map(([id, def]) => {
+    const e = p[id];
+    if (!e) return `<div class="pr"><div class="k">${def.name}</div>
+      <div class="reihe"><span class="l">Noch kein Wert</span><span class="v">—</span></div></div>`;
+    const z = (label, wert, zusatz) =>
+      `<div class="reihe"><span class="l">${label}</span><span class="v">${wert}${zusatz ? `<small>${zusatz}</small>` : ''}</span></div>`;
+    return `<div class="pr">
+      <div class="k">${def.name}</div>
+      ${e.arbeit ? z('Schwerster sauberer Satz', P.fmtWeight(e.arbeit.weight), e.arbeit.date) : z('Schwerster sauberer Satz', '—')}
+      ${e.gemessen ? z('Gemessenes Einzel', P.fmtWeight(e.gemessen.weight), e.gemessen.date) : ''}
+      ${e.maximum ? z('Geschätztes Maximum', `${e.maximum.wert} kg`,
+          `${e.maximum.weight}×${e.maximum.reps} · ${e.maximum.formel}`) : ''}
+      ${def.reference ? z('Alter Referenzwert', P.fmtWeight(def.reference)) : ''}
+    </div>`;
+  }).join('');
+  $('hist-prs').innerHTML = zeilen;
 }

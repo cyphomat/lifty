@@ -132,3 +132,49 @@ const nurWod = { ...P.initialState(config), history: [{ date: '2026-08-31', type
 eq('Montag bleibt offen', P.planWeek(nurWod, config, MI2)[0].done, false);
 
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
+
+print('\n--- Max-Out ist ein Test, kein Programmschritt ---');
+let mo = P.initialState(config);
+mo = P.applyLog(mo, config, { date:'2026-09-10', type:'maxout', lift:'squat', weight:90, reps:1 });
+eq('A/B-Wechsel unberuehrt', mo.next, 'A');
+eq('Arbeitsgewicht unveraendert ohne Uebernahme', mo.lifts.squat.weight, 47.5);
+eq('steht aber in der Historie', mo.history[0].type, 'maxout');
+
+print('\n--- ... ausser du uebernimmst das Ergebnis ---');
+let mo2 = P.initialState(config);
+mo2.lifts.squat.fails = 2;
+mo2 = P.applyLog(mo2, config, { date:'2026-09-10', type:'maxout', lift:'squat', weight:90, reps:1, newWorking:72 });
+eq('neues Arbeitsgewicht auf 2,5 gerundet', mo2.lifts.squat.weight, 72.5);
+eq('Fehlerzaehler zurueckgesetzt', mo2.lifts.squat.fails, 0);
+eq('A/B trotzdem unberuehrt', mo2.next, 'A');
+const mo3 = P.applyLog(P.initialState(config), config,
+  { date:'2026-09-10', type:'maxout', lift:'squat', weight:90, reps:1, newWorking:5 });
+eq('nie unter Hantelgewicht', mo3.lifts.squat.weight, 20);
+
+print('\n--- Und die Ableitbarkeit bleibt ---');
+const gemischt = [
+  { date:'2026-09-01', workout:'A', type:'strength', lifts:[win('squat',47.5),win('bench',35),win('row',32.5)] },
+  { date:'2026-09-05', type:'maxout', lift:'squat', weight:90, reps:1, newWorking:72 },
+  { date:'2026-09-08', workout:'B', type:'strength', lifts:[win('squat',72.5),win('ohp',25),win('deadlift',60,1)] }
+];
+const abgeleitet = P.deriveState(config, gemischt);
+eq('Kniebeuge nach Uebernahme und einer Einheit', abgeleitet.lifts.squat.weight, 75);
+eq('nur die Krafteinheiten drehen den Wechsel', abgeleitet.next, 'A');
+
+print('\n--- Geschaetztes Einer-Maximum ---');
+eq('eine Wiederholung ist gemessen', P.e1rm(100, 1), 100);
+eq('Formel bei 1 Wiederholung', P.e1rmFormel(1), 'gemessen');
+eq('bis 6 Wiederholungen Brzycki', P.e1rmFormel(5), 'Brzycki');
+eq('darueber Epley', P.e1rmFormel(8), 'Epley');
+ok('5 Wiederholungen mit 100 kg ergeben rund 112,5', Math.abs(P.e1rm(100,5) - 112.5) < 0.6, P.e1rm(100,5));
+ok('8 Wiederholungen mit 100 kg ergeben rund 126,7', Math.abs(P.e1rm(100,8) - 126.7) < 0.6, P.e1rm(100,8));
+ok('mehr Wiederholungen ergeben mehr Maximum', P.e1rm(100,6) > P.e1rm(100,3));
+eq('ueber 12 Wiederholungen keine Schaetzung', P.e1rm(100,15), null);
+eq('ohne Gewicht keine Schaetzung', P.e1rm(0,5), null);
+
+print('\n--- Arbeitsgewicht aus dem Maximum ---');
+eq('80 % von 100, gerundet', P.arbeitsgewichtAus(100), 80);
+eq('nie unter der Hantel', P.arbeitsgewichtAus(10), 20);
+eq('ohne Maximum nichts', P.arbeitsgewichtAus(null), null);
+
+print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

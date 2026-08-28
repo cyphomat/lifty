@@ -35,6 +35,21 @@ export function isSuccess(entry, target) {
 export function applyLog(state, config, log) {
   const next = JSON.parse(JSON.stringify(state)); // bewusst kein structuredClone: aeltere iOS-Safari kennen es nicht
 
+  // Ein Max-Out ist ein Krafttest, kein Programmschritt. Er dreht den
+  // A/B-Wechsel nicht weiter. Nur wenn du das Ergebnis ausdruecklich
+  // uebernimmst, steht das im Log — und ist damit reproduzierbar.
+  if (log.type === 'maxout') {
+    const l = next.lifts[log.lift];
+    if (l && log.newWorking) {
+      l.weight = Math.max(config.bar, roundTo(log.newWorking, config.rounding));
+      l.fails = 0;
+    }
+    next.updated = new Date().toISOString();
+    next.history = [...(next.history || []),
+      { date: log.date, type: 'maxout', lift: log.lift, weight: log.weight, reps: log.reps }].slice(-100);
+    return next;
+  }
+
   // Ein WOD ist Beiwerk, kein Programmschritt: es taucht in der Historie auf,
   // darf aber weder Arbeitsgewichte noch den A/B-Wechsel anfassen. Sonst
   // wuerde eine Spasseinheit die Progression verschieben.
@@ -156,4 +171,31 @@ export function ymd(d) {
 
 export function fmtWeight(w) {
   return (Number.isInteger(w) ? w : w.toFixed(1)) + ' kg';
+}
+
+/**
+ * Geschaetztes Einer-Maximum. Brzycki liegt im Bereich 2-6 Wiederholungen
+ * naeher, Epley darueber — deshalb wird umgeschaltet statt eine Formel fuer
+ * alles zu benutzen. Ueber 12 Wiederholungen wird jede Schaetzung Kaffeesatz,
+ * dann gibt es bewusst keine.
+ */
+export function e1rm(weight, reps) {
+  if (!weight || !reps || reps < 1 || reps > 12) return null;
+  if (reps === 1) return weight;
+  const wert = reps <= 6
+    ? weight * 36 / (37 - reps)          // Brzycki
+    : weight * (1 + reps / 30);          // Epley
+  return Math.round(wert * 10) / 10;
+}
+
+/** Welche Formel steckt dahinter — damit die App nicht orakelt. */
+export function e1rmFormel(reps) {
+  if (!reps || reps < 1 || reps > 12) return null;
+  return reps === 1 ? 'gemessen' : reps <= 6 ? 'Brzycki' : 'Epley';
+}
+
+/** Arbeitsgewicht fuer 5x5 aus einem Maximum. Konservativ mit 80 %. */
+export function arbeitsgewichtAus(max1rm, rounding = 2.5, bar = 20) {
+  if (!max1rm) return null;
+  return Math.max(bar, roundTo(max1rm * 0.8, rounding));
 }

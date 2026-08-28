@@ -52,6 +52,7 @@
     <div class="actions">
       <button id="swap-workout" class="btn ghost small">Workout wechseln</button>
       <button id="go-wod" class="btn small">Zufalls-WOD</button>
+      <button id="go-maxout" class="btn ghost small">Max-Out</button>
     </div>
     <h2>Zurück auf Kurs</h2>
     <div id="progress"></div>
@@ -78,7 +79,9 @@
     <button id="finish" class="btn" disabled>Einheit abschließen</button>
   </div>
   <div id="rest" class="rest" hidden>
-    <span><span class="lbl">PAUSE</span><span id="rest-time" class="t">90</span></span>
+    <button id="rest-minus" class="tick">−30</button>
+    <span class="mitte"><span class="lbl">PAUSE</span><span id="rest-time" class="t">90</span></span>
+    <button id="rest-plus" class="tick">+30</button>
     <button id="rest-skip">WEITER</button>
   </div>
 </section>
@@ -100,6 +103,32 @@
   </div>
 </section>
 
+<!-- ============ MAX-OUT ============ -->
+<section id="view-maxout" class="view" hidden>
+  <header class="head">
+    <button id="mo-back" class="icon-btn" aria-label="Zurück">‹</button>
+    <h1>Max-Out</h1>
+  </header>
+  <div class="pad">
+    <div class="directive">
+      <span class="tone hart">KRAFTTEST</span>
+      <p class="txt">Aufwärmen, dann in wenigen Sätzen an ein schweres Einzel oder Dreier herantasten.
+      Nicht mehr als drei ernsthafte Versuche — danach misst du nur noch deine Ermüdung.</p>
+    </div>
+    <h2>Übung</h2>
+    <div id="mo-lifts" class="weights"></div>
+    <h2>Ergebnis</h2>
+    <div class="mo-grid">
+      <label>Gewicht<input id="mo-weight" type="number" inputmode="decimal" step="2.5" placeholder="kg"></label>
+      <label>Wiederholungen<input id="mo-reps" type="number" inputmode="numeric" step="1" min="1" max="12" placeholder="1"></label>
+    </div>
+    <div id="mo-result"></div>
+    <button id="mo-save" class="btn" disabled>Ergebnis speichern</button>
+    <p class="fine">Ein Max-Out dreht den A/B-Wechsel nicht weiter und verändert deine
+    Arbeitsgewichte nur, wenn du es ausdrücklich übernimmst.</p>
+  </div>
+</section>
+
 <!-- ============ DONE ============ -->
 <section id="view-done" class="view" hidden>
   <header class="head"><h1><span class="glow">geschafft</span></h1></header>
@@ -115,6 +144,9 @@
   </header>
   <div class="pad">
     <div id="hist-summary"></div>
+    <h2>Bestwerte</h2>
+    <div id="hist-prs"></div>
+    <h2>Verläufe</h2>
     <div id="hist-charts"></div>
     <h2>Einheiten</h2>
     <div id="history-body"></div>

@@ -53,3 +53,40 @@ const einer = S.sparkline([{date:'2026-09-01',weight:60}], 300, 60);
 ok('ein einzelner Punkt landet mittig', Math.abs(einer.koord[0].x - 150) < 1, einer.koord[0].x);
 
 print(`\n========== ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
+
+print('\n--- PR-Verwaltung ---');
+const prLogs = [
+  { date:'2026-09-01', workout:'A', type:'strength', lifts:[
+    { lift:'squat', weight:50, sets:5, target:5, reps:[5,5,5,5,5], success:true }]},
+  { date:'2026-09-05', workout:'A', type:'strength', lifts:[
+    { lift:'squat', weight:60, sets:5, target:5, reps:[5,5,5,4,3], success:false }]},
+  { date:'2026-09-10', type:'maxout', lift:'squat', weight:95, reps:1 }
+];
+const P1 = S.prs(prLogs);
+eq('schwerster sauberer Arbeitssatz', P1.squat.arbeit.weight, 50);
+eq('gescheiterter Satz ist kein Arbeits-PR', P1.squat.arbeit.date, '2026-09-01');
+eq('gemessener Einzelversuch', P1.squat.gemessen.weight, 95);
+eq('bestes Maximum kommt vom Max-Out', P1.squat.maximum.weight, 95);
+eq('und ist als gemessen gekennzeichnet', P1.squat.maximum.formel, 'gemessen');
+ok('Maximum aus 60x5 waere kleiner als 95', S.prs(prLogs.slice(0,2)).squat.maximum.wert < 95);
+eq('ohne Logs keine PRs', Object.keys(S.prs([])).length, 0);
+
+print('\n--- Auch ein Fehlversuch kann ein Maximum liefern ---');
+const nurFail = S.prs([prLogs[1]]);
+eq('kein Arbeits-PR', nurFail.squat.arbeit, null);
+ok('aber ein geschaetztes Maximum aus 60x5', nurFail.squat.maximum.wert > 60, nurFail.squat.maximum.wert);
+
+print('\n--- Neue Bestwerte einer Einheit ---');
+const neu = S.neuePRs(prLogs.slice(0,2), prLogs[2]);
+ok('Max-Out setzt Bestwerte', neu.length >= 2, JSON.stringify(neu.map(t=>t.feld)));
+ok('darunter der gemessene', neu.some(t=>t.feld==='gemessen'));
+eq('die allererste Einheit setzt naturgemaess Bestwerte', S.neuePRs(prLogs, prLogs[0]).length, 2);
+const schwaecher = { date:'2026-09-14', workout:'A', type:'strength', lifts:[
+  { lift:'squat', weight:45, sets:5, target:5, reps:[5,5,5,5,5], success:true }]};
+eq('eine schwaechere Einheit danach ist kein PR', S.neuePRs(prLogs, schwaecher).length, 0);
+const staerker = { date:'2026-09-14', workout:'A', type:'strength', lifts:[
+  { lift:'squat', weight:65, sets:5, target:5, reps:[5,5,5,5,5], success:true }]};
+const t2 = S.neuePRs(prLogs, staerker);
+ok('eine schwerere saubere Einheit schon', t2.some(t=>t.feld==='arbeit'), JSON.stringify(t2.map(x=>x.feld)));
+
+print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

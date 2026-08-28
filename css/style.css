@@ -287,3 +287,38 @@ dialog::backdrop{background:rgba(2,5,9,.85)}
 .conn .b{flex:1}
 .conn .b .n{display:block;font-family:var(--mono);font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--fg)}
 .conn .b .s{display:block;color:var(--muted);font-size:13px;margin-top:3px}
+
+/* ── Pausenuhr mit Feinjustierung ─────────────────────────── */
+.rest .mitte{flex:1;text-align:center}
+.rest .tick{
+  background:transparent;border:1px solid var(--line);color:var(--muted);
+  font-family:var(--mono);font-size:14px;padding:12px 10px;min-width:56px;cursor:pointer;
+}
+.rest .tick:active{border-color:var(--cyan);color:var(--cyan)}
+.rest{gap:9px}
+.rest button{white-space:nowrap}
+
+/* ── Gewicht im Satz nachjustieren ────────────────────────── */
+.wadj{display:flex;align-items:center;gap:8px}
+.wadj button{
+  width:34px;height:34px;flex:none;background:transparent;border:1px solid var(--line);
+  color:var(--muted);font-family:var(--mono);font-size:17px;line-height:1;cursor:pointer;
+}
+.wadj button:active{border-color:var(--cyan);color:var(--cyan)}
+.lift .cue.geaendert{border-left-color:var(--amber);color:var(--amber)}
+
+/* ── Max-Out ──────────────────────────────────────────────── */
+.mo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mo-grid label{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.mo-grid input{margin:6px 0 0}
+.w.gewaehlt{border-color:var(--cyan);box-shadow:inset 0 0 20px rgba(0,229,255,.1)}
+.w.waehlbar{cursor:pointer}
+
+/* ── Bestwerte ────────────────────────────────────────────── */
+.pr{background:var(--panel);border:1px solid var(--line);padding:12px 14px;margin-bottom:8px;
+  clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px)}
+.pr .k{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg)}
+.pr .reihe{display:flex;justify-content:space-between;gap:10px;margin-top:6px;font-size:13px}
+.pr .reihe .l{color:var(--muted)}
+.pr .reihe .v{font-family:var(--mono);color:var(--cyan);font-weight:700;white-space:nowrap}
+.pr .reihe .v small{color:var(--dim);font-weight:400;margin-left:5px}
