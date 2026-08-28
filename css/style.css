@@ -511,3 +511,37 @@ button.raus:active{border-color:var(--amber)}
   margin:14px 0 0;font-family:var(--mono);font-size:11px;letter-spacing:.24em;
   text-transform:uppercase;color:var(--muted);text-align:center;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Grosser Bildschirm. Auf dem Handy ist die schmale Spalte richtig;
+   auf einem Mac wird daraus eine Handy-App in der Bildschirmmitte
+   mit viel Leere daneben. Ab 900 px zwei Spalten — die Reihenfolge
+   im Markup bleibt gleich, sie stapeln sich auf dem Handy einfach.
+   ═══════════════════════════════════════════════════════════ */
+
+@media (min-width: 900px) {
+  #view-home { max-width: 1080px; }
+  #view-history { max-width: 1080px; }
+
+  .zwei-spalten{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:0 26px;
+    align-items:start;
+  }
+  .spalte > h2:first-child{margin-top:18px}
+  .spalte > #motto:first-child + #directive{margin-top:0}
+
+  /* Kennzahlen und Bestwerte vertragen mehr Breite */
+  #hist-summary .stats{grid-template-columns:repeat(4,1fr)}
+  #hist-prs{display:grid;grid-template-columns:1fr 1fr;gap:0 9px;align-items:start}
+  #hist-charts{display:grid;grid-template-columns:1fr 1fr;gap:0 9px;align-items:start}
+  #hist-rad .fahrt{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:baseline}
+  #hist-rad .fahrt .m{text-align:right}
+  .weights{grid-template-columns:repeat(3,1fr)}
+}
+
+@media (min-width: 1200px) {
+  #view-history { max-width: 1240px; }
+  #hist-charts{grid-template-columns:repeat(3,1fr)}
+}
