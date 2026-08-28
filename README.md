@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://cyphomat.github.io/lifty/"><img alt="App öffnen" src="https://img.shields.io/badge/App-öffnen-00e5ff?style=for-the-badge&labelColor=0b1119"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/Tests-272%20grün-00ff9d?style=for-the-badge&labelColor=0b1119">
+  <img alt="Tests" src="https://img.shields.io/badge/Tests-315%20grün-00ff9d?style=for-the-badge&labelColor=0b1119">
   <img alt="Build" src="https://img.shields.io/badge/Build-keiner-ff2d95?style=for-the-badge&labelColor=0b1119">
   <img alt="Abhängigkeiten" src="https://img.shields.io/badge/Abhängigkeiten-0-69809a?style=for-the-badge&labelColor=0b1119">
 </p>
@@ -53,6 +53,9 @@
 |---|---|
 | **5×5-Automat** | Alle Sätze geschafft → +2,5 kg (Kreuzheben +5). Ein Satz zu kurz → Gewicht bleibt, Zähler steigt. Drei Fehlversuche → Deload auf 90 %. |
 | **Ansage des Tages** | `TECHNIK`, `SOLIDE`, `HART` oder `SCHWER` — abgeleitet aus Pause, offenen Fehlversuchen, laufender Serie und Abstand zu den alten Arbeitsgewichten. Kein Zufallsgenerator. |
+| **Eigene Stimme** | `stimme.json` im privaten Repo hat Vorrang vor allen vorgegebenen Zeilen. |
+| **Meilensteine** | Jahrestage alter Bestleistungen, Erreichen des Vorpausen-Niveaus. Sätze, die nur diese eine App sagen kann. |
+| **Dein Grund** | An schweren Tagen erscheint der selbst formulierte Grund statt eines Spruchs. |
 | **Plattenrechner** | Scheiben pro Seite unter jeder Übung. Nicht exakt ladbare Gewichte werden benannt statt stillschweigend gerundet. |
 | **Aufwärmsätze** | Aus dem Arbeitsgewicht gerechnet: leere Stange, dann 55 / 70 / 85 % mit absteigenden Wiederholungen — jeweils mit Scheibenangabe. |
 | **Gewicht im Satz** | Lässt sich während der Einheit anpassen. Das Log bildet ab, was passiert ist; die Progression rechnet von dort weiter. |
@@ -276,7 +279,7 @@ JSC=/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc
 for t in program coach wod stats intervals; do $JSC --module-file=tests/$t.test.js; done
 ```
 
-**272 Tests**, ausgeführt von der JS-Engine, die in macOS ohnehin steckt.
+**315 Tests**, ausgeführt von der JS-Engine, die in macOS ohnehin steckt.
 Kein Node, kein Framework, keine Installation.
 
 Sie decken ab, was still kaputtgehen kann: Progression, Deload, Streak,
@@ -379,3 +382,13 @@ hochkommt.
 Der Pool ist auf eine konkrete Ausstattung zugeschnitten, die in `config.json`
 unter `orte` steht — Hebeplattform, Racks, Latzug, Rudergerät, Sprungkästen,
 Battle Ropes. Bei anderer Ausstattung gehört dort und im Pool nachgezogen.
+
+## Warum die Stimme austauschbar ist
+
+Jeder Satz in dieser App wurde von jemand anderem geschrieben als dem, der sie
+benutzt. Das erzeugt ein leises Fremdeln: sie redet mit dir, aber nicht wie du.
+
+`stimme.json` im privaten Repo löst das. Was dort steht, hat Vorrang; die
+mitgelieferten Zeilen sind nur noch Rückfallebene für Situationen, für die
+nichts hinterlegt ist. Die Datei kommt bewusst **leer** — vorgeschriebene
+Persönlichkeit wäre wieder nur die Stimme des Autors im fremden Namen.
