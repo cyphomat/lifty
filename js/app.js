@@ -27,6 +27,7 @@ let alleFahrten = [];           // Radfahrten der letzten 90 Tage
 let stoerung = null;            // Interferenz Rad -> Eisen
 let stimme = null;              // deine eigenen Zeilen aus stimme.json
 let gewichtsPunkte = [];        // Rohwerte fuer die Gewichtskurve
+let formPunkte = [];            // Fitness und Ermuedung ueber die Zeit
 let eftp = null;                // geschaetzte FTP, fuer Wattziele
 
 const $ = id => document.getElementById(id);
@@ -82,6 +83,7 @@ async function load() {
   }
   if (zwischen.form) form = zwischen.form;
   if (zwischen.gewicht) gewichtsPunkte = zwischen.gewicht;
+  if (zwischen.formVerlauf) formPunkte = zwischen.formVerlauf;
   if (zwischen.eftp) eftp = zwischen.eftp;
 
   await flushQueue();
@@ -133,6 +135,8 @@ async function loadIntervals() {
     const roh = await ICU.wellness(P.ymd(von), P.ymd(bis));
     gewichtsPunkte = roh.filter(w => w.weight).map(w => ({ date: w.date, weight: w.weight }));
     S.cache({ gewicht: gewichtsPunkte });
+    formPunkte = ST.formVerlauf(roh);
+    S.cache({ formVerlauf: formPunkte });
     trend = C.gewichtsTrend(roh);
     form = C.formLage(ICU.letzteForm(roh));
     const mitFtp = [...roh].filter(w => w.eftp).sort((a, b) => b.date.localeCompare(a.date))[0];
@@ -580,6 +584,8 @@ async function renderHistory() {
     $('hist-prs').innerHTML = '';
     $('hist-kalender').innerHTML = '';
     $('hist-last').innerHTML = '';
+    $('hist-tonnage').innerHTML = '';
+    $('hist-form').innerHTML = '';
     $('hist-charts').innerHTML = '';
     $('history-body').innerHTML =
       `<p class="lead">Noch keine Verbindung zu deinen Daten. Prüfe den GitHub-Token
@@ -590,6 +596,8 @@ async function renderHistory() {
   $('hist-prs').innerHTML = '';
   $('hist-kalender').innerHTML = '';
   $('hist-last').innerHTML = '';
+  $('hist-tonnage').innerHTML = '';
+  $('hist-form').innerHTML = '';
   $('hist-charts').innerHTML = '';
   $('hist-rad').innerHTML = '';
   $('history-body').innerHTML = '<p class="lead">Lade…</p>';
@@ -600,6 +608,8 @@ async function renderHistory() {
     renderStats(logs);
     renderKalender(logs);
     renderLast(logs);
+    renderTonnage(logs);
+    renderFormVerlauf();
     renderPRs(logs);
     renderCharts(logs);
     renderRad();
@@ -612,6 +622,8 @@ async function renderHistory() {
       renderStats(alt.logs);
       renderKalender(alt.logs);
       renderLast(alt.logs);
+      renderTonnage(alt.logs);
+      renderFormVerlauf();
       renderPRs(alt.logs);
       renderCharts(alt.logs);
       renderRad();
@@ -1510,5 +1522,80 @@ function renderLast(logs) {
         <span class="t" style="color:var(--cyan)">■ Kraft ${summeK}</span>
         <span class="t" style="color:var(--magenta)">■ Rad ${summeR}</span>
         <span class="t">diese Woche →</span></div>
+    </div>`;
+}
+
+/** Bewegtes Gewicht je Woche — das Volumen hinter der Progression. */
+function renderTonnage(logs) {
+  const box = $('hist-tonnage');
+  if (!box) return;
+  const wochen = ST.wochenTonnage(logs, 12, new Date());
+  const max = Math.max(1, ...wochen.map(w => w.tonnage));
+  const breite = 300, hoehe = 64, luecke = 3;
+  const bw = (breite - luecke * (wochen.length - 1)) / wochen.length;
+
+  const balken = wochen.map((w, i) => {
+    const h = w.tonnage ? Math.max(2, (w.tonnage / max) * hoehe) : 0;
+    const x = i * (bw + luecke);
+    return h ? `<rect x="${x.toFixed(1)}" y="${(hoehe - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}"
+      fill="${i === wochen.length - 1 ? 'var(--lime)' : 'var(--cyan)'}" opacity=".85"
+      ><title>${w.woche} · ${(w.tonnage/1000).toFixed(1)} t · ${w.einheiten} Einheiten</title></rect>` : '';
+  }).join('');
+
+  const gesamt = wochen.reduce((s, w) => s + w.tonnage, 0);
+  const beste = wochen.reduce((a, w) => w.tonnage > a.tonnage ? w : a, wochen[0]);
+  box.innerHTML = `
+    <div class="radbar">
+      <div class="h"><span class="t">Bewegtes Gewicht je Woche</span>
+        <span class="r" style="color:var(--cyan)">${(gesamt/1000).toFixed(1)} t gesamt</span></div>
+      <svg viewBox="0 0 ${breite} ${hoehe}" preserveAspectRatio="none" aria-hidden="true">${balken}</svg>
+      <div class="h" style="margin:7px 0 0">
+        <span class="t">beste Woche ${(beste.tonnage/1000).toFixed(1)} t</span>
+        <span class="t">diese Woche →</span></div>
+    </div>`;
+}
+
+/**
+ * Fitness und Ermüdung. Der Abstand zwischen beiden Linien ist die Form —
+ * deshalb wird er als Fläche gezeichnet und nicht als dritte Kurve, die
+ * dasselbe noch einmal sagt.
+ */
+function renderFormVerlauf() {
+  const box = $('hist-form');
+  if (!box) return;
+  if (formPunkte.length < 2) {
+    box.innerHTML = `<p class="fine">Fitness und Ermüdung kommen aus intervals.icu —
+      sobald dort Daten liegen, steht hier eine Kurve.</p>`;
+    return;
+  }
+  const breite = 300, hoehe = 74, rand = 4;
+  const werte = formPunkte.flatMap(p => [p.ctl, p.atl]);
+  const min = Math.min(...werte), max = Math.max(...werte);
+  const spanne = max - min || 1;
+  const n = formPunkte.length;
+  const x = i => rand + (n === 1 ? (breite - 2*rand)/2 : (i / (n - 1)) * (breite - 2*rand));
+  const y = v => rand + (1 - (v - min) / spanne) * (hoehe - 2*rand);
+
+  const pfad = feld => formPunkte.map((p, i) =>
+    `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p[feld]).toFixed(1)}`).join(' ');
+  const band = pfad('ctl') + ' ' +
+    formPunkte.map((p, i) => `L${x(n-1-i).toFixed(1)},${y(formPunkte[n-1-i].atl).toFixed(1)}`).join(' ') + ' Z';
+
+  const jetzt = formPunkte[n - 1];
+  const farbe = jetzt.form >= 5 ? 'var(--lime)' : jetzt.form >= -10 ? 'var(--cyan)'
+              : jetzt.form >= -20 ? 'var(--amber)' : 'var(--red)';
+  box.innerHTML = `
+    <div class="radbar">
+      <div class="h"><span class="t">Fitness gegen Ermüdung</span>
+        <span class="r" style="color:${farbe}">Form ${jetzt.form > 0 ? '+' : ''}${jetzt.form}</span></div>
+      <svg viewBox="0 0 ${breite} ${hoehe}" preserveAspectRatio="none" aria-hidden="true">
+        <path d="${band}" fill="rgba(0,229,255,.10)"/>
+        <path d="${pfad('atl')}" fill="none" stroke="var(--magenta)" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="${pfad('ctl')}" fill="none" stroke="var(--cyan)" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+      <div class="h" style="margin:7px 0 0">
+        <span class="t" style="color:var(--cyan)">— Fitness ${Math.round(jetzt.ctl)}</span>
+        <span class="t" style="color:var(--magenta)">— Ermüdung ${Math.round(jetzt.atl)}</span>
+        <span class="t">Fläche dazwischen = Form</span></div>
     </div>`;
 }

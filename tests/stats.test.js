@@ -175,3 +175,34 @@ eq('ohne Dauer keine Kraftlast',
 eq('leere Daten ergeben leere Wochen', S.wochenLast([], [], 6, new Date(2026,7,28)).filter(w=>w.gesamt>0).length, 0);
 
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
+
+print('\n--- Tonnage je Woche ---');
+const tLogs = [
+  { date:'2026-08-24', type:'strength', lifts:[{lift:'squat',weight:100,reps:[5,5,5,5,5]}] },
+  { date:'2026-08-26', type:'strength', lifts:[{lift:'squat',weight:50,reps:[5,5,5,5,5]}] },
+  { date:'2026-08-17', type:'strength', lifts:[{lift:'squat',weight:80,reps:[5,5,5,5,5]}] },
+  { date:'2026-08-25', type:'wod', label:'AMRAP' }
+];
+const wt = S.wochenTonnage(tLogs, 4, new Date(2026, 7, 28));
+eq('vier Wochen', wt.length, 4);
+eq('diese Woche: 100x25 + 50x25', wt[3].tonnage, 2500 + 1250);
+eq('zwei Einheiten', wt[3].einheiten, 2);
+eq('WOD zaehlt nicht in die Tonnage', S.wochenTonnage([tLogs[3]], 4, new Date(2026,7,28))[3].tonnage, 0);
+eq('Vorwoche getrennt', wt[2].tonnage, 80 * 25);
+eq('leer bleibt leer', S.wochenTonnage([], 3, new Date(2026,7,28)).every(w=>w.tonnage===0), true);
+
+print('\n--- Fitness und Ermuedung ---');
+const wellnessRoh = [
+  { date:'2026-08-20', ctl:44, atl:50 },
+  { date:'2026-08-10', ctl:40, atl:38 },
+  { date:'2026-08-15', ctl:null, atl:20 },
+  { date:'2026-08-25', ctl:48, atl:44 }
+];
+const fv = S.formVerlauf(wellnessRoh);
+eq('unvollstaendige Punkte fallen raus', fv.length, 3);
+eq('aufsteigend sortiert', fv[0].date, '2026-08-10');
+eq('Form ist Fitness minus Ermuedung', fv[0].form, 2);
+eq('auch negativ', fv[1].form, -6);
+eq('ohne Daten leer', S.formVerlauf([]).length, 0);
+
+print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

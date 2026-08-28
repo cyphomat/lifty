@@ -314,3 +314,35 @@ export function wochenLast(logs = [], fahrten = [], wochen = 12, heute = new Dat
   }
   return eimer.map(e => ({ ...e, gesamt: e.kraft + e.rad }));
 }
+
+/** Bewegtes Gewicht je Woche — das Volumen hinter der Progression. */
+export function wochenTonnage(logs = [], wochen = 12, heute = new Date()) {
+  const start = montagVon(heute);
+  const eimer = [];
+  for (let i = wochen - 1; i >= 0; i--) {
+    const m = new Date(start);
+    m.setDate(m.getDate() - i * 7);
+    eimer.push({ woche: tagesKey(m), tonnage: 0, einheiten: 0 });
+  }
+  const index = new Map(eimer.map((e, i) => [e.woche, i]));
+  for (const l of logs) {
+    if (!l.date || !istKraft(l)) continue;
+    const i = index.get(tagesKey(montagVon(new Date(l.date + 'T12:00:00'))));
+    if (i === undefined) continue;
+    eimer[i].tonnage += tonnage(l);
+    eimer[i].einheiten += 1;
+  }
+  return eimer.map(e => ({ ...e, tonnage: Math.round(e.tonnage) }));
+}
+
+/**
+ * Fitness und Ermuedung ueber die Zeit. Der Abstand zwischen beiden ist die
+ * Form — deshalb wird er als Flaeche zwischen den Linien gezeichnet und
+ * nicht als dritte Kurve, die dasselbe noch einmal sagt.
+ */
+export function formVerlauf(wellness = []) {
+  return wellness
+    .filter(w => w.ctl != null && w.atl != null && w.date)
+    .map(w => ({ date: w.date, ctl: w.ctl, atl: w.atl, form: Math.round((w.ctl - w.atl) * 10) / 10 }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
