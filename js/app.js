@@ -169,7 +169,7 @@ function renderIcuStatus() {
   const tage = C.daysSince(icu.letzte.date, new Date());
   const lange = tage > 21;
   el.innerHTML = `<p class="fine">
-    Letzte Fahrt vor <b class="num" style="color:${lange ? 'var(--amber)' : 'var(--cyan)'}">${tage} Tagen</b>
+    ${tage === 0 ? 'Zuletzt gefahren' : 'Letzte Fahrt vor'} <b class="num" style="color:${lange ? 'var(--amber)' : 'var(--cyan)'}">${tage === 0 ? 'heute' : tage === 1 ? '1 Tag' : `${tage} Tagen`}</b>
     — ${icu.letzte.name} · ${icu.letzte.minutes} Min · ${icu.letzte.km} km.
     ${icu.anzahl} Fahrt${icu.anzahl === 1 ? '' : 'en'} in 90 Tagen.
     ${lange ? '<br>Das Rad ruht länger als das Eisen. Eine ruhige Stunde in Zone 2 kostet dich keine Erholung für den Beintag.' : ''}
