@@ -37,7 +37,7 @@ export const LIFT_INFO = {
   },
   deadlift: {
     tag: 'DEADLIFT',
-    warum: 'Nur ein Satz — mit Absicht. Deadlifts kosten mehr Erholung als alles andere. Ein schwerer Satz reicht als Reiz, fünf würden deine Kniebeuge auffressen.',
+    warum: 'Nur ein Satz — mit Absicht. Deadlifts kosten mehr Erholung als alles andere. Ein schwerer Satz reicht als Reiz, fünf würden deinen Squat auffressen.',
     kadenz: 'Spannung aufbauen, dann ohne Ruck. Jede Wiederholung neu ansetzen.',
     cue: 'Stange am Schienbein. Brust hoch, bevor die Hüfte kommt. Schieben, nicht ziehen.',
     fehler: 'Aus dem Boden reißen. Zieh die Stange erst auf Spannung, dann kommt die Bewegung.',

@@ -39,7 +39,7 @@ export const MOVES = [
     erklaerung:'Der stärkste Ganzkörperzug, den es gibt. Im WOD bewusst leicht: unter Zeitdruck kippt die Technik zuerst am unteren Rücken, und ein müder Rundrücken bei schwerer Last ist die häufigste Verletzung in solchen Formaten.',
     skalierung:['Leichter und dafür sauber','Romanian Deadlift mit kürzerem Weg','Kettlebell Deadlift'] },
   { id:'frontsquat',name:'Front Squat',         kat:'hantel', reps:[6,12],  last:s=>auf25(s.squat.weight*0.5), cue:'Ellbogen hoch halten.',
-    erklaerung:'Kniebeuge mit der Stange vorn — der Oberkörper muss aufrecht bleiben, sonst rutscht die Stange. Das macht sie zur ehrlichsten Rumpfübung im Programm und zur direkten Vorbereitung auf den Clean.',
+    erklaerung:'Squat mit der Stange vorn — der Oberkörper muss aufrecht bleiben, sonst rutscht die Stange. Das macht ihn zur ehrlichsten Rumpfübung im Programm und zur direkten Vorbereitung auf den Clean.',
     skalierung:['Goblet Squat mit Kurzhantel','Leere Stange','Air Squat'] },
 
   { id:'burpee',    name:'Burpees',             kat:'turnen', reps:[8,15],  last:null, cue:'Gleichmäßig. Wer sprintet, stirbt in Runde drei.',
