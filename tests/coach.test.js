@@ -299,3 +299,23 @@ for (const s of situationen) {
 }
 
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
+
+print('\n--- Auch bei zwei eigenen Zeilen kommen beide vor ---');
+// Regression: Muenze und Auswahl waren ueber die Hash-Paritaet gekoppelt,
+// dadurch erschien von zwei eigenen Zeilen immer nur die erste.
+const zweiEigene = { alle: ['ERSTE', 'ZWEITE'] };
+const gesehenEigene = new Set();
+for (let t = 1; t <= 200; t++) {
+  const z = C.spruchWaehlen('standard', `2026-12-${t}`, zweiEigene);
+  if (zweiEigene.alle.includes(z)) gesehenEigene.add(z);
+}
+eq('beide eigenen Zeilen erscheinen', gesehenEigene.size, 2);
+const dreiEigene = { alle: ['A', 'B', 'C'] };
+const gesehenDrei = new Set();
+for (let t = 1; t <= 300; t++) {
+  const z = C.spruchWaehlen('leicht', `2027-01-${t}`, dreiEigene);
+  if (dreiEigene.alle.includes(z)) gesehenDrei.add(z);
+}
+eq('auch bei drei', gesehenDrei.size, 3);
+
+print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

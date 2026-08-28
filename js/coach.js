@@ -248,6 +248,19 @@ function hash(text) {
   return h;
 }
 
+/**
+ * Bit-Lawine. Noetig, weil h*31+c in den untersten Bits linear ist: die
+ * Paritaet von hash(x) und hash(salz+x) haengt fest zusammen, egal wo man
+ * salzt. Ohne diesen Schritt waeren Muenzwurf und Auswahl gekoppelt — und
+ * von zwei eigenen Zeilen erschiene immer nur dieselbe.
+ */
+function mische(h) {
+  h ^= h >>> 16; h = Math.imul(h, 2246822507) >>> 0;
+  h ^= h >>> 13; h = Math.imul(h, 3266489909) >>> 0;
+  h ^= h >>> 16;
+  return h >>> 0;
+}
+
 export function spruchWaehlen(situation, tag, eigene) {
   const meine = VOICE[situation] || [];
   const seine = (eigene && (eigene[situation] || eigene.alle)) || [];
@@ -259,7 +272,7 @@ export function spruchWaehlen(situation, tag, eigene) {
   // Muenze: sonst gingen zwei eigene Zeilen zwischen dreissig fremden unter,
   // und genau die eigenen sind der Grund, warum sich das nach jemandem
   // anfuehlt statt nach Software.
-  return hash(tag + situation + '#') % 2
+  return mische(hash(tag + situation)) % 2
     ? seine[hash(tag + situation) % seine.length]
     : meine[hash(tag + situation) % meine.length];
 }
