@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://cyphomat.github.io/lifty/"><img alt="App öffnen" src="https://img.shields.io/badge/App-öffnen-00e5ff?style=for-the-badge&labelColor=0b1119"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/Tests-346%20grün-00ff9d?style=for-the-badge&labelColor=0b1119">
+  <img alt="Tests" src="https://img.shields.io/badge/Tests-364%20grün-00ff9d?style=for-the-badge&labelColor=0b1119">
   <img alt="Build" src="https://img.shields.io/badge/Build-keiner-ff2d95?style=for-the-badge&labelColor=0b1119">
   <img alt="Abhängigkeiten" src="https://img.shields.io/badge/Abhängigkeiten-0-69809a?style=for-the-badge&labelColor=0b1119">
 </p>
@@ -144,6 +144,9 @@ Der Back Squat kommt in beiden Workouts vor und steigt daher doppelt so schnell.
 | | |
 |---|---|
 | **Radfahrten** | Fahrten, Stunden, Kilometer, Wochenlast über zwölf Wochen. |
+| **Trainingskalender** | 26 Wochen als Raster, eine Spalte je Woche. Kraft cyan, WOD grün, Rad magenta, gemischte Tage diagonal geteilt. |
+| **Wochenlast gestapelt** | Kraft und Rad in einem Balken — die eine Kurve, wegen der beides zusammengehört. |
+| **Gewichtskurve** | Körpergewicht als Verlauf statt als Zahl. Bei Gewicht zählt nur die Richtung. |
 | **Form** | Fitness minus Ermüdung, als Hinweis. Die App kürzt keine Gewichte eigenmächtig. |
 | **Interferenz** | Warnt bei harter oder langer Fahrt unter vier Stunden Abstand. |
 | **Wattziele** | Aus der eFTP statt Prozentangaben. |
@@ -298,7 +301,7 @@ JSC=/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc
 for t in program coach wod stats intervals; do $JSC --module-file=tests/$t.test.js; done
 ```
 
-**346 Tests**, ausgeführt von der JS-Engine, die in macOS ohnehin steckt. Kein Node, kein Framework, keine Installation.
+**364 Tests**, ausgeführt von der JS-Engine, die in macOS ohnehin steckt. Kein Node, kein Framework, keine Installation.
 
 Sie decken ab, was still kaputtgehen kann: Progression, Deload, Streak, Plattenaufteilung, e1RM, die Ableitbarkeit des Zustands — und dass ein WOD die Progression nicht anfasst.
 
@@ -342,6 +345,10 @@ Es ist eine Web-App — die URL genügt. Für ein eigenes Fenster mit Icon:
 
 - **Safari:** Ablage → *Zum Dock hinzufügen*
 - **Chrome:** Adressleiste → *Installieren*
+
+Auf dem großen Bildschirm wird der Verlauf zur Übersicht: Trainingskalender
+über 26 Wochen, Kraft und Rad gestapelt, vier Kennzahlen nebeneinander,
+Bestwerte zweispaltig und drei Verlaufskurven in einer Reihe.
 
 Token und Key liegen im `localStorage` und damit **pro Gerät**. Auf dem Mac
 werden sie einmal neu eingetragen; die Trainingsdaten kommen ohnehin aus dem
