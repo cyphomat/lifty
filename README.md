@@ -4,14 +4,15 @@
 
 <p align="center">
   <a href="https://cyphomat.github.io/lifty/"><img alt="App öffnen" src="https://img.shields.io/badge/App-öffnen-00e5ff?style=for-the-badge&labelColor=0b1119"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/Tests-315%20grün-00ff9d?style=for-the-badge&labelColor=0b1119">
+  <img alt="Tests" src="https://img.shields.io/badge/Tests-346%20grün-00ff9d?style=for-the-badge&labelColor=0b1119">
   <img alt="Build" src="https://img.shields.io/badge/Build-keiner-ff2d95?style=for-the-badge&labelColor=0b1119">
   <img alt="Abhängigkeiten" src="https://img.shields.io/badge/Abhängigkeiten-0-69809a?style=for-the-badge&labelColor=0b1119">
 </p>
 
 <p align="center">
-  <b>Trainings-HUD für StrongLifts 5×5, Zwift und Battle Ropes.</b><br>
-  Statische Web-App. Kein Build, keine Bibliotheken, kein Server, keine Datenbank.
+  <b>Ein Trainings-HUD für eine Person.</b><br>
+  5×5 im Studio, Zwift im Keller, Battle Ropes zum Schluss.<br>
+  Statische Web-App: kein Build, keine Bibliotheken, kein Server, keine Datenbank.
 </p>
 
 ---
@@ -22,72 +23,46 @@
 <tr>
 <td width="33%"><img src="assets/screens/home-dunkel.png" alt="Startbildschirm"></td>
 <td width="33%"><img src="assets/screens/session-dunkel.png" alt="Einheit im Studio"></td>
-<td width="33%"><img src="assets/screens/verlauf-dunkel.png" alt="Verlauf mit Bestwerten"></td>
+<td width="33%"><img src="assets/screens/geschafft-dunkel.png" alt="Nach der Einheit"></td>
 </tr>
 <tr>
-<td align="center"><b>Ansage des Tages</b><br><sub>Ton aus Pause, Fehlversuchen und Form</sub></td>
+<td align="center"><b>Die Ansage</b><br><sub>Ton aus Pause, Form und Rad</sub></td>
 <td align="center"><b>Im Studio</b><br><sub>Scheiben, Kadenz, Sätze über dem Ziel</sub></td>
-<td align="center"><b>Bestwerte</b><br><sub>Abgeleitet, nicht gepflegt</sub></td>
+<td align="center"><b>Danach</b><br><sub>Erst der Erfolg, dann der Bericht</sub></td>
 </tr>
 <tr>
+<td><img src="assets/screens/verlauf-dunkel.png" alt="Bestwerte"></td>
 <td><img src="assets/screens/rad-dunkel.png" alt="Radfahrten"></td>
 <td><img src="assets/screens/wod-dunkel.png" alt="Zufalls-WOD"></td>
-<td><img src="assets/screens/home-hell.png" alt="Helle Fassung"></td>
 </tr>
 <tr>
+<td align="center"><b>Bestwerte</b><br><sub>Abgeleitet, nicht gepflegt</sub></td>
 <td align="center"><b>Rad</b><br><sub>Wochenlast aus intervals.icu</sub></td>
 <td align="center"><b>Zufalls-WOD</b><br><sub>Lasten aus dem aktuellen Stand</sub></td>
-<td align="center"><b>Helle Fassung</b><br><sub>Kein Neon, gleiche Formen</sub></td>
 </tr>
 </table>
 
-<sub>Aufnahmen mit Beispieldaten, entstanden über `tools/shot.html` — echte Bildschirme, keine Mockups.</sub>
+<sub>Echte Bildschirme mit Beispieldaten, aufgenommen über <code>tools/shot.html</code>. Keine Mockups.</sub>
 
 ---
 
-## Funktionen
+## Was sie dir sagt
 
-### Kraft
+Der Unterschied zu einem Logbuch: sie hat eine Meinung zum heutigen Tag — und die kommt aus Daten, nicht aus einem Zufallsgenerator.
 
-| | |
-|---|---|
-| **5×5-Automat** | Alle Sätze geschafft → +2,5 kg (Kreuzheben +5). Ein Satz zu kurz → Gewicht bleibt, Zähler steigt. Drei Fehlversuche → Deload auf 90 %. |
-| **Ansage des Tages** | `TECHNIK`, `SOLIDE`, `HART` oder `SCHWER` — abgeleitet aus Pause, offenen Fehlversuchen, laufender Serie und Abstand zu den alten Arbeitsgewichten. Kein Zufallsgenerator. |
-| **Eigene Stimme** | `stimme.json` im privaten Repo hat Vorrang vor allen vorgegebenen Zeilen. |
-| **Meilensteine** | Jahrestage alter Bestleistungen, Erreichen des Vorpausen-Niveaus. Sätze, die nur diese eine App sagen kann. |
-| **Dein Grund** | An schweren Tagen erscheint der selbst formulierte Grund statt eines Spruchs. |
-| **Plattenrechner** | Scheiben pro Seite unter jeder Übung. Nicht exakt ladbare Gewichte werden benannt statt stillschweigend gerundet. |
-| **Aufwärmsätze** | Aus dem Arbeitsgewicht gerechnet: leere Stange, dann 55 / 70 / 85 % mit absteigenden Wiederholungen — jeweils mit Scheibenangabe. |
-| **Gewicht im Satz** | Lässt sich während der Einheit anpassen. Das Log bildet ab, was passiert ist; die Progression rechnet von dort weiter. |
-| **Wiederholungen** | Tippen zählt das Ziel. Lange drücken öffnet 0 bis 12 — auch darüber, denn ein starker Satz ist eine Information. |
-| **Pausenuhr** | 90 s, nach einem Fehlversuch 180 s, im Lauf um ±30 s verstellbar. |
-| **Bestwerte** | Schwerster sauberer Satz, gemessenes Einzel — und getrennt davon **Maximum** (nur aus Max-Out, belastbar) gegen **Mindestens** (aus Arbeitssätzen, Untergrenze). |
-| **Verlauf des Maximums** | Zweite Linie im Diagramm: steigt auch dann, wenn du bei gleichem Gewicht mehr Wiederholungen schaffst. |
-| **Max-Out** | Krafttest mit e1RM. Dreht den A/B-Wechsel nicht und ändert Arbeitsgewichte nur auf ausdrückliche Ansage. |
-| **Wissen an der Stange** | Kadenz direkt sichtbar; aufklappbar Begründung, Cue, typischer Fehler und die Brücke zum olympischen Heben. |
+**Die Ansage** liest Pause, offene Fehlversuche, laufende Serie und den Abstand zu den alten Arbeitsgewichten und entscheidet daraus zwischen `TECHNIK`, `SOLIDE`, `HART` und `SCHWER`.
 
-### Rad und Kondition
+**Die Form** kommt aus intervals.icu — Fitness minus Ermüdung. Dazu die Interferenz-Warnung, wenn eine harte Fahrt weniger als vier Stunden her ist:
 
-| | |
-|---|---|
-| **Radfahrten** | Fahrten, Stunden, Kilometer und die Wochenlast der letzten zwölf Wochen als Balken. |
-| **Form** | Fitness minus Ermüdung aus intervals.icu, als Hinweis in der Tagesansage. Die App kürzt keine Gewichte eigenmächtig. |
-| **Interferenz** | Warnt, wenn eine harte oder lange Fahrt weniger als vier Stunden zurückliegt — dann leidet die Kraftausdauer, nicht das Maximalkraftniveau. |
-| **Wattziele** | Aus der eFTP statt Prozentangaben: „Sweet Spot ≈ 214–226 W". |
-| **Woche im Kalender** | Geplante Einheiten landen auf Wunsch im intervals.icu-Kalender. |
-| **Kraft → intervals.icu** | Jede Krafteinheit und jedes WOD als Aktivität, damit die gesamte Last in **einer** Kurve liegt. |
-| **Zufalls-WOD** | AMRAP, Auf Zeit, EMOM, Chipper, Tabata. Lasten aus dem aktuellen Stand abgeleitet, nie zwei Langhantelteile. |
-| **Erklärtexte** | Jede Übung sagt in zwei Sätzen, was sie trainiert und worauf zu achten ist — lesbar zwischen zwei Sätzen. |
-| **Skalierung** | Jede der 19 Übungen nennt konkrete Alternativen. „Kann ich nicht" nimmt eine dauerhaft aus dem Generator — steht in `config.json`, gilt also auf jedem Gerät. |
-| **Technik und Finisher** | Snatch Balance, Hang Power Clean, Overhead Squat · Battle Ropes, Farmer Walk. Täglich rotierend. |
+> **Rad vor 3 h** — Vor 3 Stunden hart gefahren. Unter vier Stunden Abstand leidet vor allem die Kraftausdauer — die letzten Sätze werden zäh. Das Maximalkraftniveau bleibt davon weitgehend unberührt: es ist Ermüdung, kein Rückschritt.
 
-### App
+**Meilensteine** kennen die alten Bestleistungen samt Datum. Das sind Sätze, die kein Programm von der Stange sagen kann:
 
-| | |
-|---|---|
-| **Offline** | Einheiten werden gepuffert und nachgetragen. Verlauf und Radansicht zeigen den letzten Stand statt einer Fehlermeldung. |
-| **Selbstaktualisierend** | Prüft beim Start die ausgelieferte Version und lädt sich genau einmal neu. |
-| **Hell und dunkel** | Umschalter System / Hell / Dunkel. |
+> **Aus deiner Geschichte** — Gestern vor 5 Jahren: 140 kg Back Squat. Heute stehst du bei 65 kg — nicht weil du weniger kannst, sondern weil du wieder anfängst.
+
+**Minierfolge** stehen nach jeder Einheit ganz oben. Nicht der Bericht, sondern das Geschaffte — und auch ein durchwachsener Tag hat welche.
+
+**Die Stimme** mischt eigene Zeilen aus `stimme.json` mit den 52 mitgelieferten. Etwa halbe halbe, per Münzwurf pro Tag — nicht nach Poolgröße, sonst gingen zwei eigene Zeilen zwischen fünfzig fremden unter.
 
 ---
 
@@ -110,12 +85,9 @@ flowchart LR
   class D daten
 ```
 
-lifty besitzt die **Kraft**-Progression. Die StrongLifts-App wurde abgelöst — zwei
-Systeme, die dasselbe Arbeitsgewicht berechnen, laufen unweigerlich auseinander.
+lifty besitzt die **Kraft**-Progression. Zwei Systeme, die dasselbe Arbeitsgewicht berechnen, laufen unweigerlich auseinander — deshalb gibt es hier nur eines.
 
-Das **Rad** plant lifty nur als Hinweis; die Ist-Daten entstehen ohnehin automatisch.
-Umgekehrt schreibt lifty jede Krafteinheit als Aktivität zurück, damit die gesamte
-Trainingslast in einer Fitness-Kurve liegt statt in zwei getrennten Welten.
+Das **Rad** wird nur als Hinweis geplant; die Ist-Daten entstehen ohnehin automatisch. Umgekehrt schreibt lifty jede Krafteinheit zurück, damit die gesamte Last in **einer** Fitness-Kurve liegt statt in zwei getrennten Welten.
 
 ---
 
@@ -123,13 +95,13 @@ Trainingslast in einer Fitness-Kurve liegt statt in zwei getrennten Welten.
 
 |  | Übung 1 | Übung 2 | Übung 3 |
 |---|---|---|---|
-| **Workout A** | Kniebeuge 5×5 | Bankdrücken 5×5 | Rudern 5×5 |
-| **Workout B** | Kniebeuge 5×5 | Schulterdrücken 5×5 | Kreuzheben 1×5 |
+| **Workout A** | Back Squat 5×5 | Bench Press 5×5 | Barbell Row 5×5 |
+| **Workout B** | Back Squat 5×5 | Strict Press 5×5 | Deadlift 1×5 |
 
 ```mermaid
 flowchart TD
   E{"Alle Sätze<br/>geschafft?"}
-  E -->|ja| P["Gewicht steigt<br/>+2,5 kg · Kreuzheben +5<br/>Zähler → 0"]
+  E -->|ja| P["Gewicht steigt<br/>+2,5 kg · Deadlift +5<br/>Zähler → 0"]
   E -->|nein| F["Gewicht bleibt<br/>Zähler +1"]
   F --> G{"Dritter<br/>Fehlversuch?"}
   G -->|nein| W["Nächste Einheit"]
@@ -145,9 +117,47 @@ flowchart TD
   class E,G,W frage
 ```
 
-Die Kniebeuge kommt in beiden Workouts vor und steigt daher doppelt so schnell.
-5×5 ist auf drei Einheiten pro Woche ausgelegt; bei ein bis zwei gilt dieselbe
-Mechanik, nur langsamer.
+Der Back Squat kommt in beiden Workouts vor und steigt daher doppelt so schnell.
+
+5×5 ist auf drei Einheiten pro Woche ausgelegt. Bei ein bis zwei gilt dieselbe Mechanik, nur langsamer — **und Prozentregeln aus dem Original gelten dann nicht mehr.** Der Wiedereinstieg mit 60 % wäre bei dieser Frequenz zu sechs bis neun Wochen unter Reizschwelle geworden; daraus wurden 80 %.
+
+---
+
+## Funktionen
+
+### Kraft
+
+| | |
+|---|---|
+| **5×5-Automat** | Steigerung, Fehlerzähler, Deload. Reine Funktionen, kein I/O. |
+| **Plattenrechner** | Scheiben pro Seite. Nicht exakt ladbare Gewichte werden benannt statt gerundet. |
+| **Aufwärmsätze** | Aus dem Arbeitsgewicht gerechnet: leere Stange, dann 55 / 70 / 85 % — mit Scheibenangabe. |
+| **Gewicht im Satz** | Anpassbar während der Einheit. Das Log bildet ab, was passiert ist. |
+| **Wiederholungen** | Tippen zählt das Ziel. Lange drücken öffnet 0 bis 12 — auch darüber. |
+| **Pausenuhr** | 90 s, nach einem Fehlversuch 180 s, im Lauf um ±30 s verstellbar. |
+| **Bestwerte** | Schwerster sauberer Satz, gemessenes Einzel, **Maximum** (nur aus Max-Out) gegen **Mindestens** (aus Arbeitssätzen). |
+| **Max-Out** | Krafttest mit e1RM. Dreht den A/B-Wechsel nicht. |
+| **Wissen an der Stange** | Kadenz sichtbar; aufklappbar Begründung, Cue, typischer Fehler, Brücke zum olympischen Heben. |
+
+### Rad und Kondition
+
+| | |
+|---|---|
+| **Radfahrten** | Fahrten, Stunden, Kilometer, Wochenlast über zwölf Wochen. |
+| **Form** | Fitness minus Ermüdung, als Hinweis. Die App kürzt keine Gewichte eigenmächtig. |
+| **Interferenz** | Warnt bei harter oder langer Fahrt unter vier Stunden Abstand. |
+| **Wattziele** | Aus der eFTP statt Prozentangaben. |
+| **Kraft → intervals.icu** | Jede Einheit als Aktivität, damit alles in einer Kurve liegt. |
+| **Zufalls-WOD** | Fünf Formate, 19 Übungen, Lasten aus dem aktuellen Stand. Nie zwei Langhantelteile. |
+| **Skalierung** | Jede Übung nennt Alternativen. „Kann ich nicht" nimmt sie dauerhaft raus. |
+
+### App
+
+| | |
+|---|---|
+| **Offline** | Einheiten werden gepuffert. Verlauf und Radansicht zeigen den letzten Stand. |
+| **Selbstaktualisierend** | Prüft die Version beim Start und lädt sich genau einmal neu. |
+| **Hell und dunkel** | Umschalter System / Hell / Dunkel. Zwei echte Fassungen, keine Invertierung. |
 
 ---
 
@@ -173,8 +183,6 @@ Mechanik, nur langsamer.
 
 ### Der daraus abgeleitete Zustand
 
-`state.json` — wird **nie** von Hand gepflegt:
-
 ```json
 {
   "next": "B",
@@ -186,9 +194,7 @@ Mechanik, nur langsamer.
 }
 ```
 
-Bankdrücken bleibt stehen und bekommt einen Fehlversuch angerechnet. Rudern steigt,
-obwohl der letzte Satz acht statt fünf Wiederholungen hatte — mehr als das Ziel gilt
-als geschafft und hebt zusätzlich das geschätzte Maximum.
+Bench Press bleibt stehen und bekommt einen Fehlversuch. Barbell Row steigt, obwohl der letzte Satz acht statt fünf Wiederholungen hatte — mehr als das Ziel gilt als geschafft und hebt zusätzlich die Untergrenze des geschätzten Maximums.
 
 ### Plattenrechner
 
@@ -199,13 +205,13 @@ Aufwärmen:  2×5 @ 20 kg (leer) · 5 @ 45 kg · 3 @ 57,5 kg · 2 @ 70 kg
 
 ### Ein erzeugtes WOD
 
-Gleicher Seed liefert dasselbe Workout — ein Neuzeichnen tauscht es nicht unter dir weg:
+Gleicher Seed, gleiches Workout — ein Neuzeichnen tauscht es nicht unter dir weg:
 
 ```
 CHIPPER · einmal von oben nach unten durch, auf Zeit
-   8 Wdh   Klimmzüge
-  32 Sek   Battle Ropes — Wellen
-  30 Wdh   Box Jumps
+  16 Wdh   Lat Pulldown
+  32 Sek   Battle Ropes — Waves
+  30 Wdh   Walking Lunges
   16 Wdh   Power Clean @ 42,5 kg
 ```
 
@@ -219,29 +225,31 @@ CHIPPER · einmal von oben nach unten durch, auf Zeit
   "start_date_local": "2026-08-26T19:02:11",
   "moving_time": 3112,
   "icu_training_load": 41,
-  "description": "Kniebeuge 80 kg — 5/5/5/5/5\n…\n\nAus lifty übertragen. Trainingslast geschätzt aus der Dauer (52 Min)."
+  "description": "Back Squat 80 kg — 5/5/5/5/5\n…\n\nAus lifty übertragen. Trainingslast geschätzt aus der Dauer (52 Min)."
 }
 ```
 
-Ist keine Dauer bekannt, wird **nichts** übertragen: eine erfundene Last wäre
-schlimmer als ein fehlender Eintrag.
+Ohne bekannte Dauer wird **nichts** übertragen: eine erfundene Last wäre schlimmer als ein fehlender Eintrag.
 
 ---
 
-## Die tragende Invariante
+## Entscheidungen, die tragen
 
-> `state.json` ist **abgeleitet**, nicht gepflegt — eine Projektion aus
-> `config.json` und allen Dateien in `einheiten/`.
+### `state.json` ist abgeleitet, nicht gepflegt
 
-„Neu berechnen" stellt sie jederzeit wieder her. Deshalb wird ein vertippter
-Eintrag nie zum Problem: Datei korrigieren, neu berechnen, fertig.
+> Eine Projektion aus `config.json` und allen Dateien in `einheiten/`.
 
-Wer hier abkürzt und `state.json` direkt fortschreibt, verliert genau diese
-Eigenschaft. Dafür gibt es Tests.
+„Neu berechnen" stellt sie jederzeit wieder her. Deshalb wird ein vertippter Eintrag nie zum Problem: Datei korrigieren, neu berechnen, fertig. Arbeitsgewichte werden nie direkt gesetzt — dafür gibt es den Log-Typ `anpassung`, damit auch das reproduzierbar bleibt.
 
----
+### „Mindestens" ist nicht „Maximum"
 
-## Die Rangordnung im Training
+e1RM-Formeln setzen Nähe zum Versagen voraus. Ein 5×5-Arbeitssatz ist submaximal, die Formel **unterschätzt** dort systematisch. Was aus Arbeitssätzen kommt, heißt deshalb Untergrenze. Aus demselben Grund mischt die Verlaufskurve die Quellen nicht: gestrichelte Linie für Untergrenzen, Max-Outs als eigene Punkte. Sonst sähe ein Wechsel der Datenquelle wie ein Rückschritt aus.
+
+### Erst lesen, dann schreiben
+
+`external_id` greift laut intervals.icu-Doku nur für dieselbe OAuth-Anwendung. Mit einem API-Key ist darauf kein Verlass. Kalendereinträge und nachgetragene Einheiten werden deshalb gegen den Bestand abgeglichen — über die Kennung und ersatzweise Datum plus Name. Doppelte Einträge im eigenen Konto sind ärgerlicher als fehlende.
+
+### Die Rangordnung im Training
 
 ```
 Rückgrat      5×5                   messbar progressiv, trägt alles andere
@@ -249,9 +257,19 @@ Auffrischung  Olympische Technik    leicht, im Warm-up-Slot, Qualität statt Las
 Zugabe        Seile · Kondition     als Finisher ans Ende, nie davor
 ```
 
-Kein Geschmack, sondern der Grund, warum die Progression im Kaloriendefizit
-funktioniert. Wer den Finisher nach vorn zieht oder die Technikarbeit schwer
-macht, kippt sie.
+Kein Geschmack, sondern der Grund, warum die Progression im Kaloriendefizit funktioniert.
+
+### Zwei Farbfassungen statt einer Invertierung
+
+Leuchten, vertiefte Flächen und Farbschleier laufen über CSS-Variablen, die die helle Fassung an **einer** Stelle umdefiniert. Glüheffekte werden abgeschaltet, nicht abgeschwächt — auf Weiß werden sie zu Schmutz. Was bleibt: Kantenschnitt, Raster, Monospace-Zahlen.
+
+### Die Stimme gehört dem Benutzer
+
+Jeder Satz einer App wurde von jemand anderem geschrieben als dem, der sie benutzt. `stimme.json` löst das: eigene Zeilen mischen sich mit den mitgelieferten, ungefähr halbe halbe. Songtexte gehören nicht hinein — fremde Liedzeilen sind geschützt.
+
+### Woher die Zufalls-Workouts kommen
+
+Aus `js/wod.js`. Die Formate sind die üblichen, Übungspool und Cues handgeschrieben, die Lasten aus dem aktuellen Stand abgeleitet. Keine externe Datenbank — und damit eine Datei, die man ändern kann. Der Pool ist auf eine konkrete Ausstattung zugeschnitten, die in `config.json` unter `orte` steht.
 
 ---
 
@@ -260,10 +278,10 @@ macht, kippt sie.
 | Datei | Rolle |
 |---|---|
 | `js/program.js` | 5×5-Automat, Plattenrechner, Aufwärmsätze, e1RM. Reine Funktionen, kein I/O. |
-| `js/coach.js` | Ansage, Ton, Fortschritt, Form. Ebenfalls rein. |
+| `js/coach.js` | Ansage, Ton, Form, Interferenz, Meilensteine, Minierfolge. Ebenfalls rein. |
 | `js/wod.js` | Zufalls-WOD, deterministisch über einen Seed. |
 | `js/stats.js` | Tonnage, Bestwerte, Sparklines, Radstatistik. Rechnet, zeichnet nicht. |
-| `js/content.js` | Wissensschicht: Warum je Übung, Cues, Warm-up, Technik, Finisher. |
+| `js/content.js` | Wissensschicht: Warum je Übung, Cues, Warm-up, Technik, Finisher, 52 Zeilen. |
 | `js/store.js` | GitHub-API als Speicher, Offline-Puffer, Wiederholversuche. |
 | `js/intervals.js` | Liest Fahrten, Form und Gewicht; schreibt Krafteinheiten zurück. |
 | `js/app.js` | Oberfläche und Ablauf. |
@@ -279,12 +297,9 @@ JSC=/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc
 for t in program coach wod stats intervals; do $JSC --module-file=tests/$t.test.js; done
 ```
 
-**315 Tests**, ausgeführt von der JS-Engine, die in macOS ohnehin steckt.
-Kein Node, kein Framework, keine Installation.
+**346 Tests**, ausgeführt von der JS-Engine, die in macOS ohnehin steckt. Kein Node, kein Framework, keine Installation.
 
-Sie decken ab, was still kaputtgehen kann: Progression, Deload, Streak,
-Fortschritt zur Referenz, Plattenaufteilung, e1RM, die Ableitbarkeit des
-Zustands — und dass ein WOD die Progression nicht anfasst.
+Sie decken ab, was still kaputtgehen kann: Progression, Deload, Streak, Plattenaufteilung, e1RM, die Ableitbarkeit des Zustands — und dass ein WOD die Progression nicht anfasst.
 
 ---
 
@@ -295,8 +310,7 @@ sh tools/release.sh 2026-09-14.1
 git add -A && git commit -m "…" && git push
 ```
 
-Setzt `version.json` und den Cache-Namen in `sw.js` gemeinsam. Beides muss sich
-ändern, sonst merkt weder die App noch der Service Worker, dass es Neues gibt.
+Setzt `version.json` und den Cache-Namen in `sw.js` gemeinsam. Beides muss sich ändern, sonst merkt weder die App noch der Service Worker, dass es Neues gibt.
 
 Screenshots neu aufnehmen:
 
@@ -307,88 +321,20 @@ sh tools/screens.sh
 
 ---
 
-## Vier Fallen, die Zeit gekostet haben
+## Fünf Fallen, die Zeit gekostet haben
 
-**Jekyll.** GitHub Pages schiebt statische Seiten durch einen Template-Prozessor,
-der über den JS-Code stolperte — der Build schlug fehl, ohne dass sich an der
-ausgelieferten Seite etwas änderte. `.nojekyll` schaltet ihn ab.
+**Jekyll.** GitHub Pages schiebt statische Seiten durch einen Template-Prozessor, der über den JS-Code stolperte — der Build schlug fehl, ohne dass sich an der ausgelieferten Seite etwas änderte. `.nojekyll` schaltet ihn ab.
 
-**`max-age=600`.** Pages liefert alles mit zehn Minuten Cache-Lebensdauer aus.
-Der Service Worker holte zwar „zuerst vom Netz", doch der HTTP-Cache des Browsers
-beantwortete die Anfrage selbst. Netz-zuerst war nur auf dem Papier vorhanden,
-bis `cache: 'no-cache'` dazukam.
+**`max-age=600`.** Pages liefert alles mit zehn Minuten Cache-Lebensdauer aus. Der Service Worker holte zwar „zuerst vom Netz", doch der HTTP-Cache des Browsers beantwortete die Anfrage selbst. Netz-zuerst war nur auf dem Papier vorhanden, bis `cache: 'no-cache'` dazukam.
 
-**`/log`.** Ein Netzwerkabbruch traf reproduzierbar nur `contents/log`, während
-alles andere durchging — das Muster eines Inhaltsblockers, der Adressen mit
-diesem Wegstück verwirft. Der Ordner heißt jetzt `einheiten/`, und der Verlauf
-wird über `git/trees` und `git/blobs` gelesen.
+**`/log`.** Ein Netzwerkabbruch traf reproduzierbar nur `contents/log`, während alles andere durchging — das Muster eines Inhaltsblockers. Der Ordner heißt jetzt `einheiten/`, der Verlauf läuft über `git/trees` und `git/blobs`.
 
-**Ein Fehler im Fehlerbehandler.** Der Rückfall auf den letzten Stand rief die
-Diagramme auf, die ihrerseits die Konfiguration brauchten — die in dem Moment
-fehlte. Ergebnis war ein hängendes „Lade…". Die unangenehmste Sorte Fehler:
-sie zeigt sich genau dann, wenn ohnehin schon etwas schiefläuft.
+**Ein Fehler im Fehlerbehandler.** Der Rückfall auf den letzten Stand rief die Diagramme auf, die ihrerseits die Konfiguration brauchten — die in dem Moment fehlte. Ergebnis war ein hängendes „Lade…". Die unangenehmste Sorte: sie zeigt sich genau dann, wenn ohnehin schon etwas schiefläuft.
 
----
-
-## Warum es zwei echte Farbfassungen gibt
-
-Leuchteffekte, vertiefte Flächen und Farbschleier laufen über CSS-Variablen,
-die die helle Fassung an **einer** Stelle umdefiniert. Glüheffekte werden
-abgeschaltet, nicht abgeschwächt — auf Weiß werden sie zu Schmutz statt zu
-Atmosphäre. Die Akzente werden dunkler, weil Neon-Cyan auf Hell unlesbar ist.
-
-Was bleibt: Kantenschnitt, Raster, Monospace-Zahlen, Großbuchstaben-Marken.
-Die tragen die Identität, nicht das Glühen.
+**Ein linearer Hash.** Von zwei eigenen Zeilen erschien immer nur dieselbe. `h*31+c` ist in den untersten Bits linear — die Parität von `hash(x)` und `hash(salz+x)` hängt fest zusammen, egal wo man salzt. Münzwurf und Auswahl waren dadurch gekoppelt. Es brauchte eine Bit-Lawine, kein anderes Salz.
 
 ---
 
 ## Zugangsdaten
 
-Nirgends im Code, nirgends im Repo, in keinem Commit. GitHub-Token und
-intervals.icu-Key werden in der App eingegeben und liegen ausschließlich im
-`localStorage` des jeweiligen Browsers.
-
-## Warum „Mindestens" und nicht „Maximum"
-
-e1RM-Formeln setzen voraus, dass der Satz nah ans Versagen ging. Ein
-5×5-Arbeitssatz ist per Definition submaximal — die Formel **unterschätzt**
-dort systematisch. Was aus Arbeitssätzen kommt, ist deshalb eine Untergrenze
-und heißt auch so. Ein belastbares Maximum liefert nur ein Max-Out.
-
-Aus demselben Grund mischt die Verlaufskurve die beiden Quellen nicht: die
-gestrichelte Linie zeigt nur Untergrenzen, Max-Outs stehen als eigene Punkte
-daneben. Sonst sähe ein Wechsel der Datenquelle wie ein Rückschritt aus.
-
-## Warum vorher gelesen wird, bevor geschrieben wird
-
-`external_id` greift laut intervals.icu-Doku nur für dieselbe OAuth-Anwendung.
-Mit einem API-Key ist darauf kein Verlass. Kalendereinträge und nachgetragene
-Einheiten werden deshalb erst gegen den Bestand abgeglichen — über die Kennung
-und ersatzweise über Datum plus Name. Doppelte Einträge im eigenen Konto sind
-ärgerlicher als fehlende.
-
-## Woher die Zufalls-Workouts kommen
-
-Aus `js/wod.js` — die Formate sind die üblichen (AMRAP, Auf Zeit, EMOM,
-Chipper, Tabata), Übungspool und Cues sind handgeschrieben, die Lasten leitet
-der Generator aus dem aktuellen Stand ab. Keine externe Datenbank.
-
-Das heißt vor allem: **es ist eine Datei, die man ändern kann.** Was du nicht
-kannst oder nicht hast, gehört in `config.json` unter `wod.aus` — oder wird in
-der App weggetippt. Und jede Übung nennt Alternativen, weil ein Hinweis wie
-„bei Bedarf skalieren" nichts nützt, wenn man an der Stange gar nicht erst
-hochkommt.
-
-Der Pool ist auf eine konkrete Ausstattung zugeschnitten, die in `config.json`
-unter `orte` steht — Hebeplattform, Racks, Latzug, Rudergerät, Sprungkästen,
-Battle Ropes. Bei anderer Ausstattung gehört dort und im Pool nachgezogen.
-
-## Warum die Stimme austauschbar ist
-
-Jeder Satz in dieser App wurde von jemand anderem geschrieben als dem, der sie
-benutzt. Das erzeugt ein leises Fremdeln: sie redet mit dir, aber nicht wie du.
-
-`stimme.json` im privaten Repo löst das. Was dort steht, hat Vorrang; die
-mitgelieferten Zeilen sind nur noch Rückfallebene für Situationen, für die
-nichts hinterlegt ist. Die Datei kommt bewusst **leer** — vorgeschriebene
-Persönlichkeit wäre wieder nur die Stimme des Autors im fremden Namen.
+Nirgends im Code, nirgends im Repo, in keinem Commit. GitHub-Token und intervals.icu-Key werden in der App eingegeben und liegen ausschließlich im `localStorage` des jeweiligen Browsers.
