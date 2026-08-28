@@ -745,7 +745,7 @@ function renderWod() {
             ${t.skalierung && t.skalierung.length ? `
               <details class="skal"><summary>Leichter</summary>
                 <ul>${t.skalierung.map(x => `<li>${x}</li>`).join('')}</ul>
-                <button class="raus" data-raus="${t.id}" data-name="${t.name}">Kann ich nicht — dauerhaft raus</button>
+                <button class="raus" data-raus="${t.id}" data-name="${t.name}">Kann ich nicht</button>
               </details>` : ''}
           </span>
         </div>`).join('')}
