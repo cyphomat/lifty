@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://cyphomat.github.io/lifty/"><img alt="App öffnen" src="https://img.shields.io/badge/App-öffnen-00e5ff?style=for-the-badge&labelColor=0b1119"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/Tests-211%20grün-00ff9d?style=for-the-badge&labelColor=0b1119">
+  <img alt="Tests" src="https://img.shields.io/badge/Tests-256%20grün-00ff9d?style=for-the-badge&labelColor=0b1119">
   <img alt="Build" src="https://img.shields.io/badge/Build-keiner-ff2d95?style=for-the-badge&labelColor=0b1119">
   <img alt="Abhängigkeiten" src="https://img.shields.io/badge/Abhängigkeiten-0-69809a?style=for-the-badge&labelColor=0b1119">
 </p>
@@ -58,7 +58,8 @@
 | **Gewicht im Satz** | Lässt sich während der Einheit anpassen. Das Log bildet ab, was passiert ist; die Progression rechnet von dort weiter. |
 | **Wiederholungen** | Tippen zählt das Ziel. Lange drücken öffnet 0 bis 12 — auch darüber, denn ein starker Satz ist eine Information. |
 | **Pausenuhr** | 90 s, nach einem Fehlversuch 180 s, im Lauf um ±30 s verstellbar. |
-| **Bestwerte** | Schwerster sauberer Satz, gemessenes Einzel, geschätztes Maximum. |
+| **Bestwerte** | Schwerster sauberer Satz, gemessenes Einzel — und getrennt davon **Maximum** (nur aus Max-Out, belastbar) gegen **Mindestens** (aus Arbeitssätzen, Untergrenze). |
+| **Verlauf des Maximums** | Zweite Linie im Diagramm: steigt auch dann, wenn du bei gleichem Gewicht mehr Wiederholungen schaffst. |
 | **Max-Out** | Krafttest mit e1RM. Dreht den A/B-Wechsel nicht und ändert Arbeitsgewichte nur auf ausdrückliche Ansage. |
 | **Wissen an der Stange** | Kadenz direkt sichtbar; aufklappbar Begründung, Cue, typischer Fehler und die Brücke zum olympischen Heben. |
 
@@ -68,6 +69,9 @@
 |---|---|
 | **Radfahrten** | Fahrten, Stunden, Kilometer und die Wochenlast der letzten zwölf Wochen als Balken. |
 | **Form** | Fitness minus Ermüdung aus intervals.icu, als Hinweis in der Tagesansage. Die App kürzt keine Gewichte eigenmächtig. |
+| **Interferenz** | Warnt, wenn eine harte oder lange Fahrt weniger als vier Stunden zurückliegt — dann leidet die Kraftausdauer, nicht das Maximalkraftniveau. |
+| **Wattziele** | Aus der eFTP statt Prozentangaben: „Sweet Spot ≈ 214–226 W". |
+| **Woche im Kalender** | Geplante Einheiten landen auf Wunsch im intervals.icu-Kalender. |
 | **Kraft → intervals.icu** | Jede Krafteinheit und jedes WOD als Aktivität, damit die gesamte Last in **einer** Kurve liegt. |
 | **Zufalls-WOD** | AMRAP, Auf Zeit, EMOM, Chipper, Tabata. Lasten aus dem aktuellen Stand abgeleitet, nie zwei Langhantelteile. |
 | **Technik und Finisher** | Snatch Balance, Hang Power Clean, Overhead Squat · Battle Ropes, Farmer Walk. Täglich rotierend. |
@@ -270,7 +274,7 @@ JSC=/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc
 for t in program coach wod stats intervals; do $JSC --module-file=tests/$t.test.js; done
 ```
 
-**211 Tests**, ausgeführt von der JS-Engine, die in macOS ohnehin steckt.
+**256 Tests**, ausgeführt von der JS-Engine, die in macOS ohnehin steckt.
 Kein Node, kein Framework, keine Installation.
 
 Sie decken ab, was still kaputtgehen kann: Progression, Deload, Streak,
@@ -338,3 +342,22 @@ Die tragen die Identität, nicht das Glühen.
 Nirgends im Code, nirgends im Repo, in keinem Commit. GitHub-Token und
 intervals.icu-Key werden in der App eingegeben und liegen ausschließlich im
 `localStorage` des jeweiligen Browsers.
+
+## Warum „Mindestens" und nicht „Maximum"
+
+e1RM-Formeln setzen voraus, dass der Satz nah ans Versagen ging. Ein
+5×5-Arbeitssatz ist per Definition submaximal — die Formel **unterschätzt**
+dort systematisch. Was aus Arbeitssätzen kommt, ist deshalb eine Untergrenze
+und heißt auch so. Ein belastbares Maximum liefert nur ein Max-Out.
+
+Aus demselben Grund mischt die Verlaufskurve die beiden Quellen nicht: die
+gestrichelte Linie zeigt nur Untergrenzen, Max-Outs stehen als eigene Punkte
+daneben. Sonst sähe ein Wechsel der Datenquelle wie ein Rückschritt aus.
+
+## Warum vorher gelesen wird, bevor geschrieben wird
+
+`external_id` greift laut intervals.icu-Doku nur für dieselbe OAuth-Anwendung.
+Mit einem API-Key ist darauf kein Verlass. Kalendereinträge und nachgetragene
+Einheiten werden deshalb erst gegen den Bestand abgeglichen — über die Kennung
+und ersatzweise über Datum plus Name. Doppelte Einträge im eigenen Konto sind
+ärgerlicher als fehlende.
