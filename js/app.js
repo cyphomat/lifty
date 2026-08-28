@@ -8,6 +8,10 @@ import * as ST from './stats.js';
 
 let config = null, state = null, stateSha = null, session = null;
 let ridesByDate = new Map(), letzterLog = null, trend = null;
+// Sichtbarer Zustand der intervals.icu-Anbindung. Vorher verschwanden
+// Fehler in der Konsole, und man konnte nicht unterscheiden zwischen
+// "nicht verbunden", "kaputt" und "diese Woche einfach nichts gefahren".
+let icu = { stand: 'aus', text: '', letzte: null, anzahl: 0 };
 let restTimer = null, restLeft = 0;
 // Manuell gewaehltes Workout. Nur fuer diese eine Einheit — der Automat
 // bleibt die Wahrheit darueber, was eigentlich dran waere.
@@ -58,21 +62,96 @@ async function load() {
   loadIntervals();
 }
 
-/** Nur Beiwerk: Fehler hier duerfen die App nie blockieren. */
+/** Nur Beiwerk: Fehler hier duerfen die App nie blockieren — aber sichtbar sein. */
 async function loadIntervals() {
-  if (!ICU.isConfigured()) return;
+  if (!ICU.isConfigured()) {
+    icu = { stand: 'aus', text: 'Nicht verbunden.' };
+    renderIcuStatus();
+    return;
+  }
+  icu = { stand: 'laedt', text: 'Lade…' };
+  renderIcuStatus();
+
   try {
+    // Bewusst 90 Tage statt nur der laufenden Woche: sonst sieht man bei
+    // einer Trainingspause gar nichts und haelt die Anbindung fuer kaputt.
+    const bis = new Date(), von = new Date();
+    von.setDate(von.getDate() - 90);
+    const alle = await ICU.rides(P.ymd(von), P.ymd(bis));
+
     const monday = P.mondayOf(new Date());
     const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
-    const list = await ICU.rides(P.ymd(monday), P.ymd(sunday));
-    ridesByDate = new Map(list.map(r => [r.date, r]));
+    const vonK = P.ymd(monday), bisK = P.ymd(sunday);
+    ridesByDate = new Map(alle.filter(r => r.date >= vonK && r.date <= bisK).map(r => [r.date, r]));
+
+    const sortiert = [...alle].sort((a, b) => b.date.localeCompare(a.date));
+    icu = {
+      stand: 'ok',
+      text: '',
+      letzte: sortiert[0] || null,
+      anzahl: alle.length
+    };
     renderWeek();
-  } catch (e) { console.warn('intervals.icu rides:', e.message); }
+  } catch (e) {
+    icu = { stand: 'fehler', text: e.message };
+  }
+  renderIcuStatus();
+
   try {
     const bis = new Date(), von = new Date(); von.setDate(von.getDate() - 90);
     trend = C.gewichtsTrend(await ICU.wellness(P.ymd(von), P.ymd(bis)));
     renderBodyTrend();
-  } catch (e) { console.warn('intervals.icu wellness:', e.message); }
+  } catch (e) {
+    console.warn('intervals.icu wellness:', e.message);
+  }
+}
+
+/** Was von intervals.icu tatsaechlich ankommt — oder warum nicht. */
+function renderIcuStatus() {
+  const el = $('icu-status');
+  if (!el) return;
+
+  if (icu.stand === 'aus') {
+    el.innerHTML = `<p class="fine">Radeinheiten werden nicht abgeglichen —
+      intervals.icu ist nicht verbunden. Unter ≡ eintragen.</p>`;
+    return;
+  }
+  if (icu.stand === 'laedt') { el.innerHTML = '<p class="fine">Frage intervals.icu ab…</p>'; return; }
+  if (icu.stand === 'fehler') {
+    el.innerHTML = `<p class="fine" style="color:var(--red)">intervals.icu: ${icu.text}</p>`;
+    return;
+  }
+
+  if (!icu.letzte) {
+    el.innerHTML = `<p class="fine">Keine Radeinheit in den letzten 90 Tagen.
+      Die Anbindung funktioniert — es gibt schlicht nichts abzugleichen.</p>`;
+    return;
+  }
+  const tage = C.daysSince(icu.letzte.date, new Date());
+  const lange = tage > 21;
+  el.innerHTML = `<p class="fine">
+    Letzte Fahrt vor <b class="num" style="color:${lange ? 'var(--amber)' : 'var(--cyan)'}">${tage} Tagen</b>
+    — ${icu.letzte.name} · ${icu.letzte.minutes} Min · ${icu.letzte.km} km.
+    ${icu.anzahl} Fahrt${icu.anzahl === 1 ? '' : 'en'} in 90 Tagen.
+    ${lange ? '<br>Das Rad ruht länger als das Eisen. Eine ruhige Stunde in Zone 2 kostet dich keine Erholung für die Kniebeuge.' : ''}
+  </p>`;
+}
+
+/** Verbindungsuebersicht unter ≡. */
+function renderConnections() {
+  const box = $('conn-box');
+  if (!box) return;
+  const zeile = (name, stand, text) => `<div class="conn">
+      <span class="dot ${stand}"></span>
+      <span class="b"><span class="n">${name}</span><span class="s">${text}</span></span>
+    </div>`;
+  box.innerHTML =
+    zeile('GitHub', config ? 'ok' : 'fehler',
+      config ? `Verbunden mit lifty-data.` : 'Keine Verbindung zu deinen Daten.') +
+    zeile('intervals.icu', icu.stand === 'laedt' ? 'aus' : (icu.stand === 'ok' ? 'ok' : icu.stand),
+      icu.stand === 'ok'
+        ? `${icu.anzahl} Fahrten in 90 Tagen${icu.letzte ? `, zuletzt ${icu.letzte.date}` : ''}.`
+        : icu.stand === 'fehler' ? icu.text : 'Nicht verbunden — Key unten eintragen.');
 }
 
 /* ============================ Home ============================ */
@@ -101,6 +180,7 @@ function renderHome() {
 
   renderProgress(d.fortschritt, d.streak);
   renderWeek();
+  renderIcuStatus();
   renderWeights(d.fortschritt);
   renderBodyTrend();
 }
@@ -351,6 +431,7 @@ function renderDone(before, log) {
 async function renderHistory() {
   show('history');
   renderVersion();
+  renderConnections();
   // Ohne geladene Konfiguration gibt es nichts zu zeigen — und der Zugriff
   // auf config.lifts wuerde die ganze Ansicht mit einem leeren Bildschirm
   // quittieren statt mit einer Erklaerung.
@@ -492,6 +573,23 @@ function renderVersion() {
 }
 
 $('force-update').onclick = () => pruefeVersion(true);
+$('icu-save').onclick = async () => {
+  const k = $('icukey2').value.trim();
+  if (!k) return banner('KEY FEHLT', 'err');
+  ICU.setCreds('', k);
+  try {
+    const me = await ICU.resolveAthlete();
+    $('icukey2').value = '';
+    banner(`INTERVALS.ICU: ${me ? me.name : 'verbunden'}`, 'ok');
+    await loadIntervals();
+    renderConnections();
+  } catch (e) {
+    ICU.clearCreds();
+    icu = { stand: 'fehler', text: e.message };
+    renderConnections();
+    banner(e.message, 'err', 6000);
+  }
+};
 window.addEventListener('online', flushQueue);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 
