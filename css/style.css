@@ -358,9 +358,10 @@ dialog::backdrop{background:var(--backdrop)}
 /* ── Bestwerte ────────────────────────────────────────────── */
 .pr{background:var(--panel);border:1px solid var(--line);padding:12px 14px;margin-bottom:8px;
   border-radius:2px;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg)}
-.pr .reihe{display:flex;justify-content:space-between;gap:10px;margin-top:6px;font-size:13px}
+.pr .reihe{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 10px;margin-top:6px;font-size:13px}
 .pr .reihe .l{color:var(--muted)}
-.pr .reihe .v{font-family:var(--mono);color:var(--akzent);font-weight:700;white-space:nowrap}
+.pr .reihe .v{font-family:var(--mono);color:var(--akzent);font-weight:700;
+  margin-left:auto;text-align:right;overflow-wrap:break-word}
 .pr .reihe .v small{color:var(--dim);font-weight:400;margin-left:5px}
 
 /* ── Scheiben und Form ────────────────────────────────────── */
