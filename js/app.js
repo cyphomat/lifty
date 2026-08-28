@@ -1456,7 +1456,12 @@ function renderKalender(logs) {
     return `<span class="${klasse}" title="${t.date}${was.length ? ' — ' + was.join(' + ') : ''}"></span>`;
   }).join('');
 
-  const tage = k.tage.filter(t => !t.zukunft);
+  // Nur ab dem ersten aktiven Tag zaehlen. Gegen ein halbes Jahr gerechnet
+  // steht da sonst eine niedrige Quote, die nichts ueber Regelmaessigkeit
+  // sagt, sondern nur darueber, wann man angefangen hat.
+  const bisHeute = k.tage.filter(t => !t.zukunft);
+  const ersterAktiv = bisHeute.findIndex(t => t.kraft || t.wod || t.rad);
+  const tage = ersterAktiv >= 0 ? bisHeute.slice(ersterAktiv) : [];
   const aktiv = tage.filter(t => t.kraft || t.wod || t.rad).length;
   box.innerHTML = `
     <div class="kalender">
@@ -1465,7 +1470,9 @@ function renderKalender(logs) {
         <span><i class="kraft"></i> Kraft</span>
         <span><i class="wod"></i> WOD</span>
         <span><i class="rad"></i> Rad</span>
-        <span class="rechts">${aktiv} von ${tage.length} Tagen · ${Math.round(aktiv / tage.length * 100)} %</span>
+        <span class="rechts">${tage.length
+          ? `${aktiv} aktive von ${tage.length} Tagen · ${Math.round(aktiv / tage.length * 100)} %`
+          : 'noch nichts protokolliert'}</span>
       </div>
     </div>`;
 }
