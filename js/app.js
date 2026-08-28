@@ -15,6 +15,8 @@ let workoutOverride = null;
 let wod = null, wodSeed = 0, swTimer = null, swSek = 0, swLaeuft = false;
 
 const $ = id => document.getElementById(id);
+const VERSION_KEY = 'lifty.version';
+let laufendeVersion = localStorage.getItem(VERSION_KEY) || '—';
 const VIEWS = ['setup', 'home', 'session', 'wod', 'done', 'history'];
 const show = n => { VIEWS.forEach(v => $('view-' + v).hidden = v !== n); window.scrollTo(0, 0); };
 
@@ -348,6 +350,7 @@ function renderDone(before, log) {
 
 async function renderHistory() {
   show('history');
+  renderVersion();
   $('hist-summary').innerHTML = '';
   $('hist-charts').innerHTML = '';
   $('history-body').innerHTML = '<p class="lead">Lade…</p>';
@@ -421,9 +424,63 @@ $('finish').onclick = finishSession;
 $('abort').onclick = () => { if (confirm('Einheit verwerfen?')) { stopRest(); session = null; show('home'); } };
 $('done-ok').onclick = () => { renderHome(); show('home'); };
 $('rest-skip').onclick = stopRest;
+/**
+ * Update-Erkennung. Der Service Worker holt zwar bei jedem Start vom Netz,
+ * aber ein bereits geladenes Modul tauscht sich nicht selbst aus. Deshalb
+ * vergleichen wir die ausgelieferte Version mit der zuletzt gesehenen und
+ * laden genau einmal neu, wenn sie sich geaendert hat.
+ */
+async function pruefeVersion(manuell = false) {
+  try {
+    const res = await fetch(`version.json?cb=${Date.now()}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('nicht erreichbar');
+    const { version } = await res.json();
+    const gesehen = localStorage.getItem(VERSION_KEY);
+    laufendeVersion = version;
+
+    if (gesehen && gesehen !== version) {
+      // Zuerst merken, dann neu laden — sonst droht eine Endlosschleife.
+      localStorage.setItem(VERSION_KEY, version);
+      await leereCaches();
+      banner('NEUE VERSION — LADE NEU', 'ok', 0);
+      setTimeout(() => location.reload(), 800);
+      return;
+    }
+    localStorage.setItem(VERSION_KEY, version);
+    if (manuell) {
+      await leereCaches();
+      banner(`AKTUELL · ${version}`, 'ok');
+      renderVersion();
+    }
+  } catch {
+    if (manuell) banner('KEIN NETZ — VERSION NICHT PRÜFBAR', 'err', 5000);
+  }
+}
+
+async function leereCaches() {
+  try {
+    if (window.caches) {
+      const ks = await caches.keys();
+      await Promise.all(ks.map(k => caches.delete(k)));
+    }
+    if (navigator.serviceWorker) {
+      const rs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(rs.map(r => r.update().catch(() => {})));
+    }
+  } catch { /* nicht kritisch */ }
+}
+
+function renderVersion() {
+  $('version-box').innerHTML = `<p class="fine" style="margin:0 0 6px">
+    Version <b class="num" style="color:var(--cyan)">${laufendeVersion}</b> ·
+    Updates kommen beim nächsten Start von allein.</p>`;
+}
+
+$('force-update').onclick = () => pruefeVersion(true);
 window.addEventListener('online', flushQueue);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 
+pruefeVersion();
 if (S.getToken()) {
   show('home');
   $('today').innerHTML = '<div class="kicker">Verbinde</div><div class="name neon">···</div>';
