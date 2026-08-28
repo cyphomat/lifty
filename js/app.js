@@ -1319,8 +1319,8 @@ function rekordZeile(id) {
   if (r.bestesEinzel) teile.push(`${P.fmtWeight(r.bestesEinzel)} einzeln`);
   if (r.bestes5er) teile.push(`${P.fmtWeight(r.bestes5er)} im 5er`);
   if (!teile.length) return '';
-  return `<div class="reihe"><span class="l">Bestleistung ${jahr}</span>
-    <span class="v" style="color:var(--magenta)">${teile.join(' · ')}</span></div>`;
+  return `<div class="reihe"><span class="l">Bestleistung</span>
+    <span class="v" style="color:var(--magenta)">${teile.join(' · ')}<small>${jahr}</small></span></div>`;
 }
 
 /** Was du außerhalb des Programms mal konntest — Kontext, kein Ziel. */
