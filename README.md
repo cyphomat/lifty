@@ -104,6 +104,7 @@ dieselbe Mechanik, nur langsamer — A und B wechseln sich über zwei Wochen ab.
 | **Form** | Aus intervals.icu: Fitness minus Ermüdung. Ein Hinweis in der Tagesansage — die App kürzt keine Gewichte eigenmächtig. |
 | **Radfahrten** | Im Verlauf: Fahrten, Stunden, Kilometer und die Wochenlast der letzten zwölf Wochen als Balken. |
 | **Wiederholungen** | Tippen zählt das Ziel. Lange drücken öffnet 0 bis 12 — auch über dem Ziel, denn ein starker Satz ist eine Information. |
+| **Hell und dunkel** | Umschalter System / Hell / Dunkel. Keine Invertierung: die helle Fassung schaltet Leuchteffekte ab und nutzt dunklere Akzente, weil Neon auf Weiß nicht lesbar ist. |
 
 ---
 
@@ -209,3 +210,17 @@ wird über `git/trees` und `git/blobs` gelesen.
 Nirgends im Code, nirgends im Repo, in keinem Commit. GitHub-Token und
 intervals.icu-Key werden in der App eingegeben und liegen ausschließlich im
 `localStorage` des jeweiligen Browsers.
+
+## Warum es zwei echte Fassungen gibt und keine Invertierung
+
+Leuchteffekte, vertiefte Flächen und Farbschleier laufen über CSS-Variablen,
+die die helle Fassung an **einer** Stelle umdefiniert. Glüheffekte werden dabei
+abgeschaltet, nicht abgeschwächt — auf Weiß werden sie zu Schmutz statt zu
+Atmosphäre. Die Akzentfarben werden dunkler, weil Neon-Cyan auf Hell schlicht
+unlesbar ist.
+
+Was bleibt: Kantenschnitt, Raster, Monospace-Zahlen, die Großbuchstaben-Marken.
+Die tragen die Identität, nicht das Glühen.
+
+Ein kleines Skript im `<head>` entscheidet vor dem ersten Anstrich, welche
+Fassung gilt — sonst blitzt beim Start kurz die falsche auf.
