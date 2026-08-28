@@ -1034,10 +1034,15 @@ function renderPRs(logs) {
   const p = ST.prs(logs);
   const zeilen = Object.entries(config.lifts).map(([id, def]) => {
     const e = p[id];
-    if (!e) return `<div class="pr"><div class="k">${def.name}</div>
-      <div class="reihe"><span class="l">Noch kein Wert</span><span class="v">—</span></div></div>`;
     const z = (label, wert, zusatz) =>
       `<div class="reihe"><span class="l">${label}</span><span class="v">${wert}${zusatz ? `<small>${zusatz}</small>` : ''}</span></div>`;
+    // Auch ohne eigene Einheit gehoert die alte Bestleistung sichtbar —
+    // gerade dann ist sie die einzige Zahl, die etwas ueber dich sagt.
+    if (!e) return `<div class="pr"><div class="k">${def.name}</div>
+      <div class="reihe"><span class="l">Noch keine Einheit protokolliert</span><span class="v">—</span></div>
+      ${def.reference ? z('Vor der Pause', P.fmtWeight(def.reference)) : ''}
+      ${rekordZeile(id)}</div>`;
+
     return `<div class="pr">
       <div class="k">${def.name}</div>
       ${e.arbeit ? z('Schwerster sauberer Satz', P.fmtWeight(e.arbeit.weight), e.arbeit.date) : z('Schwerster sauberer Satz', '—')}
