@@ -6,7 +6,10 @@ let pass = 0, fail = 0;
 const ok = (n, c, x = '') => c ? (pass++, print(`  ok   ${n}`)) : (fail++, print(`  FAIL ${n} ${x}`));
 const eq = (n, a, b) => ok(n, a === b, `(${a} != ${b})`);
 
-const config = { intervals: { loadProMinute: { strength: 0.8, wod: 1.4 } } };
+const config = {
+  intervals: { loadProMinute: { strength: 0.8, wod: 1.4 } },
+  lifts: { squat: { name: 'Kniebeuge' }, bench: { name: 'Bankdrücken' } }
+};
 
 const kraft = {
   date: '2026-09-02', workout: 'A', type: 'strength',
@@ -24,7 +27,10 @@ eq('45 Minuten in Sekunden', a.moving_time, 2700);
 eq('Last = 45 x 0,8', a.icu_training_load, 36);
 eq('external_id ist stabil', a.external_id, 'lifty-2026-09-02-strength-A');
 ok('Name nennt das Workout', a.name.includes('Workout A'), a.name);
-ok('Beschreibung listet die Uebungen', a.description.includes('squat 50 kg 5/5/5/5/5'));
+ok('Beschreibung nutzt die Uebungsnamen', a.description.includes('Kniebeuge 50 kg — 5/5/5/5/5'), a.description.slice(0,60));
+ok('kein internes Kuerzel in der Beschreibung', !a.description.includes('squat'), a.description.slice(0,60));
+const ohneNamen = I.alsAktivitaet(kraft, { intervals: config.intervals });
+ok('ohne Namen faellt es auf das Kuerzel zurueck', ohneNamen.description.includes('squat 50 kg'));
 ok('Beschreibung kennzeichnet die Last als Schaetzung', a.description.includes('geschätzt'));
 ok('Startzeit ohne Zeitzonenkuerzel', !/Z$/.test(a.start_date_local), a.start_date_local);
 ok('Startzeit im erwarteten Format', /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(a.start_date_local), a.start_date_local);

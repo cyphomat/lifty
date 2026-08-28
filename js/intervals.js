@@ -119,8 +119,10 @@ export function alsAktivitaet(log, config = {}) {
 
   const beschreibung = istWod
     ? (log.label || 'WOD')
-    : (log.lifts || []).map(e =>
-        `${e.lift} ${e.weight} kg ${(e.reps || []).join('/')}`).join('\n');
+    : (log.lifts || []).map(e => {
+        const name = (config.lifts && config.lifts[e.lift] && config.lifts[e.lift].name) || e.lift;
+        return `${name} ${e.weight} kg — ${(e.reps || []).join('/')}`;
+      }).join('\n');
 
   return {
     external_id: `lifty-${log.date}-${log.type || 'strength'}${log.workout ? '-' + log.workout : ''}`,
