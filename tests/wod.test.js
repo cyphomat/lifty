@@ -108,3 +108,25 @@ const allesAus = { wod: { aus: W.MOVES.map(m => m.id) } };
 ok('lieber ein Workout als gar keins', W.generateWod(state, 3, allesAus).teile.length > 0);
 
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
+
+print('\n--- Jede Uebung erklaert sich ---');
+eq('keine Uebung ohne Erklaerung',
+   W.MOVES.filter(m => !m.erklaerung || m.erklaerung.length < 60).length, 0);
+ok('Erklaerungen sind zwei Saetze oder mehr',
+   W.MOVES.every(m => (m.erklaerung.match(/[.!?]/g) || []).length >= 2),
+   W.MOVES.filter(m => (m.erklaerung.match(/[.!?]/g) || []).length < 2).map(m => m.id).join(','));
+ok('Erklaerung kommt im erzeugten WOD mit',
+   W.generateWod(state, 11).teile.every(t => typeof t.erklaerung === 'string' && t.erklaerung.length > 0));
+
+print('\n--- Latzug als Ersatz fuer die Klimmzuege ---');
+const lat = W.MOVES.find(m => m.id === 'latzug');
+ok('existiert', !!lat);
+eq('zaehlt als Turnen', lat.kat, 'turnen');
+ok('nennt den Bezug zum Klimmzug', lat.erklaerung.includes('Klimmzug'), lat.erklaerung.slice(0,50));
+let latGesehen = 0;
+for (let s = 1; s <= 300; s++) {
+  if (W.generateWod(state, s, { wod:{ aus:['pullup'] } }).teile.some(t => t.id === 'latzug')) latGesehen++;
+}
+ok('kommt trotz Klimmzug-Ausschluss vor', latGesehen > 5, latGesehen);
+
+print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

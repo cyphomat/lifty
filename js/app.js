@@ -742,11 +742,13 @@ function renderWod() {
           <span class="bez"><b>${t.name}</b>
             ${t.last ? `<span class="last">${P.fmtWeight(t.last)}</span>` : ''}
             <span class="c">${t.cue}</span>
-            ${t.skalierung && t.skalierung.length ? `
-              <details class="skal"><summary>Leichter</summary>
-                <ul>${t.skalierung.map(x => `<li>${x}</li>`).join('')}</ul>
-                <button class="raus" data-raus="${t.id}" data-name="${t.name}">Kann ich nicht</button>
-              </details>` : ''}
+            <details class="skal"><summary>Was das bringt</summary>
+              ${t.erklaerung ? `<p class="erkl">${t.erklaerung}</p>` : ''}
+              ${t.skalierung && t.skalierung.length ? `
+                <div class="skal-titel">Leichter</div>
+                <ul>${t.skalierung.map(x => `<li>${x}</li>`).join('')}</ul>` : ''}
+              <button class="raus" data-raus="${t.id}" data-name="${t.name}">Kann ich nicht</button>
+            </details>
           </span>
         </div>`).join('')}
     </div>
