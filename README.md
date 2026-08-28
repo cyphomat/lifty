@@ -52,7 +52,11 @@ danach ausschließlich im `localStorage` des jeweiligen Browsers.
 
 ```
 /System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc --module-file=tests/program.test.js
+/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc --module-file=tests/coach.test.js
 ```
+
+54 Tests. Sie decken ab, was still kaputtgehen kann: Progression, Deload,
+Streak-Berechnung, Fortschritt zur Referenz und die Ableitbarkeit des Zustands.
 
 Nutzt die JS-Engine, die in macOS ohnehin steckt. Kein Node nötig.
 
@@ -61,7 +65,27 @@ Nutzt die JS-Engine, die in macOS ohnehin steckt. Kein Node nötig.
 | Datei | Rolle |
 |---|---|
 | `js/program.js` | Der 5x5-Automat. Reine Funktionen, kein I/O — deshalb testbar. |
+| `js/coach.js` | Leitet Ansage, Ton und Fortschritt aus dem Zustand ab. Ebenfalls rein und getestet. |
+| `js/content.js` | Wissensschicht: Warum je Übung, Kadenz-Cues, Warm-up, Technikarbeit, Finisher. |
 | `js/store.js` | GitHub-API als Speicher, Offline-Puffer, Lesecache. |
 | `js/intervals.js` | Liest Radaktivitäten von intervals.icu. |
 | `js/app.js` | Oberfläche und Ablauf. |
 | `sw.js` | Cacht die App-Hülle. Trainingsdaten bewusst **nicht** — veraltete Gewichte im Studio wären schlimmer als ein Ladebalken. |
+
+## Warum die Inhalte im Code liegen
+
+Übungsbegründungen, Cues und Warm-up stehen in `js/content.js`, nicht bei den
+Trainingsdaten. Zwei Gründe: es ist Programmwissen ohne Personenbezug, und es
+muss im Studio sofort da sein, ohne zweiten API-Aufruf über schlechtes Netz.
+
+Persönliches — Gewichte, Logs, Ziele — bleibt im privaten Repo.
+
+## Die Rangordnung im Training
+
+5x5 ist das Rückgrat, weil es als Einziges messbar progressiv ist.
+Olympische Technik läuft leicht im Warm-up-Slot (Auffrischung, kein neuer Reiz).
+Seile und Konditionsarbeit kommen als Finisher ans Ende.
+
+Diese Reihenfolge ist kein Geschmack, sondern der Grund, warum die Progression
+im Kaloriendefizit überhaupt funktioniert. Wer den Finisher nach vorn zieht oder
+die Technikarbeit schwer macht, kippt sie.
