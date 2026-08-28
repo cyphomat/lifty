@@ -351,6 +351,17 @@ function renderDone(before, log) {
 async function renderHistory() {
   show('history');
   renderVersion();
+  // Ohne geladene Konfiguration gibt es nichts zu zeigen — und der Zugriff
+  // auf config.lifts wuerde die ganze Ansicht mit einem leeren Bildschirm
+  // quittieren statt mit einer Erklaerung.
+  if (!config) {
+    $('hist-summary').innerHTML = '';
+    $('hist-charts').innerHTML = '';
+    $('history-body').innerHTML =
+      `<p class="lead">Noch keine Verbindung zu deinen Daten. Prüfe den GitHub-Token
+       unter „Zugänge entfernen“ und richte ihn neu ein.</p>`;
+    return;
+  }
   $('hist-summary').innerHTML = '';
   $('hist-charts').innerHTML = '';
   $('history-body').innerHTML = '<p class="lead">Lade…</p>';
@@ -605,7 +616,7 @@ function renderStats(logs) {
 function renderCharts(logs) {
   const teile = Object.keys(config.lifts).map(id => {
     const punkte = ST.serie(logs, id);
-    if (punkte.length < 2) return '';
+    if (punkte.length < 2) return '';   // eine Linie aus einem Punkt sagt nichts
     const sp = ST.sparkline(punkte, 300, 60);
     const letzter = punkte[punkte.length - 1];
     const delta = letzter.weight - punkte[0].weight;
@@ -635,7 +646,7 @@ function renderListe(logs) {
     }
     return `<div class="hist"><div class="d">${l.date} · WORKOUT ${l.workout}</div>
       <div class="l">${(l.lifts || []).map(e =>
-        `${config.lifts[e.lift].name} ${P.fmtWeight(e.weight)} (${e.reps.join('/')})`).join(' · ')}</div>
+        `${(config.lifts[e.lift] || {}).name || e.lift} ${P.fmtWeight(e.weight)} (${(e.reps || []).join('/')})`).join(' · ')}</div>
     </div>`;
   }).join('') : '<p class="lead">Noch keine Einheit protokolliert.</p>';
 }
