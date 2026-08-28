@@ -5,6 +5,7 @@ const API = 'https://api.github.com';
 const TOKEN_KEY = 'lifty.token';
 const QUEUE_KEY = 'lifty.queue';
 const CACHE_KEY = 'lifty.cache';
+const LOGS_KEY = 'lifty.logs';
 
 export const OWNER = 'cyphomat';
 export const REPO = 'lifty-data';
@@ -113,4 +114,16 @@ export function cache(obj) {
 export function cached() {
   try { return JSON.parse(localStorage.getItem(CACHE_KEY) || '{}'); }
   catch { return {}; }
+}
+
+/* ---------- Zuletzt geladene Einheiten ----------
+   Damit der Verlauf auch ohne Netz etwas zeigt statt einer Fehlermeldung.  */
+
+export function cacheLogs(logs) {
+  try { localStorage.setItem(LOGS_KEY, JSON.stringify({ zeit: Date.now(), logs })); }
+  catch { /* Speicher voll — nicht kritisch */ }
+}
+export function cachedLogs() {
+  try { return JSON.parse(localStorage.getItem(LOGS_KEY) || 'null'); }
+  catch { return null; }
 }

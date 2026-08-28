@@ -356,23 +356,23 @@ async function renderHistory() {
   $('history-body').innerHTML = '<p class="lead">Lade…</p>';
   try {
     const logs = await S.readAllLogs();
+    S.cacheLogs(logs);
     renderStats(logs);
     renderCharts(logs);
-    const sortiert = [...logs].sort((a, b) => b.date.localeCompare(a.date));
-    $('history-body').innerHTML = sortiert.length ? sortiert.map(l => {
-      if (l.type && l.type !== 'strength') {
-        const m = l.dauerSekunden ? `${Math.floor(l.dauerSekunden / 60)}:${String(l.dauerSekunden % 60).padStart(2, '0')}` : '—';
-        return `<div class="hist wod"><div class="d">${l.date} · WOD · ${m}</div>
-          <div class="l">${l.label || ''}</div></div>`;
-      }
-      return `<div class="hist"><div class="d">${l.date} · WORKOUT ${l.workout}</div>
-        <div class="l">${(l.lifts || []).map(e =>
-          `${config.lifts[e.lift].name} ${P.fmtWeight(e.weight)} (${e.reps.join('/')})`).join(' · ')}</div>
-      </div>`;
-    }).join('') : '<p class="lead">Noch keine Einheit protokolliert.</p>';
+    renderListe(logs);
   } catch (e) {
-    $('history-body').innerHTML = `<p class="lead">${e.message}</p>
-      <button id="hist-retry" class="btn ghost">Erneut versuchen</button>`;
+    // Lieber den letzten bekannten Stand zeigen als eine Sackgasse.
+    const alt = S.cachedLogs();
+    if (alt && alt.logs.length) {
+      renderStats(alt.logs);
+      renderCharts(alt.logs);
+      renderListe(alt.logs);
+      banner('OFFLINE — STAND VOM ' + new Date(alt.zeit).toLocaleDateString('de-DE'), '', 5000);
+    } else {
+      $('history-body').innerHTML = `<p class="lead">${e.message}</p>`;
+    }
+    $('history-body').insertAdjacentHTML('beforeend',
+      '<button id="hist-retry" class="btn ghost">Erneut versuchen</button>');
     $('hist-retry').onclick = renderHistory;
   }
 }
@@ -623,4 +623,19 @@ function renderCharts(logs) {
     </div>`;
   }).join('');
   $('hist-charts').innerHTML = teile || '<p class="fine">Verläufe erscheinen ab der zweiten Einheit je Übung.</p>';
+}
+
+function renderListe(logs) {
+  const sortiert = [...logs].sort((a, b) => b.date.localeCompare(a.date));
+  $('history-body').innerHTML = sortiert.length ? sortiert.map(l => {
+    if (l.type && l.type !== 'strength') {
+      const m = l.dauerSekunden ? `${Math.floor(l.dauerSekunden / 60)}:${String(l.dauerSekunden % 60).padStart(2, '0')}` : '—';
+      return `<div class="hist wod"><div class="d">${l.date} · WOD · ${m}</div>
+        <div class="l">${l.label || ''}</div></div>`;
+    }
+    return `<div class="hist"><div class="d">${l.date} · WORKOUT ${l.workout}</div>
+      <div class="l">${(l.lifts || []).map(e =>
+        `${config.lifts[e.lift].name} ${P.fmtWeight(e.weight)} (${e.reps.join('/')})`).join(' · ')}</div>
+    </div>`;
+  }).join('') : '<p class="lead">Noch keine Einheit protokolliert.</p>';
 }
