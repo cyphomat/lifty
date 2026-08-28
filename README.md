@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://cyphomat.github.io/lifty/"><img alt="App öffnen" src="https://img.shields.io/badge/App-öffnen-00e5ff?style=for-the-badge&labelColor=0b1119"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/Tests-265%20grün-00ff9d?style=for-the-badge&labelColor=0b1119">
+  <img alt="Tests" src="https://img.shields.io/badge/Tests-272%20grün-00ff9d?style=for-the-badge&labelColor=0b1119">
   <img alt="Build" src="https://img.shields.io/badge/Build-keiner-ff2d95?style=for-the-badge&labelColor=0b1119">
   <img alt="Abhängigkeiten" src="https://img.shields.io/badge/Abhängigkeiten-0-69809a?style=for-the-badge&labelColor=0b1119">
 </p>
@@ -74,7 +74,8 @@
 | **Woche im Kalender** | Geplante Einheiten landen auf Wunsch im intervals.icu-Kalender. |
 | **Kraft → intervals.icu** | Jede Krafteinheit und jedes WOD als Aktivität, damit die gesamte Last in **einer** Kurve liegt. |
 | **Zufalls-WOD** | AMRAP, Auf Zeit, EMOM, Chipper, Tabata. Lasten aus dem aktuellen Stand abgeleitet, nie zwei Langhantelteile. |
-| **Skalierung** | Jede der 18 Übungen nennt konkrete Alternativen. „Kann ich nicht" nimmt eine dauerhaft aus dem Generator — steht in `config.json`, gilt also auf jedem Gerät. |
+| **Erklärtexte** | Jede Übung sagt in zwei Sätzen, was sie trainiert und worauf zu achten ist — lesbar zwischen zwei Sätzen. |
+| **Skalierung** | Jede der 19 Übungen nennt konkrete Alternativen. „Kann ich nicht" nimmt eine dauerhaft aus dem Generator — steht in `config.json`, gilt also auf jedem Gerät. |
 | **Technik und Finisher** | Snatch Balance, Hang Power Clean, Overhead Squat · Battle Ropes, Farmer Walk. Täglich rotierend. |
 
 ### App
@@ -275,7 +276,7 @@ JSC=/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc
 for t in program coach wod stats intervals; do $JSC --module-file=tests/$t.test.js; done
 ```
 
-**265 Tests**, ausgeführt von der JS-Engine, die in macOS ohnehin steckt.
+**272 Tests**, ausgeführt von der JS-Engine, die in macOS ohnehin steckt.
 Kein Node, kein Framework, keine Installation.
 
 Sie decken ab, was still kaputtgehen kann: Progression, Deload, Streak,
@@ -374,3 +375,7 @@ kannst oder nicht hast, gehört in `config.json` unter `wod.aus` — oder wird i
 der App weggetippt. Und jede Übung nennt Alternativen, weil ein Hinweis wie
 „bei Bedarf skalieren" nichts nützt, wenn man an der Stange gar nicht erst
 hochkommt.
+
+Der Pool ist auf eine konkrete Ausstattung zugeschnitten, die in `config.json`
+unter `orte` steht — Hebeplattform, Racks, Latzug, Rudergerät, Sprungkästen,
+Battle Ropes. Bei anderer Ausstattung gehört dort und im Pool nachgezogen.
