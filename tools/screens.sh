@@ -23,6 +23,7 @@ schuss () {
 
 schuss home-dunkel    home    dunkel
 schuss session-dunkel session dunkel
+schuss geschafft-dunkel geschafft dunkel
 schuss verlauf-dunkel verlauf dunkel
 schuss rad-dunkel     rad     dunkel
 schuss wod-dunkel     wod     dunkel

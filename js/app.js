@@ -543,7 +543,7 @@ function renderDone(before, log) {
       </div>
     </details>
     <p class="spruch">${zeileFuerHeute(d)}</p>
-    <p class="fine">Nächstes Mal: Workout ${state.next}.${d.streak > 0 ? ` Serie: ${d.streak} Woche(n).` : ''}</p>`;
+    <p class="fine">Nächstes Mal: Workout ${state.next}.${d.streak > 0 ? ` Serie: ${d.streak} Woche${d.streak === 1 ? '' : 'n'}.` : ''}</p>`;
 }
 
 /* ============================ Verlauf ============================ */

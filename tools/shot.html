@@ -149,6 +149,19 @@ rahmen.addEventListener('load', async () => {
     await warte(150);
     d.querySelectorAll('#warmup details')[1].scrollIntoView();
     w.scrollBy(0, -20);
+  } else if (szene === 'geschafft') {
+    $('start').click();
+    await warte(250);
+    for (let i = 0; i < 40; i++) {
+      const offen = [...d.querySelectorAll('#session-body .set')]
+        .filter(b => !b.classList.contains('done') && !b.classList.contains('partial'));
+      if (!offen.length) break;
+      tippe(offen[0]); await warte(40);
+    }
+    $('finish').click();
+    await warte(1200);
+    if ($('banner')) $('banner').hidden = true;
+    w.scrollTo(0, 0);
   } else if (szene === 'verlauf') {
     $('go-history').click();
     await warte(1200);
