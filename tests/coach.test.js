@@ -147,3 +147,45 @@ eq('Fahrten in der Zukunft werden ignoriert',
    C.interferenz([{ date:'2026-09-11', zeit: lokal(new Date(jetzt.getTime()+7200000)), minutes:60, load:100 }], jetzt), null);
 
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
+
+print('\n--- Deine eigene Stimme hat Vorrang ---');
+eq('ohne eigene Zeilen kommen meine', C.spruchWaehlen('standard', '2026-09-01', null).length > 10, true);
+eq('eigene Zeile wird genommen',
+   C.spruchWaehlen('standard', '2026-09-01', { standard: ['Nur diese eine.'] }), 'Nur diese eine.');
+eq('alle-Liste greift, wenn die Situation fehlt',
+   C.spruchWaehlen('comeback', '2026-09-01', { alle: ['Meine Universalzeile.'] }), 'Meine Universalzeile.');
+eq('Situation schlaegt die alle-Liste',
+   C.spruchWaehlen('comeback', '2026-09-01', { comeback: ['Speziell.'], alle: ['Allgemein.'] }), 'Speziell.');
+eq('gleicher Tag, gleiche Wahl',
+   C.spruchWaehlen('standard', '2026-09-01', { standard: ['a','b','c','d','e'] }),
+   C.spruchWaehlen('standard', '2026-09-01', { standard: ['a','b','c','d','e'] }));
+eq('leere Liste faellt auf meine zurueck',
+   C.spruchWaehlen('standard', '2026-09-01', { standard: [] }).length > 10, true);
+
+print('\n--- Meilensteine ---');
+const cfgM = {
+  lifts: { squat:{name:'Kniebeuge',reference:80}, bench:{name:'Bankdrücken',reference:60} },
+  records: { programm: {
+    squat: { bestesEinzel:140, datum:'2021-08-27' },
+    bench: { bestesEinzel:60, datum:'2020-03-15' } } }
+};
+const stM = { lifts: { squat:{weight:65,fails:0}, bench:{weight:47.5,fails:0} } };
+const amJahrestag = C.meilensteine(stM, cfgM, new Date(2026, 7, 27));
+ok('Jahrestag wird erkannt', amJahrestag.some(m => m.art === 'jahrestag'), JSON.stringify(amJahrestag.map(m=>m.art)));
+ok('nennt die Jahre', amJahrestag[0].text.includes('5 Jahren'), amJahrestag[0].text);
+ok('nennt den heutigen Stand', amJahrestag[0].text.includes('65 kg'));
+ok('und relativiert', amJahrestag[0].text.includes('wieder anfängst'));
+eq('einen Tag danach immer noch', C.meilensteine(stM, cfgM, new Date(2026,7,28)).filter(m=>m.art==='jahrestag').length, 1);
+eq('eine Woche spaeter nicht mehr', C.meilensteine(stM, cfgM, new Date(2026,8,4)).filter(m=>m.art==='jahrestag').length, 0);
+eq('im Maerz stattdessen die Bank', C.meilensteine(stM, cfgM, new Date(2026,2,15))[0].lift, 'bench');
+
+print('\n--- Vorpausen-Niveau erreicht ---');
+const aufNiveau = { lifts: { squat:{weight:80,fails:0}, bench:{weight:47.5,fails:0} } };
+const m1 = C.meilensteine(aufNiveau, cfgM, new Date(2026, 10, 1));
+eq('genau auf Referenz', m1.filter(m=>m.art==='referenz').length, 1);
+ok('wird als Wendepunkt benannt', m1[0].text.includes('Neuland'), m1[0].text);
+const drueber = { lifts: { squat:{weight:87.5,fails:0}, bench:{weight:47.5,fails:0} } };
+ok('darueber wird die Differenz genannt', C.meilensteine(drueber, cfgM, new Date(2026,10,1))[0].text.includes('7.5 kg über'));
+eq('darunter kein Meilenstein', C.meilensteine(stM, cfgM, new Date(2026,10,1)).length, 0);
+
+print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

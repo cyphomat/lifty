@@ -485,3 +485,12 @@ button.raus:active{border-color:var(--amber)}
 .hist.maxout .d{color:var(--lime)}
 .hist.anpassung{border-left:2px solid var(--amber)}
 .hist.anpassung .d{color:var(--amber)}
+
+/* ── Meilenstein ──────────────────────────────────────────── */
+.meilenstein{
+  margin-top:14px;padding:14px 16px;border:1px solid var(--magenta);
+  background:var(--tint-magenta);
+  clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);
+}
+.meilenstein .kicker{color:var(--magenta)}
+.meilenstein p{margin:7px 0 0;font-size:14.5px;line-height:1.55;color:var(--fg)}

@@ -25,6 +25,7 @@ let mo = { lift: 'squat' };     // laufender Krafttest
 let form = null;                // Form aus intervals.icu (ctl - atl)
 let alleFahrten = [];           // Radfahrten der letzten 90 Tage
 let stoerung = null;            // Interferenz Rad -> Eisen
+let stimme = null;              // deine eigenen Zeilen aus stimme.json
 let eftp = null;                // geschaetzte FTP, fuer Wattziele
 
 const $ = id => document.getElementById(id);
@@ -49,17 +50,20 @@ function banner(msg, kind = '', ms = 3500) {
 
 async function load() {
   try {
-    const [c, st] = await Promise.all([S.readFile('config.json'), S.readFile('state.json')]);
+    const [c, st, sti] = await Promise.all([
+      S.readFile('config.json'), S.readFile('state.json'), S.readFile('stimme.json')
+    ]);
+    stimme = sti ? sti.data : null;
     if (!c) throw new Error('config.json fehlt in lifty-data.');
     config = c.data;
     state = st ? st.data : P.initialState(config);
     stateSha = st ? st.sha : null;
     datenQuelle = 'netz';
-    S.cache({ config, state });
+    S.cache({ config, state, stimme });
   } catch (e) {
     const c = S.cached();
     if (c.config) {
-      config = c.config; state = c.state; stateSha = null;
+      config = c.config; state = c.state; stimme = c.stimme || null; stateSha = null;
       datenQuelle = 'cache';
       banner('OFFLINE — LETZTER STAND', '', 4000);
     } else {
@@ -216,7 +220,7 @@ function renderConnections() {
 /* ============================ Home ============================ */
 
 function renderHome() {
-  const d = C.directive(state, config, new Date(), letzterLog);
+  const d = C.directive(state, config, new Date(), letzterLog, stimme);
 
   $('directive').innerHTML = `
     <div class="directive">
@@ -225,7 +229,8 @@ function renderHome() {
       ${formZeile()}
       ${stoerungsZeile()}
     </div>
-    <p class="spruch">${d.spruch}</p>`;
+    ${meilensteinKarte()}
+    <p class="spruch">${zeileFuerHeute(d)}</p>`;
 
   const gewaehlt = workoutOverride || state.next;
   const plan = P.planWorkout(state, config, gewaehlt);
@@ -312,7 +317,7 @@ function renderBodyTrend() {
 
 function startSession() {
   const plan = P.planWorkout(state, config, workoutOverride || state.next);
-  const d = C.directive(state, config, new Date(), letzterLog);
+  const d = C.directive(state, config, new Date(), letzterLog, stimme);
   session = {
     date: P.ymd(new Date()), started: new Date().toISOString(),
     workout: plan.workout,
@@ -512,7 +517,7 @@ async function flushQueue() {
 }
 
 function renderDone(before, log) {
-  const d = C.directive(state, config, new Date(), log);
+  const d = C.directive(state, config, new Date(), log, stimme);
   $('done-body').innerHTML = `
     <div class="card">
       <div class="kicker">Workout ${log.workout} · ${log.date}</div>
@@ -1348,5 +1353,33 @@ function weitereRekorde() {
     </div>`).join('')}
     <p class="fine" style="margin-top:10px">Aus ${config.records.quelle}. Nicht Teil des Programms —
     sie stehen hier, weil sie zeigen, was in dir steckt.</p>
+  </div>`;
+}
+
+/* ================= Deine Worte, deine Geschichte ================= */
+
+/**
+ * An schweren Tagen zählt dein eigener Grund mehr als jeder Spruch von mir.
+ * Deshalb wird er genau dann gezeigt — und sonst nicht, damit er sich nicht
+ * abnutzt.
+ */
+function zeileFuerHeute(d) {
+  const schwer = ['comeback', 'nachDeload'].includes(d.situation)
+    || (form && ['muede', 'platt'].includes(form.stufe));
+  const warum = config.ziele && config.ziele.warum;
+  if (schwer && warum) {
+    return `<span style="font-style:normal;color:var(--muted);font-size:12px;
+      font-family:var(--mono);letter-spacing:.1em;display:block;margin-bottom:6px">DEIN GRUND</span>${warum}`;
+  }
+  return d.spruch;
+}
+
+/** Was nur deine App sagen kann — Jahrestage, alte Bestwerte, Wendepunkte. */
+function meilensteinKarte() {
+  const m = C.meilensteine(state, config, new Date());
+  if (!m.length) return '';
+  return `<div class="meilenstein">
+    <span class="kicker">${m[0].art === 'jahrestag' ? 'Aus deiner Geschichte' : 'Wendepunkt'}</span>
+    <p>${m[0].text}</p>
   </div>`;
 }

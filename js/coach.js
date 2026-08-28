@@ -62,7 +62,7 @@ function pick(list, seed) {
  * Die eine Aussage, die oben steht: Wo stehst du, was will der Tag,
  * und in welchem Ton wird das gesagt.
  */
-export function directive(state, config, today = new Date(), letzterLog = null) {
+export function directive(state, config, today = new Date(), letzterLog = null, stimme = null) {
   const hist = state.history || [];
   const letzte = hist.length ? hist[hist.length - 1].date : null;
   const tage = daysSince(letzte, today);
@@ -98,7 +98,7 @@ export function directive(state, config, today = new Date(), letzterLog = null) 
   return {
     situation,
     kopf,
-    spruch: pick(VOICE[situation], toKey(today) + situation),
+    spruch: spruchWaehlen(situation, toKey(today), stimme && stimme.sprueche),
     intensitaet: intensitaet(situation, workout),
     streak,
     tageSeitLetzter: tage,
@@ -230,4 +230,68 @@ export function interferenz(fahrten = [], jetzt = new Date()) {
       text: `Vor ${gerundet} Stunden locker gefahren. Kein nennenswerter Einfluss — ruhige Grundlage stört das Eisen nicht.` };
   }
   return null;
+}
+
+/* ---------------------------------------------------------------
+   Deine eigene Stimme. Alles Bisherige stammt von mir — das erzeugt
+   dieses leicht Fremde. `stimme.json` im privaten Repo gehoert dir:
+   was dort steht, hat Vorrang. Meine Zeilen sind nur die Rueckfall-
+   ebene fuer Situationen, fuer die du noch nichts geschrieben hast. */
+
+export function spruchWaehlen(situation, tag, eigene) {
+  const meine = VOICE[situation] || [];
+  const seine = (eigene && (eigene[situation] || eigene.alle)) || [];
+  const pool = seine.length ? seine : meine;
+  if (!pool.length) return '';
+  let h = 0;
+  const seed = String(tag) + situation;
+  for (const c of seed) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return pool[h % pool.length];
+}
+
+/* ---------------------------------------------------------------
+   Meilensteine. Die App kennt deine Bestleistungen samt Datum und
+   sagt nichts dazu. Das sind die Saetze, die nur DEINE App sagen
+   kann — kein Programm von der Stange kommt darauf.                */
+
+export function meilensteine(state, config, heute = new Date()) {
+  const out = [];
+  const rec = (config.records && config.records.programm) || {};
+
+  // Jahrestage der alten Bestleistungen
+  for (const [id, r] of Object.entries(rec)) {
+    if (!r || !r.datum) continue;
+    const def = config.lifts[id];
+    if (!def) continue;
+    const d = new Date(r.datum + 'T12:00:00');
+    const dieserJahrestag = new Date(heute.getFullYear(), d.getMonth(), d.getDate());
+    const abstand = Math.round((dieserJahrestag - new Date(heute.getFullYear(), heute.getMonth(), heute.getDate())) / 86400000);
+    if (Math.abs(abstand) > 3) continue;
+    const jahre = heute.getFullYear() - d.getFullYear();
+    if (jahre < 1) continue;
+    const wert = r.bestesEinzel || r.bestes5er;
+    const wann = abstand === 0 ? 'Heute vor' : abstand > 0 ? `In ${abstand} Tag${abstand === 1 ? '' : 'en'} vor`
+      : `Vor ${-abstand} Tag${abstand === -1 ? '' : 'en'} waren es`;
+    out.push({
+      art: 'jahrestag', rang: 1, lift: id,
+      text: `${wann} ${jahre} Jahren: ${wert} kg ${def.name}. Heute stehst du bei ${state.lifts[id].weight} kg — `
+          + `nicht weil du weniger kannst, sondern weil du wieder anfängst.`
+    });
+  }
+
+  // Zurueck auf dem Stand vor der Pause
+  for (const [id, def] of Object.entries(config.lifts)) {
+    if (!def.reference) continue;
+    const w = state.lifts[id].weight;
+    if (w >= def.reference) {
+      out.push({
+        art: 'referenz', rang: 2, lift: id,
+        text: w > def.reference
+          ? `${def.name}: ${w} kg — ${Math.round((w - def.reference) * 10) / 10} kg über deinem Stand vor der Pause.`
+          : `${def.name}: ${w} kg — genau da, wo du vor der Pause warst. Ab hier ist alles Neuland.`
+      });
+    }
+  }
+
+  return out.sort((a, b) => a.rang - b.rang);
 }
