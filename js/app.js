@@ -12,6 +12,9 @@ let ridesByDate = new Map(), letzterLog = null, trend = null;
 // Fehler in der Konsole, und man konnte nicht unterscheiden zwischen
 // "nicht verbunden", "kaputt" und "diese Woche einfach nichts gefahren".
 let icu = { stand: 'aus', text: '', letzte: null, anzahl: 0 };
+// Woher die angezeigten Daten wirklich stammen. Eine gruene Kachel, die nur
+// den Zwischenspeicher meint, waere eine Luege.
+let datenQuelle = 'keine';
 let restTimer = null, restLeft = 0;
 // Manuell gewaehltes Workout. Nur fuer diese eine Einheit — der Automat
 // bleibt die Wahrheit darueber, was eigentlich dran waere.
@@ -45,11 +48,13 @@ async function load() {
     config = c.data;
     state = st ? st.data : P.initialState(config);
     stateSha = st ? st.sha : null;
+    datenQuelle = 'netz';
     S.cache({ config, state });
   } catch (e) {
     const c = S.cached();
     if (c.config) {
       config = c.config; state = c.state; stateSha = null;
+      datenQuelle = 'cache';
       banner('OFFLINE — LETZTER STAND', '', 4000);
     } else {
       banner(e.message, 'err', 9000);
@@ -145,12 +150,18 @@ function renderConnections() {
       <span class="dot ${stand}"></span>
       <span class="b"><span class="n">${name}</span><span class="s">${text}</span></span>
     </div>`;
+  const gh = datenQuelle === 'netz'
+    ? ['ok', 'Verbunden mit lifty-data.']
+    : datenQuelle === 'cache'
+      ? ['aus', 'Zeigt zwischengespeicherte Daten — der letzte Abruf ist fehlgeschlagen.']
+      : ['fehler', 'Keine Verbindung zu deinen Daten.'];
+
+  const n = icu.anzahl;
   box.innerHTML =
-    zeile('GitHub', config ? 'ok' : 'fehler',
-      config ? `Verbunden mit lifty-data.` : 'Keine Verbindung zu deinen Daten.') +
+    zeile('GitHub', gh[0], gh[1]) +
     zeile('intervals.icu', icu.stand === 'laedt' ? 'aus' : (icu.stand === 'ok' ? 'ok' : icu.stand),
       icu.stand === 'ok'
-        ? `${icu.anzahl} Fahrten in 90 Tagen${icu.letzte ? `, zuletzt ${icu.letzte.date}` : ''}.`
+        ? `${n} ${n === 1 ? 'Fahrt' : 'Fahrten'} in 90 Tagen${icu.letzte ? `, zuletzt ${icu.letzte.date}` : ''}.`
         : icu.stand === 'fehler' ? icu.text : 'Nicht verbunden — Key unten eintragen.');
 }
 
