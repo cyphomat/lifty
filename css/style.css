@@ -322,3 +322,14 @@ dialog::backdrop{background:rgba(2,5,9,.85)}
 .pr .reihe .l{color:var(--muted)}
 .pr .reihe .v{font-family:var(--mono);color:var(--cyan);font-weight:700;white-space:nowrap}
 .pr .reihe .v small{color:var(--dim);font-weight:400;margin-left:5px}
+
+/* ── Scheiben und Form ────────────────────────────────────── */
+.platten{font-family:var(--mono);font-size:12.5px;color:var(--muted);margin:2px 0 10px;letter-spacing:.04em}
+.platten b{color:var(--cyan)}
+.platten.nicht{color:var(--amber)}
+.formzeile{margin:12px 0 0;padding-top:10px;border-top:1px solid var(--line);display:block}
+.formzeile .fw{font-family:var(--mono);font-weight:800;font-size:13px;letter-spacing:.1em;display:block}
+.formzeile .ft{display:block;font-size:13.5px;color:var(--fg);margin-top:3px}
+.formzeile .fd{display:block;font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:4px;letter-spacing:.06em}
+.schalter{display:flex;gap:9px;align-items:center;margin-top:10px;font-size:13px;color:var(--muted);cursor:pointer}
+.schalter input{width:auto;margin:0}

@@ -199,3 +199,62 @@ export function arbeitsgewichtAus(max1rm, rounding = 2.5, bar = 20) {
   if (!max1rm) return null;
   return Math.max(bar, roundTo(max1rm * 0.8, rounding));
 }
+
+/* ---------------------------------------------------------------
+   Plattenrechner. Rechnen zwischen zwei Sätzen ist die häufigste
+   Quelle für falsch beladene Stangen — und im Studio steht man
+   ohnehin schon unter Zeitdruck.                                  */
+
+export const STANDARD_SCHEIBEN = [25, 20, 15, 10, 5, 2.5, 1.25];
+
+/**
+ * Scheiben pro Seite, absteigend. Gibt null zurück, wenn sich das
+ * Gewicht mit den vorhandenen Scheiben nicht exakt laden lässt —
+ * lieber ehrlich nichts anzeigen als eine Zahl erfinden.
+ */
+export function platten(gewicht, config = {}) {
+  const bar = config.bar || 20;
+  const vorrat = [...(config.plates || STANDARD_SCHEIBEN)].sort((a, b) => b - a);
+  if (gewicht < bar) return null;
+  if (gewicht === bar) return [];
+
+  let rest = Math.round(((gewicht - bar) / 2) * 1000) / 1000;
+  const out = [];
+  for (const p of vorrat) {
+    while (rest >= p - 1e-9) {
+      out.push(p);
+      rest = Math.round((rest - p) * 1000) / 1000;
+    }
+  }
+  return rest < 1e-9 ? out : null;
+}
+
+/** "2×20 + 5 + 2,5" — kurz genug für eine Zeile unter der Übung. */
+export function plattenText(gewicht, config = {}) {
+  const p = platten(gewicht, config);
+  if (p === null) return null;
+  if (!p.length) return 'leere Stange';
+  const zaehler = new Map();
+  for (const g of p) zaehler.set(g, (zaehler.get(g) || 0) + 1);
+  return [...zaehler].map(([g, n]) => (n > 1 ? `${n}×${g}` : `${g}`)).join(' + ');
+}
+
+/**
+ * Aufwärmsätze zum Arbeitsgewicht. Absteigende Wiederholungen bei
+ * steigender Last: warm werden, ohne vor dem ersten Arbeitssatz
+ * schon Körner zu lassen.
+ */
+export function waermsaetze(arbeit, config = {}) {
+  const bar = config.bar || 20;
+  const step = config.rounding || 2.5;
+  const saetze = [{ weight: bar, reps: 5, saetze: 2, anteil: 0 }];
+  if (arbeit <= bar + step) return saetze;
+
+  for (const [anteil, reps] of [[0.55, 5], [0.7, 3], [0.85, 2]]) {
+    const w = Math.max(bar, roundTo(arbeit * anteil, step));
+    if (w >= arbeit) continue;
+    if (saetze.some(s => s.weight === w)) continue;
+    saetze.push({ weight: w, reps, saetze: 1, anteil });
+  }
+  return saetze;
+}

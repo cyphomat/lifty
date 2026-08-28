@@ -178,3 +178,38 @@ eq('nie unter der Hantel', P.arbeitsgewichtAus(10), 20);
 eq('ohne Maximum nichts', P.arbeitsgewichtAus(null), null);
 
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
+
+print('\n--- Plattenrechner ---');
+const cfg = { bar: 20, rounding: 2.5, plates: P.STANDARD_SCHEIBEN };
+eq('leere Stange hat keine Scheiben', JSON.stringify(P.platten(20, cfg)), '[]');
+eq('60 kg sind 20 pro Seite', JSON.stringify(P.platten(60, cfg)), '[20]');
+eq('100 kg sind 25+15 pro Seite', JSON.stringify(P.platten(100, cfg)), '[25,15]');
+eq('47,5 kg sind 10+2,5+1,25', JSON.stringify(P.platten(47.5, cfg)), '[10,2.5,1.25]');
+eq('unter Hantelgewicht nicht ladbar', P.platten(15, cfg), null);
+eq('krummes Gewicht nicht ladbar', P.platten(21, cfg), null);
+eq('Text fuer 100 kg', P.plattenText(100, cfg), '25 + 15');
+eq('Text fuer 60 kg', P.plattenText(60, cfg), '20');
+eq('Text fuer die leere Stange', P.plattenText(20, cfg), 'leere Stange');
+eq('110 kg sind 25 + 20 pro Seite', P.plattenText(110, cfg), '25 + 20');
+eq('doppelte Scheiben werden gezaehlt', P.plattenText(120, cfg), '2×25');
+// Gegenprobe: Summe muss stimmen
+let summenFehler = 0;
+for (let w = 20; w <= 200; w += 2.5) {
+  const p = P.platten(w, cfg);
+  if (p && Math.abs(20 + 2 * p.reduce((a, b) => a + b, 0) - w) > 1e-6) summenFehler++;
+}
+eq('jede Aufteilung ergibt wieder das Gewicht', summenFehler, 0);
+
+print('\n--- Aufwaermsaetze ---');
+const ws = P.waermsaetze(80, cfg);
+eq('beginnt mit der leeren Stange', ws[0].weight, 20);
+eq('und zwar zweimal', ws[0].saetze, 2);
+ok('steigen an', ws.every((s, i) => i === 0 || s.weight > ws[i-1].weight), JSON.stringify(ws.map(s=>s.weight)));
+ok('bleiben unter dem Arbeitsgewicht', ws.every(s => s.weight < 80));
+ok('Wiederholungen sinken bei steigender Last', ws[ws.length-1].reps <= ws[1].reps);
+ok('alle sind ladbar', ws.every(s => P.platten(s.weight, cfg) !== null), JSON.stringify(ws.map(s=>s.weight)));
+eq('bei fast leerer Stange nur die Stange', P.waermsaetze(22.5, cfg).length, 1);
+const ws2 = P.waermsaetze(47.5, cfg);
+ok('keine doppelten Gewichte', new Set(ws2.map(s=>s.weight)).size === ws2.length, JSON.stringify(ws2.map(s=>s.weight)));
+
+print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

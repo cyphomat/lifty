@@ -58,13 +58,11 @@ export const WARMUP = {
   ],
   A: [
     { t: '5x', was: 'Leere Stange Kniebeuge', detail: 'Tief, langsam, Position finden.' },
-    { t: '5x', was: 'Leere Stange Bankdrücken', detail: 'Schulterblätter setzen.' },
-    { t: '2 Sätze', was: 'Aufwärmsätze', detail: '50 % und 75 % des Arbeitsgewichts, je 5 Wiederholungen.' }
+    { t: '5x', was: 'Leere Stange Bankdrücken', detail: 'Schulterblätter setzen.' }
   ],
   B: [
     { t: '5x', was: 'Leere Stange Overhead', detail: 'Position über dem Kopf suchen.' },
-    { t: '5x', was: 'Romanian Deadlift, leer', detail: 'Hüfte lernt den Weg.' },
-    { t: '2 Sätze', was: 'Aufwärmsätze', detail: '50 % und 75 % des Arbeitsgewichts, je 5 Wiederholungen.' }
+    { t: '5x', was: 'Romanian Deadlift, leer', detail: 'Hüfte lernt den Weg.' }
   ]
 };
 

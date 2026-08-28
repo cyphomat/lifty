@@ -22,6 +22,7 @@ let workoutOverride = null;
 let wod = null, wodSeed = 0, swTimer = null, swSek = 0, swLaeuft = false;
 let alleLogs = [];              // zuletzt geladene Einheiten, fuer Bestwerte
 let mo = { lift: 'squat' };     // laufender Krafttest
+let form = null;                // Form aus intervals.icu (ctl - atl)
 
 const $ = id => document.getElementById(id);
 const VERSION_KEY = 'lifty.version';
@@ -106,8 +107,11 @@ async function loadIntervals() {
 
   try {
     const bis = new Date(), von = new Date(); von.setDate(von.getDate() - 90);
-    trend = C.gewichtsTrend(await ICU.wellness(P.ymd(von), P.ymd(bis)));
+    const roh = await ICU.wellness(P.ymd(von), P.ymd(bis));
+    trend = C.gewichtsTrend(roh);
+    form = C.formLage(ICU.letzteForm(roh));
     renderBodyTrend();
+    renderHome();
   } catch (e) {
     console.warn('intervals.icu wellness:', e.message);
   }
@@ -159,12 +163,34 @@ function renderConnections() {
       : ['fehler', 'Keine Verbindung zu deinen Daten.'];
 
   const n = icu.anzahl;
+  const push = ICU.pushAktiv();
   box.innerHTML =
     zeile('GitHub', gh[0], gh[1]) +
     zeile('intervals.icu', icu.stand === 'laedt' ? 'aus' : (icu.stand === 'ok' ? 'ok' : icu.stand),
       icu.stand === 'ok'
         ? `${n} ${n === 1 ? 'Fahrt' : 'Fahrten'} in 90 Tagen${icu.letzte ? `, zuletzt ${icu.letzte.date}` : ''}.`
-        : icu.stand === 'fehler' ? icu.text : 'Nicht verbunden — Key unten eintragen.');
+        : icu.stand === 'fehler' ? icu.text : 'Nicht verbunden — Key unten eintragen.') +
+    `<div class="conn">
+       <span class="dot ${push && icu.stand === 'ok' ? 'ok' : 'aus'}"></span>
+       <span class="b">
+         <span class="n">Kraft → intervals.icu</span>
+         <span class="s">${icu.stand === 'ok'
+           ? (push
+             ? 'Neue Krafteinheiten und WODs werden dort als Aktivität eingetragen. Trainingslast geschätzt aus der Dauer.'
+             : 'Aus. Einschalten, damit dein Eisen in derselben Kurve landet wie dein Rad.')
+           : 'Braucht erst eine Verbindung zu intervals.icu.'}</span>
+         <label class="schalter">
+           <input type="checkbox" id="icu-push" ${push ? 'checked' : ''} ${icu.stand === 'ok' ? '' : 'disabled'}>
+           <span>Übertragung aktiv</span>
+         </label>
+       </span>
+     </div>`;
+  const cb = $('icu-push');
+  if (cb) cb.onchange = () => {
+    ICU.setPushAktiv(cb.checked);
+    banner(cb.checked ? 'ÜBERTRAGUNG AN' : 'ÜBERTRAGUNG AUS', 'ok');
+    renderConnections();
+  };
 }
 
 /* ============================ Home ============================ */
@@ -176,6 +202,7 @@ function renderHome() {
     <div class="directive">
       <span class="tone ${d.intensitaet.stufe}">${d.intensitaet.label} · ${d.kopf}</span>
       <p class="txt">${d.intensitaet.text}</p>
+      ${formZeile()}
     </div>
     <p class="spruch">${d.spruch}</p>`;
 
@@ -285,6 +312,19 @@ function startSession() {
           `<div class="kv"><span class="k">${w.t}</span><span class="v"><b>${w.was}</b> — ${w.detail}</span></div>`).join('')}
       </div>
     </details>
+    <details class="info"><summary>Aufwärmsätze mit Scheiben</summary>
+      <div class="body">
+        ${plan.lifts.map(l => `
+          <p class="tagline" style="margin:12px 0 4px"><b>${l.name}</b> → ${P.fmtWeight(l.weight)}</p>
+          ${P.waermsaetze(l.weight, config).map(w => {
+            const t = P.plattenText(w.weight, config);
+            return `<div class="kv">
+              <span class="k">${w.saetze > 1 ? w.saetze + '×' : ''}${w.reps} Wdh</span>
+              <span class="v"><b>${P.fmtWeight(w.weight)}</b>${t ? ` — ${t}` : ''}</span></div>`;
+          }).join('')}`).join('')}
+        <p style="color:var(--dim);margin-top:12px">Scheibenangaben gelten pro Seite, ausgehend von einer ${config.bar}-kg-Stange.</p>
+      </div>
+    </details>
     <details class="info"><summary>Technik aus dem Gewichtheben — ${skill.name}</summary>
       <div class="body">
         <p class="tagline"><b>${skill.name}</b> · ${skill.dosis}</p>
@@ -317,6 +357,7 @@ function renderSession() {
           <span class="lw">${P.fmtWeight(l.weight)}</span>
           <button data-w="${li}" data-d="1" aria-label="schwerer">+</button>
         </span></div>
+      ${plattenZeile(l.weight)}
       ${l.weight !== l.planWeight
         ? `<p class="cue geaendert">Angepasst von ${P.fmtWeight(l.planWeight)} — so wird es protokolliert, und die Progression rechnet ab hier weiter.</p>`
         : (i.kadenz ? `<p class="cue">${i.kadenz}</p>` : '')}
@@ -420,8 +461,11 @@ async function finishSession() {
   stopRest();
   renderDone(before, log);
   show('done');
-  try { await commit(log); banner('GESPEICHERT', 'ok'); }
-  catch { S.queue(log); banner('KEIN NETZ — WIRD NACHGETRAGEN', '', 6000); }
+  try {
+    await commit(log);
+    banner('GESPEICHERT', 'ok');
+    await uebertrageNachIcu(log);
+  } catch { S.queue(log); banner('KEIN NETZ — WIRD NACHGETRAGEN', '', 6000); }
   session = null;
   workoutOverride = null;
 }
@@ -721,8 +765,11 @@ async function wodAbschliessen() {
     </div>
     <p class="spruch">Kondition kostet nichts, solange sie am Ende steht. Deine Gewichte sind unberührt.</p>`;
   show('done');
-  try { await commitWod(log); banner('GESPEICHERT', 'ok'); }
-  catch { S.queue(log); banner('KEIN NETZ — WIRD NACHGETRAGEN', '', 6000); }
+  try {
+    await commitWod(log);
+    banner('GESPEICHERT', 'ok');
+    await uebertrageNachIcu(log);
+  } catch { S.queue(log); banner('KEIN NETZ — WIRD NACHGETRAGEN', '', 6000); }
   wod = null;
 }
 
@@ -943,4 +990,44 @@ function renderPRs(logs) {
     </div>`;
   }).join('');
   $('hist-prs').innerHTML = zeilen;
+}
+
+/* ================= Scheiben und Form ================= */
+
+/** Was pro Seite auf die Stange gehört — spart Rechnen zwischen den Sätzen. */
+function plattenZeile(gewicht) {
+  const t = P.plattenText(gewicht, config);
+  if (!t) return `<p class="platten nicht">Mit deinen Scheiben nicht exakt ladbar.</p>`;
+  if (t === 'leere Stange') return `<p class="platten">Leere Stange</p>`;
+  return `<p class="platten">Pro Seite: <b>${t}</b></p>`;
+}
+
+/** Form aus intervals.icu — ein Hinweis, keine Anweisung. */
+function formZeile() {
+  if (!form) return '';
+  const farbe = { frisch: 'var(--lime)', neutral: 'var(--muted)', muede: 'var(--amber)', platt: 'var(--red)' }[form.stufe];
+  return `<p class="formzeile" style="border-top-color:${farbe}">
+    <span class="fw" style="color:${farbe}">Form ${form.form > 0 ? '+' : ''}${form.form}</span>
+    <span class="ft">${form.text}</span>
+    <span class="fd">Fitness ${form.fitness} · Ermüdung ${form.ermuedung} · aus intervals.icu</span>
+  </p>`;
+}
+
+/* ================= Übertragung nach intervals.icu ================= */
+
+/**
+ * Nach dem lokalen Speichern: Einheit als Aktivität nach intervals.icu.
+ * Läuft bewusst NACH dem Commit und schluckt Fehler nicht — aber sie
+ * dürfen das lokale Protokoll nie gefährden, das bleibt die Wahrheit.
+ */
+async function uebertrageNachIcu(log) {
+  if (!ICU.pushAktiv() || !ICU.isConfigured()) return;
+  const aktivitaet = ICU.alsAktivitaet(log, config);
+  if (!aktivitaet) return;                       // ohne Dauer keine erfundene Last
+  try {
+    await ICU.pushAktivitaet(aktivitaet);
+    banner(`AN INTERVALS.ICU · LAST ${aktivitaet.icu_training_load}`, 'ok', 4000);
+  } catch (e) {
+    banner(`INTERVALS.ICU: ${e.message}`, 'err', 7000);
+  }
 }

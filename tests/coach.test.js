@@ -94,3 +94,20 @@ ok('aktueller Wert plausibel', t.aktuell > 87 && t.aktuell < 90, t.aktuell);
 eq('verrauschte Einzelwerte werden gemittelt', t.n, 20);
 
 print(`\n========== ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
+
+print('\n--- Form aus intervals.icu ---');
+eq('ohne Daten keine Aussage', C.formLage(null), null);
+eq('unvollstaendige Daten ergeben nichts', C.formLage({ ctl: 40 }), null);
+const frisch = C.formLage({ ctl: 50, atl: 40, date: '2026-09-01' });
+eq('Form ist Fitness minus Ermuedung', frisch.form, 10);
+eq('positiv heisst frisch', frisch.stufe, 'frisch');
+eq('neutral bei leicht negativ', C.formLage({ ctl: 50, atl: 55 }).stufe, 'neutral');
+eq('muede ab minus zehn', C.formLage({ ctl: 50, atl: 65 }).stufe, 'muede');
+eq('platt ab minus zwanzig', C.formLage({ ctl: 50, atl: 75 }).stufe, 'platt');
+ok('Fitness und Ermuedung werden mitgegeben', frisch.fitness === 50 && frisch.ermuedung === 40);
+ok('jede Stufe hat einen Text', ['frisch','neutral','muede','platt']
+  .every(s => { const w = { frisch:{ctl:50,atl:40}, neutral:{ctl:50,atl:55}, muede:{ctl:50,atl:65}, platt:{ctl:50,atl:75} }[s];
+                return C.formLage(w).text.length > 20; }));
+eq('Grenzfall genau null ist neutral', C.formLage({ ctl: 50, atl: 50 }).stufe, 'neutral');
+
+print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
