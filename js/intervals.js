@@ -59,3 +59,14 @@ export async function rides(from, to) {
       load: a.icu_training_load || null
     }));
 }
+
+/** Wellness-Daten: liefert den Gewichtsverlauf, falls dort gepflegt. */
+export async function wellness(from, to) {
+  const id = localStorage.getItem(KEY_ID);
+  if (!id) return [];
+  const list = await get(`/athlete/${id}/wellness?oldest=${from}&newest=${to}`);
+  if (!Array.isArray(list)) return [];
+  return list
+    .filter(w => w.weight)
+    .map(w => ({ date: w.id, weight: w.weight, restingHR: w.restingHR || null }));
+}
