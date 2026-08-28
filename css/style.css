@@ -530,7 +530,7 @@ button.raus:active{border-color:var(--amber)}
     align-items:start;
   }
   .spalte > h2:first-child{margin-top:18px}
-  .spalte > #motto:first-child + #directive{margin-top:0}
+  .spalte > #directive:first-child{margin-top:0}
 
   /* Kennzahlen und Bestwerte vertragen mehr Breite */
   #hist-summary .stats{grid-template-columns:repeat(4,1fr)}
