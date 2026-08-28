@@ -49,13 +49,13 @@
         font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
         font-size="92" font-weight="700" letter-spacing="20" fill="#00e5ff">LIFTY</text>
 
-  <text x="603.5" y="280" text-anchor="middle"
+  <text x="606" y="280" text-anchor="middle" filter="url(#soft)"
         font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
-        font-size="16" letter-spacing="7" fill="#69809a">5×5 · ZWIFT · BATTLE ROPES</text>
+        font-size="18" font-weight="700" letter-spacing="11" fill="#ff2d95">LIFT HEAVY SHIT</text>
 
   <text x="601.7" y="308" text-anchor="middle"
         font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
-        font-size="12.5" letter-spacing="3.4" fill="#3d4f63">KEIN BUILD · KEINE ABHÄNGIGKEITEN · KEIN SERVER</text>
+        font-size="12.5" letter-spacing="3.4" fill="#3d4f63">5×5 · ZWIFT · BATTLE ROPES · KEIN BUILD, KEIN SERVER</text>
 
   <rect x="0" y="336" width="1200" height="4" fill="url(#rule)"/>
   <rect width="1200" height="340" fill="url(#scan)"/>
