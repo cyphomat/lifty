@@ -24,16 +24,29 @@ function b64decode(b64) {
   return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
 }
 
-async function api(path, options = {}) {
-  const res = await fetch(API + path, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${getToken()}`,
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-      ...(options.headers || {})
+async function api(path, options = {}, versuch = 1) {
+  let res;
+  try {
+    res = await fetch(API + path, {
+      ...options,
+      headers: {
+        Authorization: `Bearer ${getToken()}`,
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        ...(options.headers || {})
+      }
+    });
+  } catch (e) {
+    // Safari meldet abgebrochene Anfragen als "Load failed". Das passiert auf
+    // iOS regelmaessig bei der ersten Anfrage, nachdem die App aus dem
+    // Hintergrund aufgeweckt wurde — ein zweiter Versuch geht fast immer durch.
+    if (versuch < 3) {
+      await new Promise(r => setTimeout(r, 400 * versuch));
+      return api(path, options, versuch + 1);
     }
-  });
+    const wo = path.split('?')[0].replace(`/repos/${OWNER}/${REPO}/contents`, '');
+    throw new Error(`Keine Verbindung zu GitHub${wo ? ` (${wo})` : ''} — ${navigator.onLine ? 'Server nicht erreichbar' : 'Gerät ist offline'}.`);
+  }
   if (res.status === 401 || res.status === 403) {
     throw new Error('Token ungültig oder ohne Schreibrecht auf lifty-data.');
   }

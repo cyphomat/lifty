@@ -370,7 +370,11 @@ async function renderHistory() {
           `${config.lifts[e.lift].name} ${P.fmtWeight(e.weight)} (${e.reps.join('/')})`).join(' · ')}</div>
       </div>`;
     }).join('') : '<p class="lead">Noch keine Einheit protokolliert.</p>';
-  } catch (e) { $('history-body').innerHTML = `<p class="lead">${e.message}</p>`; }
+  } catch (e) {
+    $('history-body').innerHTML = `<p class="lead">${e.message}</p>
+      <button id="hist-retry" class="btn ghost">Erneut versuchen</button>`;
+    $('hist-retry').onclick = renderHistory;
+  }
 }
 
 async function rebuild() {
