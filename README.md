@@ -109,3 +109,25 @@ Ohne diese Trennung würde eine Spaßeinheit am Mittwoch die Kniebeuge um
 2,5 kg weiterdrehen oder als Fehlversuch zählen — und die Progression, die
 das ganze Programm trägt, wäre nach zwei Wochen Fiktion. Dafür gibt es
 Regressionstests in `tests/program.test.js`.
+
+## Veröffentlichen
+
+```
+sh tools/release.sh 2026-09-14.1
+git add -A && git commit -m "..." && git push
+```
+
+Das Skript setzt `version.json` und den Cache-Namen in `sw.js` gemeinsam.
+Beides muss sich ändern, sonst merkt weder die App noch der Service Worker,
+dass es etwas Neues gibt.
+
+Die App vergleicht bei jedem Start die ausgelieferte Version mit der zuletzt
+gesehenen und lädt sich **genau einmal** neu, wenn sie abweicht. Der Merker
+wird vor dem Neuladen geschrieben — sonst entstünde eine Endlosschleife.
+
+### Warum der Service Worker `no-cache` benutzt
+
+GitHub Pages liefert alles mit `Cache-Control: max-age=600` aus. Ohne
+erzwungene Rückfrage beantwortet der HTTP-Cache des Browsers die Anfrage des
+Service Workers selbst — der Netz-zuerst-Ansatz wäre dann nur auf dem Papier
+vorhanden und Updates kämen bis zu zehn Minuten verspätet an.
