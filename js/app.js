@@ -31,7 +31,7 @@ let formPunkte = [];            // Fitness und Ermuedung ueber die Zeit
 let eftp = null;                // geschaetzte FTP, fuer Wattziele
 
 const $ = id => document.getElementById(id);
-const VERSION_KEY = 'lifty.version';
+const VERSION_KEY = 'setlist.version';
 let laufendeVersion = localStorage.getItem(VERSION_KEY) || '—';
 const VIEWS = ['setup', 'home', 'session', 'wod', 'maxout', 'done', 'history'];
 const show = n => { VIEWS.forEach(v => $('view-' + v).hidden = v !== n); window.scrollTo(0, 0); };
@@ -56,7 +56,7 @@ async function load() {
       S.readFile('config.json'), S.readFile('state.json'), S.readFile('stimme.json')
     ]);
     stimme = sti ? sti.data : null;
-    if (!c) throw new Error('config.json fehlt in lifty-data.');
+    if (!c) throw new Error('config.json fehlt in setlist-data.');
     config = c.data;
     state = st ? st.data : P.initialState(config);
     stateSha = st ? st.sha : null;
@@ -161,7 +161,7 @@ function renderIcuStatus() {
   }
   if (icu.stand === 'laedt') { el.innerHTML = '<p class="fine">Frage intervals.icu ab…</p>'; return; }
   if (icu.stand === 'fehler') {
-    el.innerHTML = `<p class="fine" style="color:var(--red)">intervals.icu: ${icu.text}</p>`;
+    el.innerHTML = `<p class="fine" style="color:var(--rot)">intervals.icu: ${icu.text}</p>`;
     return;
   }
 
@@ -173,7 +173,7 @@ function renderIcuStatus() {
   const tage = C.daysSince(icu.letzte.date, new Date());
   const lange = tage > 21;
   el.innerHTML = `<p class="fine">
-    ${tage === 0 ? 'Zuletzt gefahren' : 'Letzte Fahrt vor'} <b class="num" style="color:${lange ? 'var(--amber)' : 'var(--cyan)'}">${tage === 0 ? 'heute' : tage === 1 ? '1 Tag' : `${tage} Tagen`}</b>
+    ${tage === 0 ? 'Zuletzt gefahren' : 'Letzte Fahrt vor'} <b class="num" style="color:${lange ? 'var(--rost)' : 'var(--akzent)'}">${tage === 0 ? 'heute' : tage === 1 ? '1 Tag' : `${tage} Tagen`}</b>
     — ${icu.letzte.name} · ${icu.letzte.minutes} Min · ${icu.letzte.km} km.
     ${icu.anzahl} Fahrt${icu.anzahl === 1 ? '' : 'en'} in 90 Tagen.
     ${lange ? '<br>Das Rad ruht länger als das Eisen. Eine ruhige Stunde in Zone 2 kostet dich keine Erholung für den Beintag.' : ''}
@@ -189,7 +189,7 @@ function renderConnections() {
       <span class="b"><span class="n">${name}</span><span class="s">${text}</span></span>
     </div>`;
   const gh = datenQuelle === 'netz'
-    ? ['ok', 'Verbunden mit lifty-data.']
+    ? ['ok', 'Verbunden mit setlist-data.']
     : datenQuelle === 'cache'
       ? ['aus', 'Zeigt zwischengespeicherte Daten — der letzte Abruf ist fehlgeschlagen.']
       : ['fehler', 'Keine Verbindung zu deinen Daten.'];
@@ -267,9 +267,9 @@ function renderProgress(f, streak) {
     <div class="card">
       <div class="kicker">Zurück zu deinen alten Arbeitsgewichten</div>
       <div class="name">${pct}<span style="font-size:20px">%</span></div>
-      <div class="bar lime"><i style="width:${pct}%"></i></div>
+      <div class="bar gruen"><i style="width:${pct}%"></i></div>
       <p class="fine">Gemittelt über alle fünf Übungen. ${streak > 0
-        ? `<b style="color:var(--lime)">${streak} Woche${streak === 1 ? '' : 'n'} am Stück.</b>`
+        ? `<b style="color:var(--gruen)">${streak} Woche${streak === 1 ? '' : 'n'} am Stück.</b>`
         : 'Noch keine laufende Serie — die erste Einheit startet sie.'}</p>
     </div>`;
 }
@@ -325,14 +325,14 @@ function renderBodyTrend() {
       <div class="name">${trend.aktuell}<span style="font-size:20px"> kg</span></div>
       ${punkte ? `<svg viewBox="0 0 300 56" preserveAspectRatio="none" aria-hidden="true"
             style="display:block;width:100%;height:56px;margin-top:10px;overflow:visible">
-          <path d="${punkte.flaeche}" fill="${runter ? 'rgba(0,255,157,.13)' : 'rgba(255,176,32,.13)'}"/>
-          <path d="${punkte.linie}" fill="none" stroke="${runter ? 'var(--lime)' : 'var(--amber)'}"
+          <path d="${punkte.flaeche}" fill="${runter ? 'var(--tint-gruen)' : 'var(--tint-rost)'}"/>
+          <path d="${punkte.linie}" fill="none" stroke="${runter ? 'var(--gruen)' : 'var(--rost)'}"
                 stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
         </svg>
         <div style="display:flex;justify-content:space-between;margin-top:5px">
           <span class="kicker">${punkte.min} kg</span><span class="kicker">${punkte.max} kg</span>
         </div>` : ''}
-      ${trend.delta !== null ? `<p class="fine" style="color:${runter ? 'var(--lime)' : 'var(--amber)'}">
+      ${trend.delta !== null ? `<p class="fine" style="color:${runter ? 'var(--gruen)' : 'var(--rost)'}">
         ${trend.delta > 0 ? '+' : ''}${trend.delta} kg im Zeitraum.
         ${runter ? 'Richtung stimmt. Solange die Gewichte auf der Stange steigen, verlierst du Fett und keine Muskeln — genau das ist das Ziel.'
                  : 'Nach oben. Kein Drama, solange die Kraftwerte mitziehen — sonst nachjustieren.'}</p>` : ''}
@@ -358,7 +358,7 @@ function startSession() {
 
   const skill = C.tagesAuswahl(SKILL, new Date(), 'skill');
   $('warmup').innerHTML = `
-    <details class="info" open><summary>Warm-up — nicht überspringen</summary>
+    <details class="info" open><summary>Soundcheck — nicht überspringen</summary>
       <div class="body">
         ${WARMUP.allgemein.concat(WARMUP[plan.workout]).map(w =>
           `<div class="kv"><span class="k">${w.t}</span><span class="v"><b>${w.was}</b> — ${w.detail}</span></div>`).join('')}
@@ -387,7 +387,7 @@ function startSession() {
 
   const fin = C.tagesAuswahl(FINISHER, new Date(), 'fin');
   $('finisher').innerHTML = `
-    <details class="info"><summary>Finisher — ${fin.name}</summary>
+    <details class="info"><summary>Encore — ${fin.name}</summary>
       <div class="body">
         <p class="tagline"><b>${fin.name}</b> · ${fin.dosis}</p>
         <p>${fin.warum}</p>
@@ -744,7 +744,7 @@ async function leereCaches() {
 
 function renderVersion() {
   $('version-box').innerHTML = `<p class="fine" style="margin:0 0 6px">
-    Version <b class="num" style="color:var(--cyan)">${laufendeVersion}</b> ·
+    Version <b class="num" style="color:var(--akzent)">${laufendeVersion}</b> ·
     Updates kommen beim nächsten Start von allein.</p>`;
 }
 
@@ -923,21 +923,21 @@ function renderCharts(logs) {
       <div class="h"><span class="t">${config.lifts[id].name}</span>
         <span class="r">${P.fmtWeight(letzter.weight)} ${delta > 0 ? `▲ +${delta}` : delta < 0 ? `▼ ${delta}` : ''}</span></div>
       <svg viewBox="0 0 300 60" preserveAspectRatio="none" aria-hidden="true">
-        <path d="${sp.flaeche}" fill="rgba(0,229,255,.13)"/>
-        <path d="${sp.linie}" fill="none" stroke="var(--cyan)" stroke-width="2"
+        <path d="${sp.flaeche}" fill="var(--tint-akzent)"/>
+        <path d="${sp.linie}" fill="none" stroke="var(--akzent)" stroke-width="2"
               stroke-linejoin="round" stroke-linecap="round"/>
-        ${linieUnten ? `<path d="${linieUnten}" fill="none" stroke="var(--magenta)" stroke-width="1.5"
+        ${linieUnten ? `<path d="${linieUnten}" fill="none" stroke="var(--stahl)" stroke-width="1.5"
               stroke-dasharray="4 3" stroke-linejoin="round" opacity=".8"/>` : ''}
         ${tests.map(k => `<circle cx="${k.x.toFixed(1)}" cy="${k.y.toFixed(1)}" r="4"
-              fill="var(--magenta)"/>`).join('')}
+              fill="var(--stahl)"/>`).join('')}
         ${sp.koord.map(k => `<circle cx="${k.x.toFixed(1)}" cy="${k.y.toFixed(1)}" r="2.5"
-              fill="${k.success === false ? 'var(--amber)' : 'var(--cyan)'}"/>`).join('')}
+              fill="${k.success === false ? 'var(--rost)' : 'var(--akzent)'}"/>`).join('')}
       </svg>
       <div class="h" style="margin:6px 0 0">
         <span class="t">${sp.min} kg</span><span class="t">${sp.max} kg</span></div>
       ${linieUnten ? `<div class="h" style="margin:3px 0 0">
-        <span class="t" style="color:var(--magenta)">┄ mind. ≈ ${Math.max(...untere.map(k => k.weight))} kg</span>
-        ${tests.length ? `<span class="t" style="color:var(--magenta)">● Max-Out ${
+        <span class="t" style="color:var(--stahl)">┄ mind. ≈ ${Math.max(...untere.map(k => k.weight))} kg</span>
+        ${tests.length ? `<span class="t" style="color:var(--stahl)">● Max-Out ${
           Math.max(...tests.map(k => k.weight))} kg</span>` : ''}</div>` : ''}
     </div>`;
   }).join('');
@@ -1036,7 +1036,7 @@ function renderMaxoutErgebnis() {
       <div class="kicker">Geschätztes Einer-Maximum · ${formel}</div>
       <div class="name neon">${max}<span style="font-size:20px"> kg</span></div>
       ${bisher ? `<p class="fine">${max > bisher
-        ? `<b style="color:var(--lime)">Neuer Bestwert.</b> Bisher ${bisher} kg.`
+        ? `<b style="color:var(--gruen)">Neuer Bestwert.</b> Bisher ${bisher} kg.`
         : `Bisheriger Bestwert: ${bisher} kg.`}</p>` : ''}
       <ul>
         <li><span>Arbeitsgewicht für 5×5 (80 %)</span><span>${P.fmtWeight(vorschlag)}</span></li>
@@ -1044,7 +1044,7 @@ function renderMaxoutErgebnis() {
       </ul>
       <label style="display:flex;gap:10px;align-items:flex-start;margin-top:12px;font-size:14px;color:var(--muted)">
         <input type="checkbox" id="mo-apply" style="width:auto;margin:3px 0 0">
-        <span>Arbeitsgewicht auf <b style="color:var(--cyan)">${P.fmtWeight(vorschlag)}</b> setzen.
+        <span>Arbeitsgewicht auf <b style="color:var(--akzent)">${P.fmtWeight(vorschlag)}</b> setzen.
         Ohne Haken bleibt alles, wie es ist — der Test wird nur protokolliert.</span>
       </label>
     </div>`;
@@ -1147,7 +1147,7 @@ function plattenZeile(gewicht) {
 /** Form aus intervals.icu — ein Hinweis, keine Anweisung. */
 function formZeile() {
   if (!form) return '';
-  const farbe = { frisch: 'var(--lime)', neutral: 'var(--muted)', muede: 'var(--amber)', platt: 'var(--red)' }[form.stufe];
+  const farbe = { frisch: 'var(--gruen)', neutral: 'var(--muted)', muede: 'var(--rost)', platt: 'var(--rot)' }[form.stufe];
   return `<p class="formzeile" style="border-top-color:${farbe}">
     <span class="fw" style="color:${farbe}">Form ${form.form > 0 ? '+' : ''}${form.form}</span>
     <span class="ft">${form.text}</span>
@@ -1210,7 +1210,7 @@ function renderRad() {
     const h = Math.max(w.last > 0 ? 2 : 0, (w.last / maxLast) * hoehe);
     const x = i * (bw + luecke);
     return `<rect x="${x.toFixed(1)}" y="${(hoehe - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}"
-      fill="${i === wochen.length - 1 ? 'var(--cyan)' : 'var(--magenta)'}" opacity="${w.last ? 0.85 : 0.25}"/>`;
+      fill="${i === wochen.length - 1 ? 'var(--akzent)' : 'var(--stahl)'}" opacity="${w.last ? 0.85 : 0.25}"/>`;
   }).join('');
 
   const sortiert = [...fahrten].sort((a, b) => b.date.localeCompare(a.date));
@@ -1240,7 +1240,7 @@ function renderRad() {
 
 /* ================= Darstellung ================= */
 
-const THEMA_KEY = 'lifty.theme';
+const THEMA_KEY = 'setlist.theme';
 
 /** 'auto' folgt dem System, sonst die ausdrückliche Wahl. */
 function themaWahl() { return localStorage.getItem(THEMA_KEY) || 'dunkel'; }
@@ -1252,7 +1252,7 @@ function themaAnwenden() {
   if (hell) document.documentElement.setAttribute('data-theme', 'light');
   else document.documentElement.removeAttribute('data-theme');
   const m = document.querySelector('meta[name=theme-color]');
-  if (m) m.setAttribute('content', hell ? '#eceff4' : '#04060a');
+  if (m) m.setAttribute('content', hell ? '#f4f1ea' : '#0c0c0e');
   renderThemenSchalter();
 }
 
@@ -1281,7 +1281,7 @@ themaAnwenden();
 /** Warnt vor der Wechselwirkung mit dem Rad — kürzt aber nichts. */
 function stoerungsZeile() {
   if (!stoerung) return '';
-  const farbe = { stark: 'var(--amber)', leicht: 'var(--cyan)', gering: 'var(--dim)' }[stoerung.stufe];
+  const farbe = { stark: 'var(--rost)', leicht: 'var(--akzent)', gering: 'var(--dim)' }[stoerung.stufe];
   return `<p class="formzeile" style="border-top-color:${farbe}">
     <span class="fw" style="color:${farbe}">Rad vor ${Math.round(stoerung.stunden)} h</span>
     <span class="ft">${stoerung.text}</span>
@@ -1294,7 +1294,7 @@ function wattZiel(label) {
   const info = RIDE_INFO[label];
   if (!info || !info.ftp || !eftp) return '';
   const w = P.wattBereich(info.ftp, eftp);
-  return w ? ` <b style="color:var(--cyan)">≈ ${w}</b>` : '';
+  return w ? ` <b style="color:var(--stahl)">≈ ${w}</b>` : '';
 }
 
 /** Geplante Woche als Kalendereinträge — nur was dort noch fehlt. */
@@ -1393,18 +1393,18 @@ function rekordZeile(id) {
   if (r.bestes5er) teile.push(`${P.fmtWeight(r.bestes5er)} im 5er`);
   if (!teile.length) return '';
   return `<div class="reihe"><span class="l">Bestleistung</span>
-    <span class="v" style="color:var(--magenta)">${teile.join(' · ')}<small>${jahr}</small></span></div>`;
+    <span class="v" style="color:var(--stahl)">${teile.join(' · ')}<small>${jahr}</small></span></div>`;
 }
 
 /** Was du außerhalb des Programms mal konntest — Kontext, kein Ziel. */
 function weitereRekorde() {
   const w = config.records && config.records.weitere;
   if (!w || !w.length) return '';
-  return `<div class="pr" style="border-left:2px solid var(--magenta)">
+  return `<div class="pr" style="border-left:2px solid var(--stahl)">
     <div class="k">Weitere Bestleistungen</div>
     ${w.map(r => `<div class="reihe">
       <span class="l">${r.name}${r.zusatz ? ` <small style="color:var(--dim)">${r.zusatz}</small>` : ''}</span>
-      <span class="v" style="color:var(--magenta)">${P.fmtWeight(r.wert)}<small>${(r.datum || '').slice(0, 4)}</small></span>
+      <span class="v" style="color:var(--stahl)">${P.fmtWeight(r.wert)}<small>${(r.datum || '').slice(0, 4)}</small></span>
     </div>`).join('')}
     <p class="fine" style="margin-top:10px">Aus ${config.records.quelle}. Nicht Teil des Programms —
     sie stehen hier, weil sie zeigen, was in dir steckt.</p>
@@ -1506,9 +1506,9 @@ function renderLast(logs) {
     const hR = (w.rad / max) * hoehe;
     return `
       ${w.rad ? `<rect x="${x.toFixed(1)}" y="${(hoehe - hR).toFixed(1)}" width="${bw.toFixed(1)}" height="${hR.toFixed(1)}"
-        fill="var(--magenta)" opacity=".85"><title>${w.woche} · Rad ${w.rad}</title></rect>` : ''}
+        fill="var(--stahl)" opacity=".85"><title>${w.woche} · Rad ${w.rad}</title></rect>` : ''}
       ${w.kraft ? `<rect x="${x.toFixed(1)}" y="${(hoehe - hR - hK).toFixed(1)}" width="${bw.toFixed(1)}" height="${hK.toFixed(1)}"
-        fill="var(--cyan)" opacity=".9"><title>${w.woche} · Kraft ${w.kraft}</title></rect>` : ''}`;
+        fill="var(--akzent)" opacity=".9"><title>${w.woche} · Kraft ${w.kraft}</title></rect>` : ''}`;
   }).join('');
 
   const summeK = wochen.reduce((s, w) => s + w.kraft, 0);
@@ -1519,8 +1519,8 @@ function renderLast(logs) {
         <span class="r" style="color:var(--fg)">${summeK + summeR} gesamt</span></div>
       <svg viewBox="0 0 ${breite} ${hoehe}" preserveAspectRatio="none" aria-hidden="true">${balken}</svg>
       <div class="h" style="margin:7px 0 0">
-        <span class="t" style="color:var(--cyan)">■ Kraft ${summeK}</span>
-        <span class="t" style="color:var(--magenta)">■ Rad ${summeR}</span>
+        <span class="t" style="color:var(--akzent)">■ Kraft ${summeK}</span>
+        <span class="t" style="color:var(--stahl)">■ Rad ${summeR}</span>
         <span class="t">diese Woche →</span></div>
     </div>`;
 }
@@ -1538,7 +1538,7 @@ function renderTonnage(logs) {
     const h = w.tonnage ? Math.max(2, (w.tonnage / max) * hoehe) : 0;
     const x = i * (bw + luecke);
     return h ? `<rect x="${x.toFixed(1)}" y="${(hoehe - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}"
-      fill="${i === wochen.length - 1 ? 'var(--lime)' : 'var(--cyan)'}" opacity=".85"
+      fill="${i === wochen.length - 1 ? 'var(--gruen)' : 'var(--akzent)'}" opacity=".85"
       ><title>${w.woche} · ${(w.tonnage/1000).toFixed(1)} t · ${w.einheiten} Einheiten</title></rect>` : '';
   }).join('');
 
@@ -1547,7 +1547,7 @@ function renderTonnage(logs) {
   box.innerHTML = `
     <div class="radbar">
       <div class="h"><span class="t">Bewegtes Gewicht je Woche</span>
-        <span class="r" style="color:var(--cyan)">${(gesamt/1000).toFixed(1)} t gesamt</span></div>
+        <span class="r" style="color:var(--akzent)">${(gesamt/1000).toFixed(1)} t gesamt</span></div>
       <svg viewBox="0 0 ${breite} ${hoehe}" preserveAspectRatio="none" aria-hidden="true">${balken}</svg>
       <div class="h" style="margin:7px 0 0">
         <span class="t">beste Woche ${(beste.tonnage/1000).toFixed(1)} t</span>
@@ -1582,20 +1582,20 @@ function renderFormVerlauf() {
     formPunkte.map((p, i) => `L${x(n-1-i).toFixed(1)},${y(formPunkte[n-1-i].atl).toFixed(1)}`).join(' ') + ' Z';
 
   const jetzt = formPunkte[n - 1];
-  const farbe = jetzt.form >= 5 ? 'var(--lime)' : jetzt.form >= -10 ? 'var(--cyan)'
-              : jetzt.form >= -20 ? 'var(--amber)' : 'var(--red)';
+  const farbe = jetzt.form >= 5 ? 'var(--gruen)' : jetzt.form >= -10 ? 'var(--akzent)'
+              : jetzt.form >= -20 ? 'var(--rost)' : 'var(--rot)';
   box.innerHTML = `
     <div class="radbar">
       <div class="h"><span class="t">Fitness gegen Ermüdung</span>
         <span class="r" style="color:${farbe}">Form ${jetzt.form > 0 ? '+' : ''}${jetzt.form}</span></div>
       <svg viewBox="0 0 ${breite} ${hoehe}" preserveAspectRatio="none" aria-hidden="true">
-        <path d="${band}" fill="rgba(0,229,255,.10)"/>
-        <path d="${pfad('atl')}" fill="none" stroke="var(--magenta)" stroke-width="1.6" stroke-linejoin="round"/>
-        <path d="${pfad('ctl')}" fill="none" stroke="var(--cyan)" stroke-width="2" stroke-linejoin="round"/>
+        <path d="${band}" fill="var(--tint-stahl)"/>
+        <path d="${pfad('atl')}" fill="none" stroke="var(--stahl)" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="${pfad('ctl')}" fill="none" stroke="var(--akzent)" stroke-width="2" stroke-linejoin="round"/>
       </svg>
       <div class="h" style="margin:7px 0 0">
-        <span class="t" style="color:var(--cyan)">— Fitness ${Math.round(jetzt.ctl)}</span>
-        <span class="t" style="color:var(--magenta)">— Ermüdung ${Math.round(jetzt.atl)}</span>
+        <span class="t" style="color:var(--akzent)">— Fitness ${Math.round(jetzt.ctl)}</span>
+        <span class="t" style="color:var(--stahl)">— Ermüdung ${Math.round(jetzt.atl)}</span>
         <span class="t">Fläche dazwischen = Form</span></div>
     </div>`;
 }

@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#04060a">
+<meta name="theme-color" content="#0c0c0e">
 <meta name="color-scheme" content="dark light">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="lifty">
+<meta name="apple-mobile-web-app-title" content="Setlist">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="icon" href="icons/icon-192.png">
@@ -15,17 +15,28 @@
 <script>
 (function () {
   try {
-    var w = localStorage.getItem('lifty.theme') || 'dunkel';
+    // Die App hiess frueher lifty. Zugaenge und Zwischenspeicher liegen auf
+    // derselben Origin weiter unter den alten Schluesseln — einmal umtragen,
+    // damit niemand Token und intervals-Key neu eintippen muss.
+    for (var i = localStorage.length - 1; i >= 0; i--) {
+      var k = localStorage.key(i);
+      if (k && k.indexOf('lifty.') === 0) {
+        var neuK = 'setlist.' + k.slice(6);
+        if (localStorage.getItem(neuK) === null) localStorage.setItem(neuK, localStorage.getItem(k));
+        localStorage.removeItem(k);
+      }
+    }
+    var w = localStorage.getItem('setlist.theme') || 'dunkel';
     var hell = w === 'hell' ||
       (w === 'auto' && window.matchMedia('(prefers-color-scheme: light)').matches);
     if (hell) document.documentElement.setAttribute('data-theme', 'light');
     var m = document.querySelector('meta[name=theme-color]');
-    if (m) m.setAttribute('content', hell ? '#eceff4' : '#04060a');
+    if (m) m.setAttribute('content', hell ? '#f4f1ea' : '#0c0c0e');
   } catch (e) { /* Speicher gesperrt — dann eben dunkel */ }
 })();
 </script>
 <link rel="stylesheet" href="css/style.css">
-<title>lifty</title>
+<title>Setlist</title>
 </head>
 <body>
 
@@ -33,13 +44,13 @@
 
 <!-- ============ SETUP ============ -->
 <section id="view-setup" class="view" hidden>
-  <header class="head"><h1><span class="glow">lifty</span> · setup</h1></header>
+  <header class="head"><h1><span class="glow">Setlist</span> · setup</h1></header>
   <div class="pad">
     <h2>1 · GitHub — deine Daten</h2>
-    <p class="lead">Damit liest und schreibt die App dein privates Repo <code>lifty-data</code>.</p>
+    <p class="lead">Damit liest und schreibt die App dein privates Repo <code>setlist-data</code>.</p>
     <ol class="steps">
       <li><b>Settings → Developer settings → Personal access tokens → Fine-grained tokens</b></li>
-      <li><b>Generate new token</b>, Zugriff auf <b>nur</b> <code>lifty-data</code></li>
+      <li><b>Generate new token</b>, Zugriff auf <b>nur</b> <code>setlist-data</code></li>
       <li>Permissions: <b>Contents → Read and write</b>. Sonst nichts.</li>
     </ol>
     <input id="token" type="password" placeholder="github_pat_..." autocomplete="off" autocapitalize="off" spellcheck="false">
@@ -56,8 +67,8 @@
 <!-- ============ HOME ============ -->
 <section id="view-home" class="view" hidden>
   <header class="head">
-    <h1><span class="glow">lifty</span></h1>
-    <button id="go-history" class="icon-btn" aria-label="Verlauf">≡</button>
+    <h1><span class="glow">Setlist</span></h1>
+    <button id="go-history" class="icon-btn" aria-label="Tour">≡</button>
   </header>
   <div class="pad" style="padding-bottom:0"><div id="motto"></div></div>
   <div class="pad zwei-spalten">
@@ -66,14 +77,14 @@
       <div id="today" class="card today"></div>
       <div class="actions">
         <button id="swap-workout" class="btn ghost small">Workout wechseln</button>
-        <button id="go-wod" class="btn small">Zufalls-WOD</button>
+        <button id="go-wod" class="btn small">Jam</button>
         <button id="go-maxout" class="btn ghost small">Max-Out</button>
       </div>
     </div>
     <div class="spalte">
       <h2>Zurück auf Kurs</h2>
       <div id="progress"></div>
-      <h2>Diese Woche</h2>
+      <h2>Setlist</h2>
       <div id="week" class="week"></div>
       <div id="icu-status"></div>
       <h2>Arbeitsgewichte</h2>
@@ -98,7 +109,7 @@
   </div>
   <div id="rest" class="rest" hidden>
     <button id="rest-minus" class="tick">−30</button>
-    <span class="mitte"><span class="lbl">PAUSE</span><span id="rest-time" class="t">90</span></span>
+    <span class="mitte"><span class="lbl">UMBAUPAUSE</span><span id="rest-time" class="t">90</span></span>
     <button id="rest-plus" class="tick">+30</button>
     <button id="rest-skip">WEITER</button>
   </div>
@@ -108,7 +119,7 @@
 <section id="view-wod" class="view" hidden>
   <header class="head">
     <button id="wod-back" class="icon-btn" aria-label="Zurück">‹</button>
-    <h1>Zufalls-WOD</h1>
+    <h1>Jam</h1>
     <button id="wod-reroll" class="icon-btn" aria-label="Neu würfeln">⟳</button>
   </header>
   <div class="pad" id="wod-body"></div>
@@ -158,7 +169,7 @@
 <section id="view-history" class="view" hidden>
   <header class="head">
     <button id="hist-back" class="icon-btn" aria-label="Zurück">‹</button>
-    <h1>Verlauf</h1>
+    <h1>Tour</h1>
   </header>
   <div class="pad">
     <div id="hist-summary"></div>
@@ -180,6 +191,7 @@
     <div id="history-body"></div>
   </div>
   <div class="pad">
+    <h2 class="backstage">Backstage</h2>
     <h2>Verbindungen</h2>
     <div id="conn-box"></div>
     <input id="icukey2" type="password" placeholder="intervals.icu API-Key" autocomplete="off" autocapitalize="off" spellcheck="false">

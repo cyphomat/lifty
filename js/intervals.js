@@ -5,8 +5,8 @@
 // niemals im Repo. Deshalb taucht hier kein Schluessel im Code auf.
 
 const BASE = 'https://intervals.icu/api/v1';
-const KEY_ID = 'lifty.icu.athlete';
-const KEY_TOKEN = 'lifty.icu.key';
+const KEY_ID = 'setlist.icu.athlete';
+const KEY_TOKEN = 'setlist.icu.key';
 const RIDE_TYPES = ['Ride', 'VirtualRide', 'GravelRide', 'MountainBikeRide', 'EBikeRide'];
 
 export function setCreds(athleteId, apiKey) {
@@ -130,14 +130,14 @@ export function alsAktivitaet(log, config = {}) {
       }).join('\n');
 
   return {
-    external_id: `lifty-${log.date}-${log.type || 'strength'}${log.workout ? '-' + log.workout : ''}`,
+    external_id: `setlist-${log.date}-${log.type || 'strength'}${log.workout ? '-' + log.workout : ''}`,
     start_date_local: lokalIso(start),
     type: istWod ? 'Crossfit' : 'WeightTraining',
     name: istWod ? `WOD — ${log.label || ''}`.trim() : `Kraft — Workout ${log.workout || ''}`.trim(),
     moving_time: dauerSek,
     elapsed_time: dauerSek,
     icu_training_load: last,
-    description: `${beschreibung}\n\nAus lifty übertragen. Trainingslast geschätzt aus der Dauer (${Math.round(minuten)} Min).`
+    description: `${beschreibung}\n\nAus Setlist übertragen. Trainingslast geschätzt aus der Dauer (${Math.round(minuten)} Min).`
   };
 }
 
@@ -160,7 +160,7 @@ export async function pushAktivitaet(aktivitaet) {
   return res.json();
 }
 
-const PUSH_KEY = 'lifty.icu.push';
+const PUSH_KEY = 'setlist.icu.push';
 /**
  * An, solange nicht ausdruecklich abgeschaltet. Daniel hat die Uebertragung
  * freigegeben; ein Schalter, den man erst suchen muss, wuerde die Funktion
@@ -196,9 +196,9 @@ export function alsEvent(slot, config = {}) {
     start_date_local: `${slot.date}T00:00:00`,
     type: rad ? 'Ride' : 'WeightTraining',
     name: rad ? slot.label : `Kraft — Workout ${slot.workout || ''}`.trim(),
-    description: [slot.detail, slot.watt ? `Ziel: ${slot.watt}` : '', 'Geplant in lifty.']
+    description: [slot.detail, slot.watt ? `Ziel: ${slot.watt}` : '', 'Geplant in Setlist.']
       .filter(Boolean).join('\n'),
-    external_id: `lifty-plan-${slot.date}-${slot.type}`
+    external_id: `setlist-plan-${slot.date}-${slot.type}`
   };
 }
 

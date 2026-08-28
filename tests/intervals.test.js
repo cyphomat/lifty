@@ -25,7 +25,7 @@ const a = I.alsAktivitaet(kraft, config);
 eq('Typ ist WeightTraining', a.type, 'WeightTraining');
 eq('45 Minuten in Sekunden', a.moving_time, 2700);
 eq('Last = 45 x 0,8', a.icu_training_load, 36);
-eq('external_id ist stabil', a.external_id, 'lifty-2026-09-02-strength-A');
+eq('external_id ist stabil', a.external_id, 'setlist-2026-09-02-strength-A');
 ok('Name nennt das Workout', a.name.includes('Workout A'), a.name);
 ok('Beschreibung nutzt die Uebungsnamen', a.description.includes('Kniebeuge 50 kg — 5/5/5/5/5'), a.description.slice(0,60));
 ok('kein internes Kuerzel in der Beschreibung', !a.description.includes('squat'), a.description.slice(0,60));
@@ -44,7 +44,7 @@ const b = I.alsAktivitaet(wod, config);
 eq('Typ ist Crossfit', b.type, 'Crossfit');
 eq('Last = 12 x 1,4', b.icu_training_load, 17);
 ok('Name nennt das WOD', b.name.includes('AMRAP 12'), b.name);
-eq('eigene Kennung', b.external_id, 'lifty-2026-09-04-wod');
+eq('eigene Kennung', b.external_id, 'setlist-2026-09-04-wod');
 
 print('\n--- Ohne Dauer keine erfundene Last ---');
 eq('fehlende Zeiten ergeben nichts', I.alsAktivitaet({ date:'2026-09-05', type:'strength', lifts:[] }, config), null);
@@ -78,9 +78,9 @@ eq('Kategorie', ev.category, 'WORKOUT');
 eq('Typ Ride', ev.type, 'Ride');
 eq('Name', ev.name, 'Sweet Spot');
 eq('Startdatum als Ortszeit', ev.start_date_local, '2026-09-14T00:00:00');
-eq('stabile Kennung', ev.external_id, 'lifty-plan-2026-09-14-ride');
+eq('stabile Kennung', ev.external_id, 'setlist-plan-2026-09-14-ride');
 ok('Wattziel steht in der Beschreibung', ev.description.includes('205–217 W'));
-ok('als aus lifty gekennzeichnet', ev.description.includes('lifty'));
+ok('als aus Setlist gekennzeichnet', ev.description.includes('Setlist'));
 
 const kraftSlot = { date:'2026-09-15', type:'strength', workout:'B', detail:'Kniebeuge · Schulterdrücken · Kreuzheben' };
 const ev2 = I.alsEvent(kraftSlot);
@@ -92,7 +92,7 @@ print('\n--- Es wird nur eingetragen, was fehlt ---');
 const geplant = [ev, ev2];
 eq('leerer Kalender: alles fehlt', I.fehlendeEvents(geplant, []).length, 2);
 eq('gleiche Kennung wird uebersprungen',
-   I.fehlendeEvents(geplant, [{ external_id:'lifty-plan-2026-09-14-ride' }]).length, 1);
+   I.fehlendeEvents(geplant, [{ external_id:'setlist-plan-2026-09-14-ride' }]).length, 1);
 eq('auch Datum plus Name genuegt',
    I.fehlendeEvents(geplant, [{ start_date_local:'2026-09-14T00:00:00', name:'Sweet Spot' }]).length, 1);
 eq('beide vorhanden: nichts zu tun',

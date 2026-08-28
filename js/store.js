@@ -2,13 +2,13 @@
 // Schreibt Klartext-JSON ins private Repo — jede Einheit wird ein Commit.
 
 const API = 'https://api.github.com';
-const TOKEN_KEY = 'lifty.token';
-const QUEUE_KEY = 'lifty.queue';
-const CACHE_KEY = 'lifty.cache';
-const LOGS_KEY = 'lifty.logs';
+const TOKEN_KEY = 'setlist.token';
+const QUEUE_KEY = 'setlist.queue';
+const CACHE_KEY = 'setlist.cache';
+const LOGS_KEY = 'setlist.logs';
 
 export const OWNER = 'cyphomat';
-export const REPO = 'lifty-data';
+export const REPO = 'setlist-data';
 // Bewusst nicht "log": Inhaltsblocker, Netzwerkfilter und Firmen-WLANs
 // verwerfen Adressen mit diesem Wegstueck regelmaessig, weil dort sonst
 // Tracking-Daten abfliessen. Der Ordner heisst deshalb neutral.
@@ -53,7 +53,7 @@ async function api(path, options = {}, versuch = 1) {
     throw new Error(`Keine Verbindung zu GitHub${wo ? ` (${wo})` : ''} — ${navigator.onLine ? 'Server nicht erreichbar' : 'Gerät ist offline'}.`);
   }
   if (res.status === 401 || res.status === 403) {
-    throw new Error('Token ungültig oder ohne Schreibrecht auf lifty-data.');
+    throw new Error('Token ungültig oder ohne Schreibrecht auf setlist-data.');
   }
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`GitHub ${res.status}: ${(await res.text()).slice(0, 140)}`);

@@ -1,11 +1,11 @@
 {
-  "name": "lifty",
-  "short_name": "lifty",
+  "name": "Setlist",
+  "short_name": "Setlist",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#04060a",
-  "theme_color": "#04060a",
+  "background_color": "#0c0c0e",
+  "theme_color": "#0c0c0e",
   "icons": [
     {
       "src": "icons/icon-192.png",
@@ -26,5 +26,5 @@
       "purpose": "any"
     }
   ],
-  "description": "Trainings-HUD für 5×5, Zwift und Battle Ropes."
+  "description": "Trainingsplaner für 5×5, Zwift und Jams. Plan schreiben, Plan folgen, Minierfolge feiern."
 }

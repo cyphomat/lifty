@@ -1,17 +1,17 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="lifty" width="100%">
+  <img src="assets/banner.svg" alt="Setlist" width="100%">
 </p>
 
 <p align="center">
-  <a href="https://cyphomat.github.io/lifty/"><img alt="App öffnen" src="https://img.shields.io/badge/App-öffnen-00e5ff?style=for-the-badge&labelColor=0b1119"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/Tests-375%20grün-00ff9d?style=for-the-badge&labelColor=0b1119">
-  <img alt="Build" src="https://img.shields.io/badge/Build-keiner-ff2d95?style=for-the-badge&labelColor=0b1119">
-  <img alt="Abhängigkeiten" src="https://img.shields.io/badge/Abhängigkeiten-0-69809a?style=for-the-badge&labelColor=0b1119">
+  <a href="https://cyphomat.github.io/setlist/"><img alt="App öffnen" src="https://img.shields.io/badge/App-öffnen-e8a23d?style=for-the-badge&labelColor=17161b"></a>
+  <img alt="Tests" src="https://img.shields.io/badge/Tests-375%20grün-7fa65c?style=for-the-badge&labelColor=17161b">
+  <img alt="Build" src="https://img.shields.io/badge/Build-keiner-6f93ad?style=for-the-badge&labelColor=17161b">
+  <img alt="Abhängigkeiten" src="https://img.shields.io/badge/Abhängigkeiten-0-a7a3ab?style=for-the-badge&labelColor=17161b">
 </p>
 
 <p align="center">
-  <b>Ein Trainings-HUD für eine Person.</b><br>
-  5×5 im Studio, Zwift im Keller, Battle Ropes zum Schluss.<br>
+  <b>Ein Trainingsplaner für eine Person.</b><br>
+  Die Woche ist eine Setlist: 5×5 im Studio, Zwift im Keller, ein Jam zum Schluss.<br>
   Statische Web-App: kein Build, keine Bibliotheken, kein Server, keine Datenbank.
 </p>
 
@@ -74,7 +74,7 @@ flowchart LR
   S --> I["intervals.icu"]
   I -. Fahrten, Form, Gewicht .-> A
   A -. Kraft als Aktivität .-> I
-  A["lifty<br/>GitHub Pages"] <--> D[("lifty-data<br/>privates Repo")]
+  A["Setlist<br/>GitHub Pages"] <--> D[("setlist-data<br/>privates Repo")]
   P["iPhone<br/>Homescreen"] --> A
 
   classDef fremd fill:#0b1119,stroke:#3d4f63,color:#69809a
@@ -85,9 +85,9 @@ flowchart LR
   class D daten
 ```
 
-lifty besitzt die **Kraft**-Progression. Zwei Systeme, die dasselbe Arbeitsgewicht berechnen, laufen unweigerlich auseinander — deshalb gibt es hier nur eines.
+Setlist besitzt die **Kraft**-Progression. Zwei Systeme, die dasselbe Arbeitsgewicht berechnen, laufen unweigerlich auseinander — deshalb gibt es hier nur eines.
 
-Das **Rad** wird nur als Hinweis geplant; die Ist-Daten entstehen ohnehin automatisch. Umgekehrt schreibt lifty jede Krafteinheit zurück, damit die gesamte Last in **einer** Fitness-Kurve liegt statt in zwei getrennten Welten.
+Das **Rad** wird nur als Hinweis geplant; die Ist-Daten entstehen ohnehin automatisch. Umgekehrt schreibt Setlist jede Krafteinheit zurück, damit die gesamte Last in **einer** Fitness-Kurve liegt statt in zwei getrennten Welten.
 
 ---
 
@@ -225,13 +225,13 @@ CHIPPER · einmal von oben nach unten durch, auf Zeit
 
 ```json
 {
-  "external_id": "lifty-2026-08-26-strength-A",
+  "external_id": "setlist-2026-08-26-strength-A",
   "type": "WeightTraining",
   "name": "Kraft — Workout A",
   "start_date_local": "2026-08-26T19:02:11",
   "moving_time": 3112,
   "icu_training_load": 41,
-  "description": "Back Squat 80 kg — 5/5/5/5/5\n…\n\nAus lifty übertragen. Trainingslast geschätzt aus der Dauer (52 Min)."
+  "description": "Back Squat 80 kg — 5/5/5/5/5\n…\n\nAus Setlist übertragen. Trainingslast geschätzt aus der Dauer (52 Min)."
 }
 ```
 

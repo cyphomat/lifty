@@ -1,62 +1,50 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 340" width="1200" height="340" role="img" aria-label="lifty">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 340" width="1200" height="340" role="img" aria-label="Setlist">
   <defs>
-    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#071019"/>
-      <stop offset="1" stop-color="#04060a"/>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#17161b"/>
+      <stop offset="1" stop-color="#0c0c0e"/>
     </linearGradient>
-    <radialGradient id="halo" cx="50%" cy="8%" r="62%">
-      <stop offset="0" stop-color="#00e5ff" stop-opacity=".26"/>
-      <stop offset="1" stop-color="#00e5ff" stop-opacity="0"/>
+    <radialGradient id="glut" cx="50%" cy="10%" r="60%">
+      <stop offset="0" stop-color="#e8a23d" stop-opacity=".13"/>
+      <stop offset="1" stop-color="#e8a23d" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="rule" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#00e5ff"/>
-      <stop offset="1" stop-color="#ff2d95"/>
+      <stop offset="0" stop-color="#e8a23d"/>
+      <stop offset="1" stop-color="#6f93ad"/>
     </linearGradient>
     <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-      <path d="M40 0H0V40" fill="none" stroke="#ffffff" stroke-opacity=".035" stroke-width="1"/>
+      <path d="M40 0H0V40" fill="none" stroke="#ffffff" stroke-opacity=".03" stroke-width="1"/>
     </pattern>
-    <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse">
-      <rect width="4" height="1.4" fill="#000" fill-opacity=".22"/>
-    </pattern>
-    <filter id="neon" x="-60%" y="-60%" width="220%" height="220%">
-      <feGaussianBlur stdDeviation="7" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-    <filter id="soft" x="-60%" y="-60%" width="220%" height="220%">
-      <feGaussianBlur stdDeviation="5" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
   </defs>
 
-  <rect width="1200" height="340" fill="url(#sky)"/>
+  <rect width="1200" height="340" fill="url(#ground)"/>
   <rect width="1200" height="340" fill="url(#grid)"/>
-  <rect width="1200" height="340" fill="url(#halo)"/>
+  <rect width="1200" height="340" fill="url(#glut)"/>
 
-  <!-- Eckklammern -->
-  <path d="M34 34h84M34 34v56" fill="none" stroke="#00e5ff" stroke-opacity=".55" stroke-width="2"/>
-  <path d="M1166 306h-84M1166 306v-56" fill="none" stroke="#ff2d95" stroke-opacity=".55" stroke-width="2"/>
+  <!-- Eckwinkel wie am Road-Case -->
+  <path d="M34 34h84M34 34v56" fill="none" stroke="#e8a23d" stroke-opacity=".7" stroke-width="2"/>
+  <path d="M1166 306h-84M1166 306v-56" fill="none" stroke="#6f93ad" stroke-opacity=".7" stroke-width="2"/>
 
-  <!-- Hantel -->
-  <g transform="translate(600 104)" fill="#00e5ff" filter="url(#soft)">
+  <!-- Hantel, flach. Kein Leuchten — ein Amp glimmt, er strahlt nicht. -->
+  <g transform="translate(600 100)" fill="#f2f0ec">
     <rect x="-118" y="-5" width="236" height="10" rx="1"/>
     <rect x="-96"  y="-30" width="17" height="60" rx="2"/>
     <rect x="79"   y="-30" width="17" height="60" rx="2"/>
-    <rect x="-124" y="-19" width="13" height="38" rx="2" fill-opacity=".72"/>
-    <rect x="111"  y="-19" width="13" height="38" rx="2" fill-opacity=".72"/>
+    <rect x="-124" y="-19" width="13" height="38" rx="2" fill-opacity=".7"/>
+    <rect x="111"  y="-19" width="13" height="38" rx="2" fill-opacity=".7"/>
   </g>
 
-  <text x="610" y="238" text-anchor="middle" filter="url(#neon)"
-        font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
-        font-size="92" font-weight="700" letter-spacing="20" fill="#00e5ff">LIFTY</text>
+  <text x="600" y="232" text-anchor="middle"
+        font-family="Oswald, 'Arial Narrow', 'Helvetica Neue Condensed', Impact, sans-serif"
+        font-size="104" font-weight="700" letter-spacing="14" fill="#e8a23d">SETLIST</text>
 
-  <text x="606" y="280" text-anchor="middle" filter="url(#soft)"
+  <text x="600" y="274" text-anchor="middle"
         font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
-        font-size="18" font-weight="700" letter-spacing="11" fill="#ff2d95">LIFT HEAVY SHIT</text>
+        font-size="18" font-weight="700" letter-spacing="11" fill="#6f93ad">LIFT HEAVY SHIT</text>
 
-  <text x="601.7" y="308" text-anchor="middle"
+  <text x="600" y="304" text-anchor="middle"
         font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
-        font-size="12.5" letter-spacing="3.4" fill="#3d4f63">5×5 · ZWIFT · BATTLE ROPES · KEIN BUILD, KEIN SERVER</text>
+        font-size="12.5" letter-spacing="3.4" fill="#57535c">5×5 · ZWIFT · JAMS · KEIN BUILD, KEIN SERVER</text>
 
   <rect x="0" y="336" width="1200" height="4" fill="url(#rule)"/>
-  <rect width="1200" height="340" fill="url(#scan)"/>
 </svg>

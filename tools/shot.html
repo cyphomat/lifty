@@ -91,18 +91,18 @@ const state = {
 };
 
 localStorage.clear();
-localStorage.setItem('lifty.token', 'demo');
-localStorage.setItem('lifty.cache', JSON.stringify({
+localStorage.setItem('setlist.token', 'demo');
+localStorage.setItem('setlist.cache', JSON.stringify({
   config, state, fahrten,
   form: { form: 5, stufe: 'frisch', fitness: 52, ermuedung: 47,
           text: 'Ausgeruht. Wenn ein Tag für einen Versuch am oberen Ende taugt, dann dieser.' },
   eftp: 243
 }));
-localStorage.setItem('lifty.logs', JSON.stringify({ zeit: Date.now(), logs }));
-localStorage.setItem('lifty.icu.key', 'demo');
-localStorage.setItem('lifty.icu.athlete', 'i000000');
-localStorage.setItem('lifty.theme', thema);
-localStorage.setItem('lifty.version', 'demo');
+localStorage.setItem('setlist.logs', JSON.stringify({ zeit: Date.now(), logs }));
+localStorage.setItem('setlist.icu.key', 'demo');
+localStorage.setItem('setlist.icu.athlete', 'i000000');
+localStorage.setItem('setlist.theme', thema);
+localStorage.setItem('setlist.version', 'demo');
 
 const rahmen = document.createElement('iframe');
 rahmen.src = '../index.html';
