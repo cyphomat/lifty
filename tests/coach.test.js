@@ -189,3 +189,25 @@ ok('darueber wird die Differenz genannt', C.meilensteine(drueber, cfgM, new Date
 eq('darunter kein Meilenstein', C.meilensteine(stM, cfgM, new Date(2026,10,1)).length, 0);
 
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
+
+print('\n--- Die Saetze muessen auch grammatisch stimmen ---');
+const satz = tag => (C.meilensteine(stM, cfgM, tag).find(m => m.art === 'jahrestag') || {}).text || '';
+eq('am Tag selbst', satz(new Date(2026,7,27)).startsWith('Heute vor 5 Jahren:'), true);
+eq('einen Tag danach', satz(new Date(2026,7,28)).startsWith('Gestern vor 5 Jahren:'), true);
+eq('einen Tag davor', satz(new Date(2026,7,26)).startsWith('Morgen vor 5 Jahren:'), true);
+eq('zwei Tage danach', satz(new Date(2026,7,29)).startsWith('Vor 2 Tagen war es 5 Jahre her:'), true);
+eq('zwei Tage davor', satz(new Date(2026,7,25)).startsWith('In 2 Tagen ist es 5 Jahre her:'), true);
+ok('nirgends "waren es 5 Jahren"', ![25,26,27,28,29].some(d => satz(new Date(2026,7,d)).includes('waren es')));
+
+print('\n--- Kopfzeile bei frischem Training ---');
+const heuteTrainiert = { ...base(), history: [{ date: '2026-09-15' }] };
+Object.values(heuteTrainiert.lifts).forEach(l => l.weight = 999);
+eq('am selben Tag', C.directive(heuteTrainiert, config, HEUTE).kopf, 'Heute schon trainiert');
+const gestern = { ...base(), history: [{ date: '2026-09-14' }] };
+Object.values(gestern.lifts).forEach(l => l.weight = 999);
+eq('einen Tag spaeter', C.directive(gestern, config, HEUTE).kopf, 'Gestern trainiert');
+const vorendrei = { ...base(), history: [{ date: '2026-09-12' }] };
+Object.values(vorendrei.lifts).forEach(l => l.weight = 999);
+eq('danach mit Zahl', C.directive(vorendrei, config, HEUTE).kopf, 'Zuletzt vor 3 Tagen');
+
+print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

@@ -92,7 +92,10 @@ export function directive(state, config, today = new Date(), letzterLog = null, 
     kopf = 'Wiederaufbau';
   } else {
     situation = 'standard';
-    kopf = tage !== null ? `Zuletzt vor ${tage} Tag${tage === 1 ? '' : 'en'}` : 'Auf geht’s';
+    kopf = tage === null ? 'Auf geht’s'
+         : tage === 0 ? 'Heute schon trainiert'
+         : tage === 1 ? 'Gestern trainiert'
+         : `Zuletzt vor ${tage} Tagen`;
   }
 
   return {
@@ -270,11 +273,18 @@ export function meilensteine(state, config, heute = new Date()) {
     const jahre = heute.getFullYear() - d.getFullYear();
     if (jahre < 1) continue;
     const wert = r.bestesEinzel || r.bestes5er;
-    const wann = abstand === 0 ? 'Heute vor' : abstand > 0 ? `In ${abstand} Tag${abstand === 1 ? '' : 'en'} vor`
-      : `Vor ${-abstand} Tag${abstand === -1 ? '' : 'en'} waren es`;
+    // Ganze Saetze statt zusammengeklebter Bruchstuecke — sonst kommt
+    // "Vor 1 Tag waren es 5 Jahren" heraus.
+    const n = Math.abs(abstand);
+    const wann =
+      abstand === 0  ? `Heute vor ${jahre} Jahren`
+    : abstand === -1 ? `Gestern vor ${jahre} Jahren`
+    : abstand === 1  ? `Morgen vor ${jahre} Jahren`
+    : abstand < 0    ? `Vor ${n} Tagen war es ${jahre} Jahre her`
+    :                  `In ${n} Tagen ist es ${jahre} Jahre her`;
     out.push({
       art: 'jahrestag', rang: 1, lift: id,
-      text: `${wann} ${jahre} Jahren: ${wert} kg ${def.name}. Heute stehst du bei ${state.lifts[id].weight} kg — `
+      text: `${wann}: ${wert} kg ${def.name}. Heute stehst du bei ${state.lifts[id].weight} kg — `
           + `nicht weil du weniger kannst, sondern weil du wieder anfängst.`
     });
   }
