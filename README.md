@@ -55,8 +55,14 @@ danach ausschließlich im `localStorage` des jeweiligen Browsers.
 /System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc --module-file=tests/coach.test.js
 ```
 
-54 Tests. Sie decken ab, was still kaputtgehen kann: Progression, Deload,
-Streak-Berechnung, Fortschritt zur Referenz und die Ableitbarkeit des Zustands.
+```
+jsc --module-file=tests/wod.test.js
+jsc --module-file=tests/stats.test.js
+```
+
+104 Tests. Sie decken ab, was still kaputtgehen kann: Progression, Deload,
+Streak-Berechnung, Fortschritt zur Referenz, die Ableitbarkeit des Zustands —
+und dass ein WOD die Progression nicht anfasst.
 
 Nutzt die JS-Engine, die in macOS ohnehin steckt. Kein Node nötig.
 
@@ -67,6 +73,8 @@ Nutzt die JS-Engine, die in macOS ohnehin steckt. Kein Node nötig.
 | `js/program.js` | Der 5x5-Automat. Reine Funktionen, kein I/O — deshalb testbar. |
 | `js/coach.js` | Leitet Ansage, Ton und Fortschritt aus dem Zustand ab. Ebenfalls rein und getestet. |
 | `js/content.js` | Wissensschicht: Warum je Übung, Kadenz-Cues, Warm-up, Technikarbeit, Finisher. |
+| `js/wod.js` | Zufalls-WOD. Deterministisch über einen Seed, Lasten aus den Arbeitsgewichten. |
+| `js/stats.js` | Tonnage, Bestwerte, Verläufe. Rechnet die Sparklines, zeichnet sie aber nicht. |
 | `js/store.js` | GitHub-API als Speicher, Offline-Puffer, Lesecache. |
 | `js/intervals.js` | Liest Radaktivitäten von intervals.icu. |
 | `js/app.js` | Oberfläche und Ablauf. |
@@ -89,3 +97,15 @@ Seile und Konditionsarbeit kommen als Finisher ans Ende.
 Diese Reihenfolge ist kein Geschmack, sondern der Grund, warum die Progression
 im Kaloriendefizit überhaupt funktioniert. Wer den Finisher nach vorn zieht oder
 die Technikarbeit schwer macht, kippt sie.
+
+## Warum ein WOD einen eigenen Log-Typ hat
+
+Log-Dateien tragen ein Feld `type`. Fehlt es, gilt `strength`.
+
+`applyLog` steigt bei jedem anderen Typ sofort aus: das WOD landet in der
+Historie, rührt aber weder Arbeitsgewichte noch den A/B-Wechsel an.
+
+Ohne diese Trennung würde eine Spaßeinheit am Mittwoch die Kniebeuge um
+2,5 kg weiterdrehen oder als Fehlversuch zählen — und die Progression, die
+das ganze Programm trägt, wäre nach zwei Wochen Fiktion. Dafür gibt es
+Regressionstests in `tests/program.test.js`.
