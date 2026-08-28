@@ -1046,10 +1046,11 @@ function renderPRs(logs) {
           `${e.maximum.weight}×${e.maximum.reps} · ${e.maximum.formel}`) : ''}
       ${e.untergrenze ? z('Mindestens', `${e.untergrenze.wert} kg`,
           `aus ${e.untergrenze.weight}×${e.untergrenze.reps}`) : ''}
-      ${def.reference ? z('Alter Referenzwert', P.fmtWeight(def.reference)) : ''}
+      ${def.reference ? z('Vor der Pause', P.fmtWeight(def.reference)) : ''}
+      ${rekordZeile(id)}
     </div>`;
   }).join('');
-  $('hist-prs').innerHTML = zeilen + `<p class="fine">
+  $('hist-prs').innerHTML = zeilen + weitereRekorde() + `<p class="fine">
     „Mindestens“ stammt aus Arbeitssätzen. Die sind bewusst submaximal, deshalb
     unterschätzt jede Formel dort — der Wert ist eine Untergrenze, kein Maximum.
     Ein belastbares Maximum liefert nur ein Max-Out.</p>`;
@@ -1295,4 +1296,39 @@ async function uebungAusschliessen(id, name) {
   } catch (e) {
     banner(e.message, 'err', 8000);
   }
+}
+
+/* ================= Bestleistungen aus der CrossFit-Zeit ================= */
+
+/**
+ * Zwei Zeithorizonte, die nicht vermischt werden dürfen: „Vor der Pause" ist
+ * das realistische Nahziel, die Bestleistung von 2021 der ferne Bestwert.
+ * Der Fortschrittsbalken misst bewusst gegen das Nahziel — gegen 140 kg
+ * gemessen stünde er bei einem Drittel, und das wäre entmutigend statt wahr.
+ */
+function rekordZeile(id) {
+  const r = config.records && config.records.programm && config.records.programm[id];
+  if (!r) return '';
+  const jahr = (r.datum || '').slice(0, 4);
+  const teile = [];
+  if (r.bestesEinzel) teile.push(`${P.fmtWeight(r.bestesEinzel)} einzeln`);
+  if (r.bestes5er) teile.push(`${P.fmtWeight(r.bestes5er)} im 5er`);
+  if (!teile.length) return '';
+  return `<div class="reihe"><span class="l">Bestleistung ${jahr}</span>
+    <span class="v" style="color:var(--magenta)">${teile.join(' · ')}</span></div>`;
+}
+
+/** Was du außerhalb des Programms mal konntest — Kontext, kein Ziel. */
+function weitereRekorde() {
+  const w = config.records && config.records.weitere;
+  if (!w || !w.length) return '';
+  return `<div class="pr" style="border-left:2px solid var(--magenta)">
+    <div class="k">Weitere Bestleistungen</div>
+    ${w.map(r => `<div class="reihe">
+      <span class="l">${r.name}${r.zusatz ? ` <small style="color:var(--dim)">${r.zusatz}</small>` : ''}</span>
+      <span class="v" style="color:var(--magenta)">${P.fmtWeight(r.wert)}<small>${(r.datum || '').slice(0, 4)}</small></span>
+    </div>`).join('')}
+    <p class="fine" style="margin-top:10px">Aus ${config.records.quelle}. Nicht Teil des Programms —
+    sie stehen hier, weil sie zeigen, was in dir steckt.</p>
+  </div>`;
 }
