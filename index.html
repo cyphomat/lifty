@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111418">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="lifty">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/style.css">
+<title>lifty</title>
+</head>
+<body>
+
+<div id="banner" class="banner" hidden></div>
+
+<!-- ============ SETUP ============ -->
+<section id="view-setup" class="view">
+  <header class="head"><h1>lifty einrichten</h1></header>
+  <div class="pad">
+    <h2>1 · GitHub — deine Daten</h2>
+    <p class="lead">Damit liest und schreibt die App dein privates Repo <code>lifty-data</code>.</p>
+    <ol class="steps">
+      <li><b>Settings → Developer settings → Personal access tokens → Fine-grained tokens</b></li>
+      <li><b>Generate new token</b>, Zugriff auf <b>nur</b> <code>lifty-data</code></li>
+      <li>Permissions: <b>Contents → Read and write</b>. Sonst nichts.</li>
+    </ol>
+    <input id="token" type="password" placeholder="github_pat_..." autocomplete="off" autocapitalize="off" spellcheck="false">
+
+    <h2>2 · intervals.icu — dein Rad <span class="opt">optional</span></h2>
+    <p class="lead">Zeigt dir, ob die geplanten Radeinheiten tatsächlich gefahren wurden. Den Key findest du in den intervals.icu-Einstellungen unter „Developer".</p>
+    <input id="icukey" type="password" placeholder="intervals.icu API-Key" autocomplete="off" autocapitalize="off" spellcheck="false">
+
+    <button id="save-token" class="btn primary">Verbinden</button>
+    <p class="fine">Beide Schlüssel bleiben im Speicher dieses Browsers. Sie werden nie ins Repo geschrieben und tauchen in keinem Commit auf.</p>
+  </div>
+</section>
+
+<!-- ============ HOME ============ -->
+<section id="view-home" class="view" hidden>
+  <header class="head">
+    <h1>lifty</h1>
+    <button id="go-history" class="icon-btn" aria-label="Verlauf">≡</button>
+  </header>
+  <div class="pad">
+    <div id="today" class="card today"></div>
+    <h2>Diese Woche</h2>
+    <div id="week" class="week"></div>
+    <h2>Arbeitsgewichte</h2>
+    <div id="weights" class="weights"></div>
+  </div>
+</section>
+
+<!-- ============ SESSION ============ -->
+<section id="view-session" class="view" hidden>
+  <header class="head">
+    <button id="abort" class="icon-btn" aria-label="Abbrechen">✕</button>
+    <h1 id="session-title">Workout</h1>
+  </header>
+  <div class="pad" id="session-body"></div>
+  <div class="pad">
+    <button id="finish" class="btn primary" disabled>Einheit abschließen</button>
+  </div>
+  <div id="rest" class="rest" hidden>
+    <span id="rest-time">90</span>
+    <button id="rest-skip">Weiter</button>
+  </div>
+</section>
+
+<!-- ============ DONE ============ -->
+<section id="view-done" class="view" hidden>
+  <header class="head"><h1>Geschafft</h1></header>
+  <div class="pad" id="done-body"></div>
+  <div class="pad"><button id="done-ok" class="btn primary">Zurück</button></div>
+</section>
+
+<!-- ============ HISTORY ============ -->
+<section id="view-history" class="view" hidden>
+  <header class="head">
+    <button id="hist-back" class="icon-btn" aria-label="Zurück">‹</button>
+    <h1>Verlauf</h1>
+  </header>
+  <div class="pad" id="history-body"></div>
+  <div class="pad">
+    <button id="rebuild" class="btn ghost">state.json neu berechnen</button>
+    <button id="logout" class="btn ghost danger">Token entfernen</button>
+  </div>
+</section>
+
+<!-- ============ REP PICKER ============ -->
+<dialog id="picker">
+  <p id="picker-title">Wiederholungen</p>
+  <div id="picker-opts" class="picker-opts"></div>
+</dialog>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
