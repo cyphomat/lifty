@@ -1,0 +1,171 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>laedt</title>
+<style>
+  html,body{margin:0;padding:0;background:#000;overflow:hidden}
+  iframe{display:block;width:390px;height:844px;border:0}
+</style>
+<body>
+<script>
+/* Aufnahme-Vorrichtung für die Screenshots im README.
+   Lädt die App mit Beispieldaten in einen Rahmen und bedient sie, damit
+   Chrome im Kopflos-Modus echte Bildschirme statt Mockups aufnimmt.
+   Nur ein Werkzeug — die App selbst kennt diese Datei nicht.
+
+   Aufruf:  tools/shot.html?szene=home&thema=dunkel                        */
+
+const p = new URLSearchParams(location.search);
+const szene = p.get('szene') || 'home';
+const thema = p.get('thema') || 'dunkel';
+
+const config = {
+  version: 1, bar: 20, rounding: 2.5,
+  plates: [25, 20, 15, 10, 5, 2.5, 1.25],
+  intervals: { loadProMinute: { strength: 0.8, wod: 1.4 } },
+  deload: { afterFails: 3, factor: 0.9 },
+  lifts: {
+    squat:    { name: 'Kniebeuge',       increment: 2.5, start: 47.5, reference: 100 },
+    bench:    { name: 'Bankdrücken',     increment: 2.5, start: 35,   reference: 75 },
+    row:      { name: 'Rudern',          increment: 2.5, start: 32.5, reference: 70 },
+    ohp:      { name: 'Schulterdrücken', increment: 2.5, start: 25,   reference: 50 },
+    deadlift: { name: 'Kreuzheben',      increment: 5,   start: 60,   reference: 130 }
+  },
+  workouts: {
+    A: [{ lift:'squat', sets:5, reps:5 }, { lift:'bench', sets:5, reps:5 }, { lift:'row', sets:5, reps:5 }],
+    B: [{ lift:'squat', sets:5, reps:5 }, { lift:'ohp', sets:5, reps:5 }, { lift:'deadlift', sets:1, reps:5 }]
+  },
+  firstWorkout: 'A',
+  rest: { normal: 90, afterFail: 180 },
+  week: { slots: [{day:1,type:'strength'},{day:2,type:'ride'},{day:4,type:'strength'},{day:6,type:'ride'}] },
+  rides: [
+    { label:'Grundlage Z2', detail:'90 Min ruhig, Zone 2, Gespräch möglich' },
+    { label:'Sweet Spot',   detail:'3x12 Min @ 88-93% FTP, 6 Min locker dazwischen' },
+    { label:'Grundlage Z2', detail:'60-120 Min ruhig, Zone 2' },
+    { label:'VO2max',       detail:'5x4 Min hart, 4 Min locker dazwischen' }
+  ]
+};
+
+const tage = n => { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
+
+const einheit = (d, w, a, b, c) => ({
+  date: d, workout: w, type: 'strength',
+  started: d + 'T17:00:00.000Z', finished: d + 'T17:52:00.000Z',
+  lifts: w === 'A'
+    ? [{lift:'squat',weight:a,sets:5,target:5,reps:[5,5,5,5,5],success:true},
+       {lift:'bench',weight:b,sets:5,target:5,reps:[5,5,5,5,5],success:true},
+       {lift:'row',  weight:c,sets:5,target:5,reps:[5,5,5,5,5],success:true}]
+    : [{lift:'squat',weight:a,sets:5,target:5,reps:[5,5,5,5,5],success:true},
+       {lift:'ohp',  weight:b,sets:5,target:5,reps:[5,5,5,5,5],success:true},
+       {lift:'deadlift',weight:c,sets:1,target:5,reps:[5],success:true}]
+});
+
+const logs = [
+  einheit(tage(26),'A',62.5,45,42.5), einheit(tage(23),'B',65,32.5,85),
+  einheit(tage(19),'A',67.5,47.5,45), einheit(tage(16),'B',70,35,90),
+  einheit(tage(12),'A',72.5,50,47.5), einheit(tage(9),'B',75,37.5,95),
+  { date: tage(6), type:'wod', label:'AMRAP 14 · Thruster / Burpees / Battle Ropes — Slams', dauerSekunden: 842 },
+  einheit(tage(5),'A',77.5,52.5,50),
+  { date: tage(3), type:'maxout', lift:'deadlift', weight:110, reps:3, e1rm:116.5, formel:'Brzycki' },
+  einheit(tage(2),'B',80,40,100)
+];
+
+const fahrten = [
+  { id:'a1', date:tage(1),  name:'Zwift — Watopia Flat',  minutes:55, km:31.5, load:78 },
+  { id:'a2', date:tage(4),  name:'Feierabendrunde',        minutes:90, km:52,   load:121 },
+  { id:'a3', date:tage(8),  name:'Zwift — Alpe du Zwift',  minutes:70, km:22,   load:96 },
+  { id:'a4', date:tage(15), name:'Lange Runde',            minutes:150,km:88,   load:180 },
+  { id:'a5', date:tage(22), name:'Zwift — Gruppenfahrt',   minutes:50, km:15.3, load:73 }
+];
+
+const state = {
+  version: 1, derivedFrom: logs.length, updated: new Date().toISOString(), next: 'A',
+  lifts: {
+    squat:{weight:82.5,fails:0}, bench:{weight:42.5,fails:1}, row:{weight:52.5,fails:0},
+    ohp:{weight:42.5,fails:0}, deadlift:{weight:105,fails:0}
+  },
+  history: logs.filter(l => (l.type||'strength')==='strength').map(l => ({ date:l.date, workout:l.workout, type:'strength' }))
+};
+
+localStorage.clear();
+localStorage.setItem('lifty.token', 'demo');
+localStorage.setItem('lifty.cache', JSON.stringify({ config, state, fahrten }));
+localStorage.setItem('lifty.logs', JSON.stringify({ zeit: Date.now(), logs }));
+localStorage.setItem('lifty.icu.key', 'demo');
+localStorage.setItem('lifty.icu.athlete', 'i000000');
+localStorage.setItem('lifty.theme', thema);
+localStorage.setItem('lifty.version', 'demo');
+
+const rahmen = document.createElement('iframe');
+rahmen.src = '../index.html';
+document.body.appendChild(rahmen);
+
+const warte = ms => new Promise(r => setTimeout(r, ms));
+
+rahmen.addEventListener('load', async () => {
+  const w = rahmen.contentWindow, d = rahmen.contentDocument;
+  const $ = id => d.getElementById(id);
+  const tippe = el => {
+    el.dispatchEvent(new w.PointerEvent('pointerdown', { bubbles: true }));
+    el.dispatchEvent(new w.PointerEvent('pointerup', { bubbles: true }));
+  };
+  w.confirm = () => true;
+  await warte(1400);
+  if ($('banner')) $('banner').hidden = true;     // Offline-Hinweis stört das Bild
+
+  if (szene === 'session' || szene === 'session-hell') {
+    $('start').click();
+    await warte(200);
+    const k = [...d.querySelectorAll('#session-body .set')];
+    tippe(k[0]); await warte(120);
+    const k2 = [...d.querySelectorAll('#session-body .set')];
+    k2[1].dispatchEvent(new w.PointerEvent('pointerdown', { bubbles: true }));
+    await warte(600);
+    const acht = [...d.querySelectorAll('#picker-opts button')].find(b => b.dataset.n === '8');
+    if (acht) acht.click();
+    await warte(200);
+    const k3 = [...d.querySelectorAll('#session-body .set')];
+    k3[2].dispatchEvent(new w.PointerEvent('pointerdown', { bubbles: true }));
+    await warte(600);
+    const drei = [...d.querySelectorAll('#picker-opts button')].find(b => b.dataset.n === '3');
+    if (drei) drei.click();
+    await warte(200);
+    if ($('banner')) $('banner').hidden = true;
+    d.querySelector('#session-body .lift').scrollIntoView();
+    w.scrollBy(0, -20);
+  } else if (szene === 'warmup') {
+    $('start').click();
+    await warte(200);
+    d.querySelectorAll('#warmup details')[0].open = false;
+    d.querySelectorAll('#warmup details')[1].open = true;
+    await warte(150);
+    d.querySelectorAll('#warmup details')[1].scrollIntoView();
+    w.scrollBy(0, -20);
+  } else if (szene === 'verlauf') {
+    $('go-history').click();
+    await warte(1200);
+    if ($('banner')) $('banner').hidden = true;
+    w.scrollTo(0, 0);
+  } else if (szene === 'rad') {
+    $('go-history').click();
+    await warte(1200);
+    if ($('banner')) $('banner').hidden = true;
+    $('hist-rad').scrollIntoView();
+    w.scrollBy(0, -70);
+  } else if (szene === 'wod') {
+    $('go-wod').click();
+    await warte(300);
+    w.scrollTo(0, 0);
+  } else if (szene === 'maxout') {
+    $('go-maxout').click();
+    await warte(200);
+    d.querySelector('[data-lift="deadlift"]').click();
+    $('mo-weight').value = '110'; $('mo-weight').dispatchEvent(new w.Event('input'));
+    $('mo-reps').value = '3';     $('mo-reps').dispatchEvent(new w.Event('input'));
+    await warte(200);
+    $('mo-result').scrollIntoView(); w.scrollBy(0, -90);
+  }
+  await warte(500);
+  if ($('banner')) $('banner').hidden = true;
+  document.title = 'fertig';
+});
+</script>
