@@ -150,12 +150,16 @@ print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========
 
 print('\n--- Deine eigene Stimme hat Vorrang ---');
 eq('ohne eigene Zeilen kommen meine', C.spruchWaehlen('standard', '2026-09-01', null).length > 10, true);
-eq('eigene Zeile wird genommen',
-   C.spruchWaehlen('standard', '2026-09-01', { standard: ['Nur diese eine.'] }), 'Nur diese eine.');
-eq('alle-Liste greift, wenn die Situation fehlt',
-   C.spruchWaehlen('comeback', '2026-09-01', { alle: ['Meine Universalzeile.'] }), 'Meine Universalzeile.');
-eq('Situation schlaegt die alle-Liste',
-   C.spruchWaehlen('comeback', '2026-09-01', { comeback: ['Speziell.'], alle: ['Allgemein.'] }), 'Speziell.');
+// Seit dem Mischen gilt nicht mehr "eigene ersetzen fremde", sondern
+// "eigene kommen etwa jeden zweiten Tag vor". Also ueber viele Tage pruefen.
+const ueberTage = (situation, eigene, n = 60) =>
+  [...Array(n)].map((_, t) => C.spruchWaehlen(situation, `2026-09-${t + 1}`, eigene));
+ok('eigene Zeile kommt vor',
+   ueberTage('standard', { standard: ['Nur diese eine.'] }).includes('Nur diese eine.'));
+ok('alle-Liste greift, wenn die Situation fehlt',
+   ueberTage('comeback', { alle: ['Meine Universalzeile.'] }).includes('Meine Universalzeile.'));
+const mitBeiden = ueberTage('comeback', { comeback: ['Speziell.'], alle: ['Allgemein.'] });
+ok('Situation schlaegt die alle-Liste', mitBeiden.includes('Speziell.') && !mitBeiden.includes('Allgemein.'));
 eq('gleicher Tag, gleiche Wahl',
    C.spruchWaehlen('standard', '2026-09-01', { standard: ['a','b','c','d','e'] }),
    C.spruchWaehlen('standard', '2026-09-01', { standard: ['a','b','c','d','e'] }));
@@ -268,5 +272,30 @@ ok('keine Uebung mit vorangestelltem Artikel',
    alleTexte.slice(0,140));
 ok('Uebungsnamen englisch', alleTexte.includes('Back Squat') || alleTexte.includes('Bench Press'), alleTexte.slice(0,140));
 ok('nirgends "erste Mal"', !alleTexte.includes('erste Mal'), alleTexte.slice(0,120));
+
+print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
+
+print('\n--- Eigene und fremde Zeilen mischen sich ---');
+const meins = { alle: ["Let's go.", "Let's lift heavy shit."] };
+let vonIhm = 0, vonMir = 0;
+for (let t = 1; t <= 200; t++) {
+  const z = C.spruchWaehlen('standard', `2026-09-${t}`, meins);
+  if (meins.alle.includes(z)) vonIhm++; else vonMir++;
+}
+ok('beide kommen vor', vonIhm > 0 && vonMir > 0, `eigene ${vonIhm}, fremde ${vonMir}`);
+ok('ungefaehr halbe halbe trotz zwei gegen dreizehn Zeilen',
+   vonIhm > 60 && vonIhm < 140, `eigene ${vonIhm} von 200`);
+eq('ohne eigene Zeilen kommen nur meine',
+   [...Array(50)].every((_, t) => !meins.alle.includes(C.spruchWaehlen('standard', `2026-10-${t}`, null))), true);
+eq('gleicher Tag, gleiche Wahl — auch beim Mischen',
+   C.spruchWaehlen('standard', '2026-09-05', meins), C.spruchWaehlen('standard', '2026-09-05', meins));
+
+print('\n--- Genug Auswahl, damit es sich nicht abnutzt ---');
+const situationen = ['comeback','leicht','standard','nachFehlversuch','nachDeload','streak','defizit'];
+for (const s of situationen) {
+  const gesehen = new Set();
+  for (let t = 1; t <= 120; t++) gesehen.add(C.spruchWaehlen(s, `2026-11-${t}`, null));
+  ok(`${s}: mindestens fuenf verschiedene`, gesehen.size >= 5, `${gesehen.size} verschiedene`);
+}
 
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

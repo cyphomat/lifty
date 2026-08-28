@@ -121,49 +121,69 @@ export const RIDE_INFO = {
 
 export const VOICE = {
   comeback: [
-    'Willkommen zurück. Die Stange hat dich nicht vermisst — sie liegt einfach da und wartet.',
     'Fünf Wochen weg. Das Gewicht auf der Stange ist niedrig, weil das der Plan ist — nicht weil du schwach bist.',
     'Der erste Satz nach einer Pause ist der schwerste. Nicht körperlich.',
-    'Du kommst nicht bei null zurück. Du kommst mit allem zurück, was du vorher gelernt hast.'
+    'Du kommst nicht bei null zurück. Du kommst mit allem zurück, was du vorher gelernt hast.',
+    'Willkommen zurück. Die Stange hat dich nicht vermisst — sie liegt einfach da und wartet.',
+    'Die Pause ist vorbei, sobald du drunterstehst. Nicht vorher.',
+    'Niemand schaut zu. Das ist die gute Nachricht.',
+    'Dein Körper hat das alles schon mal gemacht. Er erinnert sich schneller, als du denkst.',
+    'Anfangen ist die ganze Übung. Der Rest ist Routine.'
   ],
   leicht: [
-    'Zu leicht ist heute die richtige Antwort. Die schweren Tage kommen von allein.',
-    'Geduld ist unbequem, aber sie ist das Einzige, was funktioniert.',
     'Heute soll sich zu leicht anfühlen. Das ist die Dosis, nicht der Fehler.',
-    'Geduld ist hier kein Charakterzug, sondern Methode. In acht Wochen liegt wieder die 80 auf der Stange.',
-    'Wer jetzt schummelt und Scheiben drauflegt, zahlt es in Woche sechs.'
+    'Geduld ist hier kein Charakterzug, sondern Methode.',
+    'Wer jetzt schummelt und Scheiben drauflegt, zahlt es in Woche sechs.',
+    'Zu leicht ist heute die richtige Antwort. Die schweren Tage kommen von allein.',
+    'Langweilig ist ein Trainingszustand, kein Urteil.',
+    'Die harten Tage stehen im Kalender. Nur eben nicht heute.',
+    'Unterfordert ist besser als überzogen. Fragt jeder, der mal drei Monate ausgefallen ist.'
   ],
   standard: [
-    'Keine Ausreden, keine Zuschauer. Nur Eisen.',
-    'Aufwärmen, laden, wegdrücken. Kein Drama.',
-    'Fünf Sätze. Die Stange zählt mit, nicht du.',
     'Kein Held sein. Fünf saubere Sätze, dann nach Hause.',
     'Die Stange interessiert nicht, wie dein Tag war.',
     'Zwei Kilo mehr als beim letzten Mal. So wird das gemacht.',
-    'Technik zuerst. Das Gewicht kommt von allein.'
+    'Technik zuerst. Das Gewicht kommt von allein.',
+    'Keine Ausreden, keine Zuschauer. Nur Eisen.',
+    'Aufwärmen, laden, wegdrücken. Kein Drama.',
+    'Fünf Sätze. Die Stange zählt mit, nicht du.',
+    'Der Plan steht. Du musst ihn nur noch anfassen.',
+    'Erst die Arbeit, dann der Espresso.',
+    'Heute keine Heldentaten. Heute Handwerk.',
+    'Zwift im Keller, Eisen in Darmstadt. Heute ist Darmstadt dran.',
+    'Es liegt alles bereit. Du musst dich nur drunterlegen.',
+    'Niemand hat je eine Einheit bereut, die er gemacht hat.'
   ],
   nachFehlversuch: [
-    'Die Stange hat gewonnen. Einmal.',
-    'Beim letzten Mal war Schluss. Heute nicht.',
     'Letztes Mal hat dich das geschlagen. Heute nicht.',
     'Gleiche Last wie beim letzten Mal. Diesmal gewinnst du sie.',
-    'Ein Fehlversuch ist Information, kein Urteil.'
+    'Ein Fehlversuch ist Information, kein Urteil.',
+    'Die Stange hat gewonnen. Einmal.',
+    'Beim letzten Mal war Schluss. Heute nicht.',
+    'Dieselbe Stange, dieselbe Zahl. Andere Laune.',
+    'Sie steht noch auf deiner Liste. Streich sie.'
   ],
   nachDeload: [
-    'Zehn Prozent runter ist kein Rückzug. Das ist Anlauf nehmen.',
     'Deload ist kein Rückschritt, sondern Anlauf. Das Programm hat das für dich entschieden, nicht gegen dich.',
-    'Zehn Prozent runter, damit es wieder hoch geht. Vertrau der Mechanik.'
+    'Zehn Prozent runter, damit es wieder hoch geht. Vertrau der Mechanik.',
+    'Zehn Prozent runter ist kein Rückzug. Das ist Anlauf nehmen.',
+    'Das Programm hat entschieden, damit du es nicht musst.',
+    'Rückwärts laufen, um Anlauf zu nehmen, sieht immer albern aus. Funktioniert trotzdem.'
   ],
   streak: [
-    'Nichts Spektakuläres. Nur wieder da. Genau das zählt.',
-    'Vier Wochen. Die meisten sind längst weg.',
     'Vierte Woche in Folge. Das ist der Teil, an dem die meisten aufhören.',
     'Konstanz schlägt Intensität. Du machst es gerade richtig.',
-    'Kein spektakulärer Tag. Nur wieder einer. Genau darum geht es.'
+    'Kein spektakulärer Tag. Nur wieder einer. Genau darum geht es.',
+    'Nichts Spektakuläres. Nur wieder da. Genau das zählt.',
+    'Vier Wochen. Die meisten sind längst weg.',
+    'Kein Applaus, keine Geschichte. Nur Wochen, die sich stapeln.',
+    'Das hier ist der unsichtbare Teil. Der zählt am meisten.'
   ],
   defizit: [
-    'Weniger essen, mehr heben. Der unangenehmste Weg — und der einzige, der geht.',
     'Im Defizit ist Halten schon Gewinn. Jedes Kilo mehr auf der Stange ist Bonus.',
-    'Muskeln aufbauen und Fett verlieren gleichzeitig geht — bei Wiedereinsteigern. Das Fenster ist offen, nutz es.'
+    'Muskeln aufbauen und Fett verlieren gleichzeitig geht — bei Wiedereinsteigern. Das Fenster ist offen, nutz es.',
+    'Weniger essen, mehr heben. Der unangenehmste Weg — und der einzige, der geht.',
+    'Der Espresso hat keine Kalorien. Alles danach schon.',
+    'Die Waage misst Wasser, Essen und Tagesform. Die Stange misst dich.'
   ]
 };

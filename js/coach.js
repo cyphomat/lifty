@@ -242,15 +242,26 @@ export function interferenz(fahrten = [], jetzt = new Date()) {
    was dort steht, hat Vorrang. Meine Zeilen sind nur die Rueckfall-
    ebene fuer Situationen, fuer die du noch nichts geschrieben hast. */
 
+function hash(text) {
+  let h = 0;
+  for (const c of String(text)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return h;
+}
+
 export function spruchWaehlen(situation, tag, eigene) {
   const meine = VOICE[situation] || [];
   const seine = (eigene && (eigene[situation] || eigene.alle)) || [];
-  const pool = seine.length ? seine : meine;
-  if (!pool.length) return '';
-  let h = 0;
-  const seed = String(tag) + situation;
-  for (const c of seed) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  return pool[h % pool.length];
+  if (!seine.length && !meine.length) return '';
+  if (!seine.length) return meine[hash(tag + situation) % meine.length];
+  if (!meine.length) return seine[hash(tag + situation) % seine.length];
+
+  // Mischen statt ersetzen. Nicht ueber die Poolgroesse, sondern ueber eine
+  // Muenze: sonst gingen zwei eigene Zeilen zwischen dreissig fremden unter,
+  // und genau die eigenen sind der Grund, warum sich das nach jemandem
+  // anfuehlt statt nach Software.
+  return hash(tag + situation + '#') % 2
+    ? seine[hash(tag + situation) % seine.length]
+    : meine[hash(tag + situation) % meine.length];
 }
 
 /* ---------------------------------------------------------------
