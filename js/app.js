@@ -16,8 +16,12 @@ let bannerTimer = null;
 function banner(msg, kind = '', ms = 3500) {
   const b = $('banner');
   b.textContent = msg; b.className = 'banner ' + kind; b.hidden = false;
+  document.body.classList.add('has-banner');
   clearTimeout(bannerTimer);
-  if (ms) bannerTimer = setTimeout(() => b.hidden = true, ms);
+  if (ms) bannerTimer = setTimeout(() => {
+    b.hidden = true;
+    document.body.classList.remove('has-banner');
+  }, ms);
 }
 
 /* ============================ Laden ============================ */

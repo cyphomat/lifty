@@ -17,6 +17,9 @@
 }
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+/* Muss vor allen Layoutregeln stehen: sonst sticht ein display:flex
+   das hidden-Attribut aus und Elemente tauchen ungefragt auf. */
+[hidden]{display:none!important}
 html,body{margin:0;padding:0}
 body{
   background:var(--bg); color:var(--fg);
@@ -62,7 +65,7 @@ code{background:#0d1620;color:var(--cyan);padding:2px 6px;border-radius:3px;font
   display:flex;align-items:center;gap:12px;
   padding:calc(env(safe-area-inset-top) + 16px) 16px 14px;
   position:sticky;top:0;z-index:6;
-  background:linear-gradient(180deg,var(--bg) 72%,transparent);
+  background:var(--bg);
   border-bottom:1px solid var(--line);
 }
 .head h1{flex:1}
@@ -217,6 +220,7 @@ input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 1px rgba(0,22
   font-size:13px;font-weight:700;text-align:center;font-family:var(--mono);letter-spacing:.06em;
 }
 .banner.err{border-color:var(--red);color:var(--red)}
+body.has-banner .head{padding-top:calc(env(safe-area-inset-top) + 62px)}
 .banner.ok{border-color:var(--lime);color:var(--lime)}
 
 dialog{

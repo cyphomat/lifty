@@ -111,7 +111,10 @@ export function planWeek(state, config, today = new Date()) {
     const date = new Date(monday);
     date.setDate(monday.getDate() + (slot.day - 1));
     const key = ymd(date);
-    const done = (state.history || []).some(h => h.date === key);
+    // Nur Krafteinheiten kommen aus der eigenen Historie. Ob eine Radeinheit
+    // gefahren wurde, weiss allein intervals.icu — sonst haekelt eine
+    // Krafteinheit am Dienstag die Radeinheit desselben Tages ab.
+    const done = slot.type === 'strength' && (state.history || []).some(h => h.date === key);
 
     const item = {
       date: key,

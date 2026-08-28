@@ -92,6 +92,17 @@ eq('Donnerstag Kraft B', week[2].workout, 'B');
 eq('Dienstag ist Rad', week[1].type, 'ride');
 eq('Wochentage stimmen', week.map(w => w.day).join(','), 'Mo,Di,Do,Sa');
 
+print('\n--- Abgehakt wird nur, was zum Slot passt ---');
+// Regression: eine Krafteinheit am Dienstag hat frueher die Radeinheit
+// desselben Tages als erledigt markiert.
+const MI = new Date(2026, 8, 2);                    // Mi, 02.09.2026
+const mitKraftAmDi = { ...P.initialState(config), history: [{ date: '2026-09-01', workout: 'A' }] };
+const w2 = P.planWeek(mitKraftAmDi, config, MI);
+eq('Dienstag ist der Rad-Slot', w2[1].type, 'ride');
+eq('Krafteinheit hakt die Radeinheit NICHT ab', w2[1].done, false);
+const mitKraftAmMo = { ...P.initialState(config), history: [{ date: '2026-08-31', workout: 'A' }] };
+eq('Krafteinheit hakt den Kraft-Slot ab', P.planWeek(mitKraftAmMo, config, MI)[0].done, true);
+
 print('\n--- Rundung ---');
 eq('42,3 -> 42,5', P.roundTo(42.3, 2.5), 42.5);
 eq('41,1 -> 40', P.roundTo(41.1, 2.5), 40);
