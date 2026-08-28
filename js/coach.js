@@ -177,3 +177,57 @@ export function formLage(wellness) {
     datum: wellness.date || null
   };
 }
+
+/* ---------------------------------------------------------------
+   Interferenz zwischen Rad und Eisen. Die Forschungslage kurz:
+   vier bis acht Stunden Abstand vermeiden die Stoerung weitgehend,
+   Radfahren stoert weniger als Laufen, harte Intervalle treffen die
+   Kraftausdauer deutlich und das Maximalkraftniveau kaum, und ab
+   etwa 30 Minuten Umfang wird es ueberhaupt erst messbar.
+
+   Die App warnt damit — sie kuerzt nichts. Der Sinn ist, dass ein
+   zaeher Tag erklaerbar wird statt sich wie ein Rueckschritt
+   anzufuehlen.                                                    */
+
+function artDerFahrt(f) {
+  const min = f.minutes || 0;
+  const proMin = min > 0 && f.load ? f.load / min : 0;
+  if (proMin >= 1.3 || (f.load >= 90 && min <= 75)) return 'hart';
+  if (min >= 75) return 'lang';
+  return 'locker';
+}
+
+export function interferenz(fahrten = [], jetzt = new Date()) {
+  const mitZeit = fahrten
+    .filter(f => f.zeit)
+    .map(f => ({ ...f, ts: new Date(f.zeit) }))
+    .filter(f => !isNaN(f.ts) && f.ts <= jetzt)
+    .sort((a, b) => b.ts - a.ts);
+  if (!mitZeit.length) return null;
+
+  const f = mitZeit[0];
+  const stunden = Math.round(((jetzt - f.ts) / 3600000) * 10) / 10;
+  if (stunden > 24) return null;
+
+  const art = artDerFahrt(f);
+  const gerundet = Math.round(stunden);
+
+  if (art === 'locker' && stunden >= 4) return null;
+
+  if (stunden < 4 && art !== 'locker') {
+    return { stufe: 'stark', stunden, art, fahrt: f,
+      text: `Vor ${gerundet} Stunden ${art === 'hart' ? 'hart' : 'lang'} gefahren. Unter vier Stunden Abstand `
+          + `leidet vor allem die Kraftausdauer — die letzten Sätze werden zäh. `
+          + `Das Maximalkraftniveau bleibt davon weitgehend unberührt: es ist Ermüdung, kein Rückschritt.` };
+  }
+  if (stunden < 8 && art !== 'locker') {
+    return { stufe: 'leicht', stunden, art, fahrt: f,
+      text: `Vor ${gerundet} Stunden ${art === 'hart' ? 'hart' : 'lang'} gefahren. Der Abstand reicht knapp; `
+          + `rechne beim letzten Satz mit etwas weniger Reserve.` };
+  }
+  if (stunden < 4) {
+    return { stufe: 'gering', stunden, art, fahrt: f,
+      text: `Vor ${gerundet} Stunden locker gefahren. Kein nennenswerter Einfluss — ruhige Grundlage stört das Eisen nicht.` };
+  }
+  return null;
+}

@@ -111,3 +111,39 @@ ok('jede Stufe hat einen Text', ['frisch','neutral','muede','platt']
 eq('Grenzfall genau null ist neutral', C.formLage({ ctl: 50, atl: 50 }).stufe, 'neutral');
 
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
+
+print('\n--- Interferenz zwischen Rad und Eisen ---');
+const jetzt = new Date(2026, 8, 10, 18, 0, 0);
+// intervals.icu liefert Ortszeit ohne Zeitzone. toISOString() waere UTC —
+// ohne das Z wuerde das als Ortszeit gelesen und um den Versatz verschoben.
+const lokal = d => { const z = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}`; };
+const vorStunden = h => lokal(new Date(jetzt.getTime() - h * 3600000));
+const fahrt = (h, minutes, load) => ({ date:'2026-09-10', zeit: vorStunden(h), minutes, load, name:'Test' });
+
+eq('ohne Fahrten nichts', C.interferenz([], jetzt), null);
+eq('ohne Uhrzeit nichts', C.interferenz([{ date:'2026-09-10', minutes:60, load:90 }], jetzt), null);
+eq('aeltere Fahrt als 24 h zaehlt nicht', C.interferenz([fahrt(30, 60, 100)], jetzt), null);
+
+const hart2h = C.interferenz([fahrt(2, 50, 90)], jetzt);
+eq('harte Fahrt vor 2 h: starke Warnung', hart2h.stufe, 'stark');
+eq('als hart erkannt', hart2h.art, 'hart');
+ok('Text nennt die Kraftausdauer', hart2h.text.includes('Kraftausdauer'));
+ok('und beruhigt beim Maximalkraftniveau', hart2h.text.includes('Maximalkraft'));
+
+eq('harte Fahrt vor 6 h: nur leicht', C.interferenz([fahrt(6, 50, 90)], jetzt).stufe, 'leicht');
+eq('harte Fahrt vor 10 h: keine Warnung', C.interferenz([fahrt(10, 50, 90)], jetzt), null);
+
+const lang = C.interferenz([fahrt(3, 120, 110)], jetzt);
+eq('lange Fahrt wird erkannt', lang.stufe, 'stark');
+
+eq('lockere Fahrt vor 6 h: nichts', C.interferenz([fahrt(6, 60, 40)], jetzt), null);
+eq('lockere Fahrt vor 1 h: nur Hinweis', C.interferenz([fahrt(1, 60, 40)], jetzt).stufe, 'gering');
+
+print('\n--- Es zaehlt die juengste Fahrt ---');
+const mehrere = [fahrt(20, 60, 100), fahrt(2, 50, 95), fahrt(9, 90, 120)];
+eq('nimmt die von vor 2 Stunden', Math.round(C.interferenz(mehrere, jetzt).stunden), 2);
+eq('Fahrten in der Zukunft werden ignoriert',
+   C.interferenz([{ date:'2026-09-11', zeit: lokal(new Date(jetzt.getTime()+7200000)), minutes:60, load:100 }], jetzt), null);
+
+print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

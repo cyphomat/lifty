@@ -52,7 +52,11 @@ export async function rides(from, to) {
     .filter(a => RIDE_TYPES.includes(a.type))
     .map(a => ({
       id: a.id,
+      external_id: a.external_id || null,
       date: (a.start_date_local || '').slice(0, 10),
+      // Uhrzeit wird gebraucht: der Abstand zwischen Fahrt und Eisen
+      // entscheidet, ob sich die beiden ins Gehege kommen.
+      zeit: a.start_date_local || null,
       name: a.name || 'Fahrt',
       minutes: Math.round((a.moving_time || 0) / 60),
       km: Math.round((a.distance || 0) / 100) / 10,
@@ -69,6 +73,7 @@ export async function wellness(from, to) {
   return list.map(w => ({
     date: w.id,
     weight: w.weight || null,
+    eftp: w.eftp || null,
     ctl: w.ctl != null ? w.ctl : null,
     atl: w.atl != null ? w.atl : null,
     restingHR: w.restingHR || null
@@ -166,3 +171,79 @@ export function pushAktiv() {
   return v === null ? true : v === '1';
 }
 export function setPushAktiv(an) { localStorage.setItem(PUSH_KEY, an ? '1' : '0'); }
+
+/* ---------------------------------------------------------------
+   Geplante Einheiten in den Kalender. `external_id` greift laut Doku
+   nur fuer dieselbe OAuth-Anwendung — mit einem API-Key ist darauf
+   kein Verlass. Deshalb wird vorher gelesen, was schon dasteht, statt
+   blind zu schreiben: doppelte Eintraege im eigenen Kalender sind
+   aergerlicher als ein fehlender.                                   */
+
+/** Vorhandene Kalendereintraege im Zeitraum. */
+export async function events(from, to) {
+  const id = localStorage.getItem(KEY_ID);
+  if (!id) return [];
+  const list = await get(`/athlete/${id}/events?oldest=${from}&newest=${to}`);
+  return Array.isArray(list) ? list : [];
+}
+
+/** Ein geplanter Slot als Kalendereintrag. Rein, damit testbar. */
+export function alsEvent(slot, config = {}) {
+  if (!slot || !slot.date) return null;
+  const rad = slot.type === 'ride';
+  return {
+    category: 'WORKOUT',
+    start_date_local: `${slot.date}T00:00:00`,
+    type: rad ? 'Ride' : 'WeightTraining',
+    name: rad ? slot.label : `Kraft — Workout ${slot.workout || ''}`.trim(),
+    description: [slot.detail, slot.watt ? `Ziel: ${slot.watt}` : '', 'Geplant in lifty.']
+      .filter(Boolean).join('\n'),
+    external_id: `lifty-plan-${slot.date}-${slot.type}`
+  };
+}
+
+/**
+ * Was von den geplanten Eintraegen noch fehlt. Abgleich ueber
+ * external_id und ersatzweise ueber Datum plus Name — Letzteres
+ * traegt auch dann, wenn die Kennung nicht zurueckkommt.
+ */
+export function fehlendeEvents(geplant, vorhanden = []) {
+  const kennungen = new Set(vorhanden.map(e => e.external_id).filter(Boolean));
+  const paare = new Set(vorhanden.map(e => `${(e.start_date_local || '').slice(0, 10)}|${e.name || ''}`));
+  return geplant.filter(e =>
+    !kennungen.has(e.external_id) &&
+    !paare.has(`${e.start_date_local.slice(0, 10)}|${e.name}`));
+}
+
+/** Mehrere Kalendereintraege auf einmal anlegen. */
+export async function pushEvents(liste) {
+  if (!liste.length) return [];
+  const id = localStorage.getItem(KEY_ID);
+  const key = localStorage.getItem(KEY_TOKEN);
+  if (!id || !key) throw new Error('intervals.icu ist nicht verbunden.');
+  const res = await fetch(`${BASE}/athlete/${id}/events/bulk`, {
+    method: 'POST',
+    headers: { Authorization: 'Basic ' + btoa('API_KEY:' + key), 'Content-Type': 'application/json' },
+    body: JSON.stringify(liste)
+  });
+  if (res.status === 401 || res.status === 403) throw new Error('intervals.icu: Key ohne Schreibrecht.');
+  if (!res.ok) throw new Error(`intervals.icu ${res.status}: ${(await res.text()).slice(0, 120)}`);
+  return res.json();
+}
+
+/** Analog fuer Aktivitaeten: was von den Einheiten dort noch fehlt. */
+export function fehlendeAktivitaeten(geplant, vorhanden = []) {
+  const kennungen = new Set(vorhanden.map(a => a.external_id).filter(Boolean));
+  const paare = new Set(vorhanden.map(a => `${(a.start_date_local || a.zeit || '').slice(0, 10)}|${a.name || ''}`));
+  return geplant.filter(a =>
+    !kennungen.has(a.external_id) &&
+    !paare.has(`${a.start_date_local.slice(0, 10)}|${a.name}`));
+}
+
+/** Alle Aktivitaeten im Zeitraum, ungefiltert — fuer den Abgleich. */
+export async function alleAktivitaeten(from, to) {
+  const id = localStorage.getItem(KEY_ID);
+  if (!id) return [];
+  const list = await get(`/athlete/${id}/activities?oldest=${from}&newest=${to}`);
+  return Array.isArray(list) ? list : [];
+}

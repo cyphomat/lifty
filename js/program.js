@@ -258,3 +258,14 @@ export function waermsaetze(arbeit, config = {}) {
   }
   return saetze;
 }
+
+/**
+ * Wattbereich aus FTP-Anteilen. "88-93 % FTP" ist eine Anweisung,
+ * "205-217 W" ist eine Zahl, die man am Rad einstellen kann.
+ */
+export function wattBereich(anteile, eftp) {
+  if (!eftp || !Array.isArray(anteile) || anteile.length !== 2) return null;
+  const von = Math.round(eftp * anteile[0]);
+  const bis = Math.round(eftp * anteile[1]);
+  return von === bis ? `${von} W` : `${von}–${bis} W`;
+}

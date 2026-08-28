@@ -96,7 +96,7 @@ import { e1rm, e1rmFormel } from './program.js';
 export function prs(logs = []) {
   const out = {};
   const merke = (lift, feld, wert) => {
-    out[lift] = out[lift] || { arbeit: null, gemessen: null, maximum: null };
+    out[lift] = out[lift] || { arbeit: null, gemessen: null, maximum: null, untergrenze: null };
     const alt = out[lift][feld];
     if (!alt || wert.vergleich > alt.vergleich) out[lift][feld] = wert;
   };
@@ -108,10 +108,12 @@ export function prs(logs = []) {
       if (wdh === 1) {
         merke(l.lift, 'gemessen', { vergleich: l.weight, weight: l.weight, date: l.date });
       }
+      // Nur ein Max-Out geht bis nah ans Versagen — nur daraus wird ein
+      // belastbares Maximum. Alles andere ist eine Untergrenze.
       if (geschaetzt) {
         merke(l.lift, 'maximum', {
           vergleich: geschaetzt, wert: geschaetzt, weight: l.weight, reps: wdh,
-          date: l.date, formel: e1rmFormel(wdh), quelle: 'Max-Out'
+          date: l.date, formel: e1rmFormel(wdh)
         });
       }
       continue;
@@ -123,16 +125,40 @@ export function prs(logs = []) {
       if (e.success) {
         merke(e.lift, 'arbeit', { vergleich: e.weight, weight: e.weight, date: l.date, sets: e.sets, reps: e.target });
       }
+      // Arbeitssaetze sind submaximal: die Formel unterschaetzt hier
+      // systematisch. Deshalb "mindestens", nicht "geschaetztes Maximum".
       const geschaetzt = e1rm(e.weight, beste);
       if (geschaetzt) {
-        merke(e.lift, 'maximum', {
+        merke(e.lift, 'untergrenze', {
           vergleich: geschaetzt, wert: geschaetzt, weight: e.weight, reps: beste,
-          date: l.date, formel: e1rmFormel(beste), quelle: 'Trainingssatz'
+          date: l.date, formel: e1rmFormel(beste)
         });
       }
     }
   }
   return out;
+}
+
+/**
+ * Verlauf des geschätzten Maximums. Steigt auch dann, wenn du bei gleichem
+ * Gewicht mehr Wiederholungen schaffst — bei ein bis zwei Einheiten pro
+ * Woche der ehrlichere Fortschrittsmesser als das reine Arbeitsgewicht.
+ */
+export function serieE1rm(logs, liftId) {
+  const punkte = [];
+  for (const l of logs) {
+    if (l.type === 'maxout' && l.lift === liftId) {
+      const w = e1rm(l.weight, l.reps || 1);
+      if (w) punkte.push({ date: l.date, weight: w, belastbar: true });
+      continue;
+    }
+    if ((l.type || 'strength') !== 'strength' || !Array.isArray(l.lifts)) continue;
+    const e = l.lifts.find(x => x.lift === liftId);
+    if (!e) continue;
+    const w = e1rm(e.weight, Math.max(0, ...(e.reps || [])));
+    if (w) punkte.push({ date: l.date, weight: w, belastbar: false });
+  }
+  return punkte.sort((a, b) => a.date.localeCompare(b.date));
 }
 
 /**
@@ -144,7 +170,7 @@ export function neuePRs(logs, log) {
   const danach = prs([...logs.filter(l => l.date < log.date), log]);
   const treffer = [];
   for (const [lift, neu] of Object.entries(danach)) {
-    for (const feld of ['arbeit', 'gemessen', 'maximum']) {
+    for (const feld of ['arbeit', 'gemessen', 'maximum', 'untergrenze']) {
       const a = davor[lift] && davor[lift][feld];
       const b = neu[feld];
       if (b && (!a || b.vergleich > a.vergleich) && b.date === log.date) {

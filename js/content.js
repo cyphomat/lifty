@@ -97,16 +97,19 @@ export const FINISHER = [
 export const RIDE_INFO = {
   'Grundlage Z2': {
     intensitaet: 'locker',
+    ftp: [0.56, 0.75],
     warum: 'Baut das aerobe Fundament und verbrennt Fett, ohne deine Beine für die Kniebeuge zu ruinieren. Der wichtigste Teil deines Radumfangs — und der, den alle zu hart fahren.',
     achtung: 'Wenn du dich unterhalten kannst, stimmt es. Wenn es sich gut anfühlt, ist es meistens zu hart.'
   },
   'Sweet Spot': {
     intensitaet: 'mittel',
+    ftp: [0.88, 0.93],
     warum: 'Bestes Verhältnis von Reiz zu Erholungskosten. Hebt die Schwelle, ohne dich für Tage zu zerstören.',
     achtung: 'Zäh, aber kontrolliert. Du solltest das letzte Intervall genauso fahren können wie das erste.'
   },
   'VO2max': {
     intensitaet: 'hart',
+    ftp: [1.06, 1.20],
     warum: 'Hebt die Decke. Wenige, kurze, wirklich harte Intervalle.',
     achtung: 'Nicht am Tag vor dem Beintag. Und nicht, wenn du schlecht geschlafen hast.'
   }

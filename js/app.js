@@ -24,6 +24,8 @@ let alleLogs = [];              // zuletzt geladene Einheiten, fuer Bestwerte
 let mo = { lift: 'squat' };     // laufender Krafttest
 let form = null;                // Form aus intervals.icu (ctl - atl)
 let alleFahrten = [];           // Radfahrten der letzten 90 Tage
+let stoerung = null;            // Interferenz Rad -> Eisen
+let eftp = null;                // geschaetzte FTP, fuer Wattziele
 
 const $ = id => document.getElementById(id);
 const VERSION_KEY = 'lifty.version';
@@ -88,6 +90,7 @@ async function loadIntervals() {
     von.setDate(von.getDate() - 90);
     const alle = await ICU.rides(P.ymd(von), P.ymd(bis));
     alleFahrten = alle;
+    stoerung = C.interferenz(alle);
     S.cache({ fahrten: alle });
 
     const monday = P.mondayOf(new Date());
@@ -113,6 +116,8 @@ async function loadIntervals() {
     const roh = await ICU.wellness(P.ymd(von), P.ymd(bis));
     trend = C.gewichtsTrend(roh);
     form = C.formLage(ICU.letzteForm(roh));
+    const mitFtp = [...roh].filter(w => w.eftp).sort((a, b) => b.date.localeCompare(a.date))[0];
+    eftp = mitFtp ? Math.round(mitFtp.eftp) : null;
     renderBodyTrend();
     renderHome();
   } catch (e) {
@@ -206,6 +211,7 @@ function renderHome() {
       <span class="tone ${d.intensitaet.stufe}">${d.intensitaet.label} · ${d.kopf}</span>
       <p class="txt">${d.intensitaet.text}</p>
       ${formZeile()}
+      ${stoerungsZeile()}
     </div>
     <p class="spruch">${d.spruch}</p>`;
 
@@ -266,7 +272,7 @@ function renderWeek() {
         <span class="what">${done ? '✓ ' : ''}${s.label}
           <span class="detail">${ride
             ? `<span class="ride-done">${ride.minutes} MIN · ${ride.km} KM${ride.load ? ` · LOAD ${ride.load}` : ''}</span>`
-            : s.detail}</span>
+            : s.detail + wattZiel(s.label)}</span>
         </span>
       </div>
       ${info && !done ? `<details class="info"><summary>Warum diese Einheit</summary>
@@ -305,7 +311,7 @@ function startSession() {
 
   $('session-intent').innerHTML = `
     <div class="directive"><span class="tone ${d.intensitaet.stufe}">${d.intensitaet.label}</span>
-    <p class="txt">${d.intensitaet.text}</p></div>`;
+    <p class="txt">${d.intensitaet.text}</p>${stoerungsZeile()}</div>`;
 
   const skill = C.tagesAuswahl(SKILL, new Date(), 'skill');
   $('warmup').innerHTML = `
@@ -819,6 +825,10 @@ function renderCharts(logs) {
     const sp = ST.sparkline(punkte, 300, 60);
     const letzter = punkte[punkte.length - 1];
     const delta = letzter.weight - punkte[0].weight;
+    // Zweite Linie: das geschaetzte Maximum steigt auch dann, wenn du bei
+    // gleichem Gewicht mehr Wiederholungen schaffst.
+    const maxPunkte = ST.serieE1rm(logs, id);
+    const spMax = maxPunkte.length > 1 ? ST.sparkline(maxPunkte, 300, 60, 4) : null;
     return `<div class="chart">
       <div class="h"><span class="t">${config.lifts[id].name}</span>
         <span class="r">${P.fmtWeight(letzter.weight)} ${delta > 0 ? `▲ +${delta}` : delta < 0 ? `▼ ${delta}` : ''}</span></div>
@@ -826,10 +836,15 @@ function renderCharts(logs) {
         <path d="${sp.flaeche}" fill="rgba(0,229,255,.13)"/>
         <path d="${sp.linie}" fill="none" stroke="var(--cyan)" stroke-width="2"
               stroke-linejoin="round" stroke-linecap="round"/>
+        ${spMax ? `<path d="${spMax.linie}" fill="none" stroke="var(--magenta)" stroke-width="1.5"
+              stroke-dasharray="4 3" stroke-linejoin="round" opacity=".85"/>` : ''}
         ${sp.koord.map(k => `<circle cx="${k.x.toFixed(1)}" cy="${k.y.toFixed(1)}" r="2.5"
               fill="${k.success === false ? 'var(--amber)' : 'var(--cyan)'}"/>`).join('')}
       </svg>
-      <div class="h" style="margin:6px 0 0"><span class="t">${sp.min} kg</span><span class="t">${sp.max} kg</span></div>
+      <div class="h" style="margin:6px 0 0">
+        <span class="t">${sp.min} kg</span>
+        ${spMax ? `<span class="t" style="color:var(--magenta)">Max. ≈ ${spMax.max} kg</span>` : ''}
+        <span class="t">${sp.max} kg</span></div>
     </div>`;
   }).join('');
   $('hist-charts').innerHTML = teile || '<p class="fine">Verläufe erscheinen ab der zweiten Einheit je Übung.</p>';
@@ -995,12 +1010,17 @@ function renderPRs(logs) {
       <div class="k">${def.name}</div>
       ${e.arbeit ? z('Schwerster sauberer Satz', P.fmtWeight(e.arbeit.weight), e.arbeit.date) : z('Schwerster sauberer Satz', '—')}
       ${e.gemessen ? z('Gemessenes Einzel', P.fmtWeight(e.gemessen.weight), e.gemessen.date) : ''}
-      ${e.maximum ? z('Geschätztes Maximum', `${e.maximum.wert} kg`,
+      ${e.maximum ? z('Maximum (Max-Out)', `${e.maximum.wert} kg`,
           `${e.maximum.weight}×${e.maximum.reps} · ${e.maximum.formel}`) : ''}
+      ${e.untergrenze ? z('Mindestens', `${e.untergrenze.wert} kg`,
+          `aus ${e.untergrenze.weight}×${e.untergrenze.reps}`) : ''}
       ${def.reference ? z('Alter Referenzwert', P.fmtWeight(def.reference)) : ''}
     </div>`;
   }).join('');
-  $('hist-prs').innerHTML = zeilen;
+  $('hist-prs').innerHTML = zeilen + `<p class="fine">
+    „Mindestens“ stammt aus Arbeitssätzen. Die sind bewusst submaximal, deshalb
+    unterschätzt jede Formel dort — der Wert ist eine Untergrenze, kein Maximum.
+    Ein belastbares Maximum liefert nur ein Max-Out.</p>`;
 }
 
 /* ================= Scheiben und Form ================= */
@@ -1144,3 +1164,77 @@ window.matchMedia('(prefers-color-scheme: light)')
   .addEventListener('change', () => { if (themaWahl() === 'auto') themaAnwenden(); });
 
 themaAnwenden();
+
+/* ================= Interferenz, Watt, Kalender ================= */
+
+/** Warnt vor der Wechselwirkung mit dem Rad — kürzt aber nichts. */
+function stoerungsZeile() {
+  if (!stoerung) return '';
+  const farbe = { stark: 'var(--amber)', leicht: 'var(--cyan)', gering: 'var(--dim)' }[stoerung.stufe];
+  return `<p class="formzeile" style="border-top-color:${farbe}">
+    <span class="fw" style="color:${farbe}">Rad vor ${Math.round(stoerung.stunden)} h</span>
+    <span class="ft">${stoerung.text}</span>
+    <span class="fd">${stoerung.fahrt.name} · ${stoerung.fahrt.minutes} Min${stoerung.fahrt.load ? ` · Load ${stoerung.fahrt.load}` : ''}</span>
+  </p>`;
+}
+
+/** "3x12 Min @ 88-93% FTP" wird zu einer Zahl, die man einstellen kann. */
+function wattZiel(label) {
+  const info = RIDE_INFO[label];
+  if (!info || !info.ftp || !eftp) return '';
+  const w = P.wattBereich(info.ftp, eftp);
+  return w ? ` <b style="color:var(--cyan)">≈ ${w}</b>` : '';
+}
+
+/** Geplante Woche als Kalendereinträge — nur was dort noch fehlt. */
+async function planInKalender() {
+  if (!ICU.isConfigured()) return banner('INTERVALS.ICU NICHT VERBUNDEN', 'err');
+  try {
+    banner('PRÜFE KALENDER…', '', 0);
+    const woche = P.planWeek(state, config);
+    const geplant = woche.map(s => ICU.alsEvent({
+      ...s,
+      watt: s.type === 'ride' ? P.wattBereich((RIDE_INFO[s.label] || {}).ftp, eftp) : null
+    })).filter(Boolean);
+
+    const von = woche[0].date, bis = woche[woche.length - 1].date;
+    const vorhanden = await ICU.events(von, bis);
+    const fehlt = ICU.fehlendeEvents(geplant, vorhanden);
+
+    if (!fehlt.length) return banner('KALENDER IST BEREITS AKTUELL', 'ok');
+    await ICU.pushEvents(fehlt);
+    banner(`${fehlt.length} EINTRAG(E) ANGELEGT`, 'ok', 5000);
+  } catch (e) {
+    banner(`INTERVALS.ICU: ${e.message}`, 'err', 8000);
+  }
+}
+
+/**
+ * Alte Einheiten nachtragen. Es wird zuerst gelesen, was dort schon steht —
+ * auf die Kennung allein ist mit einem API-Key kein Verlass, und doppelte
+ * Aktivitäten im eigenen Konto sind ärgerlicher als fehlende.
+ */
+async function einheitenNachtragen() {
+  if (!ICU.isConfigured()) return banner('INTERVALS.ICU NICHT VERBUNDEN', 'err');
+  try {
+    banner('LESE EINHEITEN…', '', 0);
+    const logs = alleLogs.length ? alleLogs : await S.readAllLogs();
+    const kandidaten = logs.map(l => ICU.alsAktivitaet(l, config)).filter(Boolean);
+    if (!kandidaten.length) return banner('NICHTS ZU ÜBERTRAGEN', 'ok');
+
+    const daten = kandidaten.map(a => a.start_date_local.slice(0, 10)).sort();
+    const vorhanden = await ICU.alleAktivitaeten(daten[0], daten[daten.length - 1]);
+    const fehlt = ICU.fehlendeAktivitaeten(kandidaten, vorhanden);
+
+    if (!fehlt.length) return banner('ALLES SCHON ÜBERTRAGEN', 'ok');
+    banner(`ÜBERTRAGE ${fehlt.length}…`, '', 0);
+    let n = 0;
+    for (const a of fehlt) { await ICU.pushAktivitaet(a); n++; }
+    banner(`${n} EINHEIT(EN) NACHGETRAGEN`, 'ok', 5000);
+  } catch (e) {
+    banner(`INTERVALS.ICU: ${e.message}`, 'err', 8000);
+  }
+}
+
+$('icu-plan').onclick = planInKalender;
+$('icu-nachtragen').onclick = einheitenNachtragen;

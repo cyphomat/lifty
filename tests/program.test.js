@@ -213,3 +213,12 @@ const ws2 = P.waermsaetze(47.5, cfg);
 ok('keine doppelten Gewichte', new Set(ws2.map(s=>s.weight)).size === ws2.length, JSON.stringify(ws2.map(s=>s.weight)));
 
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
+
+print('\n--- Wattziele aus der FTP ---');
+eq('88 bis 93 Prozent von 240', P.wattBereich([0.88, 0.93], 240), '211–223 W');
+eq('gleiche Grenzen ergeben einen Wert', P.wattBereich([0.7, 0.7], 200), '140 W');
+eq('ohne FTP kein Ziel', P.wattBereich([0.88, 0.93], null), null);
+eq('ohne Bereich kein Ziel', P.wattBereich(null, 240), null);
+eq('unvollstaendiger Bereich ergibt nichts', P.wattBereich([0.88], 240), null);
+
+print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

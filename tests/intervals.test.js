@@ -70,3 +70,43 @@ eq('ohne Daten nichts', I.letzteForm([]), null);
 eq('unvollstaendige werden uebersprungen', I.letzteForm([{date:'2026-09-09',ctl:null,atl:null}]), null);
 
 print(`\n========== ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
+
+print('\n--- Geplanter Slot als Kalendereintrag ---');
+const slot = { date:'2026-09-14', type:'ride', label:'Sweet Spot', detail:'3x12 Min', watt:'205–217 W' };
+const ev = I.alsEvent(slot);
+eq('Kategorie', ev.category, 'WORKOUT');
+eq('Typ Ride', ev.type, 'Ride');
+eq('Name', ev.name, 'Sweet Spot');
+eq('Startdatum als Ortszeit', ev.start_date_local, '2026-09-14T00:00:00');
+eq('stabile Kennung', ev.external_id, 'lifty-plan-2026-09-14-ride');
+ok('Wattziel steht in der Beschreibung', ev.description.includes('205–217 W'));
+ok('als aus lifty gekennzeichnet', ev.description.includes('lifty'));
+
+const kraftSlot = { date:'2026-09-15', type:'strength', workout:'B', detail:'Kniebeuge · Schulterdrücken · Kreuzheben' };
+const ev2 = I.alsEvent(kraftSlot);
+eq('Typ WeightTraining', ev2.type, 'WeightTraining');
+eq('Name nennt das Workout', ev2.name, 'Kraft — Workout B');
+eq('ohne Slot nichts', I.alsEvent(null), null);
+
+print('\n--- Es wird nur eingetragen, was fehlt ---');
+const geplant = [ev, ev2];
+eq('leerer Kalender: alles fehlt', I.fehlendeEvents(geplant, []).length, 2);
+eq('gleiche Kennung wird uebersprungen',
+   I.fehlendeEvents(geplant, [{ external_id:'lifty-plan-2026-09-14-ride' }]).length, 1);
+eq('auch Datum plus Name genuegt',
+   I.fehlendeEvents(geplant, [{ start_date_local:'2026-09-14T00:00:00', name:'Sweet Spot' }]).length, 1);
+eq('beide vorhanden: nichts zu tun',
+   I.fehlendeEvents(geplant, [
+     { start_date_local:'2026-09-14T00:00:00', name:'Sweet Spot' },
+     { start_date_local:'2026-09-15T00:00:00', name:'Kraft — Workout B' }]).length, 0);
+eq('fremde Eintraege stoeren nicht',
+   I.fehlendeEvents(geplant, [{ start_date_local:'2026-09-14T00:00:00', name:'Irgendwas anderes' }]).length, 2);
+
+print('\n--- Nachtragen von Einheiten prueft dasselbe ---');
+const akt = I.alsAktivitaet(kraft, config);
+eq('unbekannt: wird nachgetragen', I.fehlendeAktivitaeten([akt], []).length, 1);
+eq('per Kennung erkannt', I.fehlendeAktivitaeten([akt], [{ external_id: akt.external_id }]).length, 0);
+eq('per Datum und Name erkannt',
+   I.fehlendeAktivitaeten([akt], [{ start_date_local:'2026-09-02T19:00:00', name:'Kraft — Workout A' }]).length, 0);
+
+print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

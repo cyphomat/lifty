@@ -66,15 +66,26 @@ const P1 = S.prs(prLogs);
 eq('schwerster sauberer Arbeitssatz', P1.squat.arbeit.weight, 50);
 eq('gescheiterter Satz ist kein Arbeits-PR', P1.squat.arbeit.date, '2026-09-01');
 eq('gemessener Einzelversuch', P1.squat.gemessen.weight, 95);
-eq('bestes Maximum kommt vom Max-Out', P1.squat.maximum.weight, 95);
+eq('belastbares Maximum kommt nur vom Max-Out', P1.squat.maximum.weight, 95);
 eq('und ist als gemessen gekennzeichnet', P1.squat.maximum.formel, 'gemessen');
-ok('Maximum aus 60x5 waere kleiner als 95', S.prs(prLogs.slice(0,2)).squat.maximum.wert < 95);
+eq('ohne Max-Out gibt es kein belastbares Maximum', S.prs(prLogs.slice(0,2)).squat.maximum, null);
+ok('Arbeitssaetze liefern nur eine Untergrenze', S.prs(prLogs.slice(0,2)).squat.untergrenze.wert > 60);
 eq('ohne Logs keine PRs', Object.keys(S.prs([])).length, 0);
 
 print('\n--- Auch ein Fehlversuch kann ein Maximum liefern ---');
 const nurFail = S.prs([prLogs[1]]);
 eq('kein Arbeits-PR', nurFail.squat.arbeit, null);
-ok('aber ein geschaetztes Maximum aus 60x5', nurFail.squat.maximum.wert > 60, nurFail.squat.maximum.wert);
+eq('und kein belastbares Maximum', nurFail.squat.maximum, null);
+ok('aber eine Untergrenze aus 60x5', nurFail.squat.untergrenze.wert > 60, nurFail.squat.untergrenze.wert);
+
+print('\n--- Verlauf des geschaetzten Maximums ---');
+const kurve = S.serieE1rm(prLogs, 'squat');
+eq('drei Punkte', kurve.length, 3);
+eq('aufsteigend nach Datum', kurve[0].date, '2026-09-01');
+eq('der Max-Out ist als belastbar markiert', kurve[2].belastbar, true);
+eq('Arbeitssaetze nicht', kurve[0].belastbar, false);
+ok('Max-Out-Wert entspricht dem Gewicht bei einer Wiederholung', kurve[2].weight === 95);
+eq('unbekannte Uebung ergibt nichts', S.serieE1rm(prLogs, 'ohp').length, 0);
 
 print('\n--- Neue Bestwerte einer Einheit ---');
 const neu = S.neuePRs(prLogs.slice(0,2), prLogs[2]);
