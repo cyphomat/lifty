@@ -852,10 +852,11 @@ function renderCharts(logs) {
               fill="${k.success === false ? 'var(--amber)' : 'var(--cyan)'}"/>`).join('')}
       </svg>
       <div class="h" style="margin:6px 0 0">
-        <span class="t">${sp.min} kg</span>
-        ${linieUnten ? `<span class="t" style="color:var(--magenta)">mind. ≈ ${
-          Math.max(...untere.map(k => k.weight))} kg${tests.length ? ' · ● Max-Out' : ''}</span>` : ''}
-        <span class="t">${sp.max} kg</span></div>
+        <span class="t">${sp.min} kg</span><span class="t">${sp.max} kg</span></div>
+      ${linieUnten ? `<div class="h" style="margin:3px 0 0">
+        <span class="t" style="color:var(--magenta)">┄ mind. ≈ ${Math.max(...untere.map(k => k.weight))} kg</span>
+        ${tests.length ? `<span class="t" style="color:var(--magenta)">● Max-Out ${
+          Math.max(...tests.map(k => k.weight))} kg</span>` : ''}</div>` : ''}
     </div>`;
   }).join('');
   $('hist-charts').innerHTML = teile || '<p class="fine">Verläufe erscheinen ab der zweiten Einheit je Übung.</p>';
