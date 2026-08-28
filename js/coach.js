@@ -3,6 +3,7 @@
 // etwas behauptet, das nicht aus deinen Daten folgt.
 
 import { VOICE } from './content.js';
+import { mondayOf } from './program.js';
 
 export function daysSince(dateStr, today = new Date()) {
   if (!dateStr) return null;
@@ -301,6 +302,79 @@ export function meilensteine(state, config, heute = new Date()) {
           : `${def.name}: ${w} kg — genau da, wo du vor der Pause warst. Ab hier ist alles Neuland.`
       });
     }
+  }
+
+  return out.sort((a, b) => a.rang - b.rang);
+}
+
+/* ---------------------------------------------------------------
+   Minierfolge. Nach einer Einheit hat die App bisher berichtet, was
+   passiert ist — eine Tabelle mit Pfeilen. Das ist etwas anderes,
+   als gesagt zu bekommen, dass man gerade etwas geschafft hat.
+
+   Bewusst kleinteilig: jede Steigerung zaehlt, jeder saubere Satz,
+   jede Einheit in der Woche. Es geht nicht um Rekorde, sondern
+   darum, dass sich Regelmaessigkeit anfuehlt wie Fortschritt.      */
+
+export function erfolge(vorher, nachher, config, log, alleLogs = [], heute = new Date()) {
+  const out = [];
+  const lifts = Array.isArray(log.lifts) ? log.lifts : [];
+
+  // Jede Steigerung ist ein Erfolg — auch die zwoelfte in Folge.
+  const gestiegen = lifts
+    .map(e => ({ id: e.lift, alt: vorher.lifts[e.lift].weight, neu: nachher.lifts[e.lift].weight }))
+    .filter(x => x.neu > x.alt);
+  for (const g of gestiegen) {
+    out.push({ art: 'steigerung', rang: 3, lift: g.id,
+      text: `${config.lifts[g.id].name}: ${g.alt} → ${g.neu} kg` });
+  }
+
+  // Runde Zahl geknackt
+  for (const g of gestiegen) {
+    const schwelle = Math.floor(g.neu / 10) * 10;
+    if (schwelle > g.alt && schwelle <= g.neu && schwelle >= 40) {
+      out.push({ art: 'rund', rang: 1, lift: g.id,
+        text: `${schwelle} kg im ${config.lifts[g.id].name} — erste Mal über dieser Marke seit dem Wiedereinstieg.` });
+    }
+  }
+
+  // Wieder auf dem Stand vor der Pause
+  for (const g of gestiegen) {
+    const ref = config.lifts[g.id].reference;
+    if (ref && g.alt < ref && g.neu >= ref) {
+      out.push({ art: 'referenz', rang: 0, lift: g.id,
+        text: `${config.lifts[g.id].name} zurück auf ${ref} kg — dem Stand vor der Pause. Ab hier ist alles Neuland.` });
+    }
+  }
+
+  // Alle Sätze sauber
+  const saetze = lifts.reduce((s, e) => s + (e.reps || []).length, 0);
+  const sauber = lifts.reduce((s, e) => s + (e.reps || []).filter(r => r >= (e.target || 5)).length, 0);
+  if (saetze && sauber === saetze) {
+    out.push({ art: 'sauber', rang: 2, text: `${saetze} von ${saetze} Sätzen sauber durchgezogen.` });
+  } else if (saetze) {
+    out.push({ art: 'saetze', rang: 4, text: `${sauber} von ${saetze} Sätzen geschafft.` });
+  }
+
+  // Bewegtes Gewicht dieser Einheit
+  const tonnage = lifts.reduce((s, e) => s + (e.weight || 0) * (e.reps || []).reduce((a, r) => a + r, 0), 0);
+  if (tonnage > 0) {
+    out.push({ art: 'tonnage', rang: 5,
+      text: tonnage >= 1000 ? `${(tonnage / 1000).toFixed(1)} Tonnen bewegt.` : `${Math.round(tonnage)} kg bewegt.` });
+  }
+
+  // Wievielte Einheit in dieser Woche
+  const montag = mondayOf(heute);
+  const dieseWoche = alleLogs.filter(l => (l.type || 'strength') === 'strength'
+    && new Date(l.date + 'T12:00:00') >= montag).length;
+  if (dieseWoche >= 2) {
+    out.push({ art: 'woche', rang: 2, text: `${dieseWoche}. Einheit diese Woche.` });
+  }
+
+  // Runde Gesamtzahl an Einheiten
+  const gesamt = alleLogs.filter(l => (l.type || 'strength') === 'strength').length;
+  if (gesamt > 0 && (gesamt % 10 === 0 || gesamt === 5)) {
+    out.push({ art: 'anzahl', rang: 1, text: `${gesamt}. Einheit insgesamt.` });
   }
 
   return out.sort((a, b) => a.rang - b.rang);

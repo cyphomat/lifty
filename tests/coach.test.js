@@ -211,3 +211,48 @@ Object.values(vorendrei.lifts).forEach(l => l.weight = 999);
 eq('danach mit Zahl', C.directive(vorendrei, config, HEUTE).kopf, 'Zuletzt vor 3 Tagen');
 
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
+
+print('\n--- Minierfolge ---');
+const cfgE = { lifts: {
+  squat:{name:'Kniebeuge',reference:80}, bench:{name:'Bankdrücken',reference:60}, row:{name:'Rudern',reference:55} } };
+const vorEinheit = { lifts:{ squat:{weight:67.5}, bench:{weight:47.5}, row:{weight:45} } };
+const nachEinheit = { lifts:{ squat:{weight:70},   bench:{weight:50},   row:{weight:47.5} } };
+const logE = { date:'2026-09-10', workout:'A', type:'strength', lifts:[
+  { lift:'squat', weight:67.5, sets:5, target:5, reps:[5,5,5,5,5] },
+  { lift:'bench', weight:47.5, sets:5, target:5, reps:[5,5,5,5,5] },
+  { lift:'row',   weight:45,   sets:5, target:5, reps:[5,5,5,5,5] } ] };
+
+const e = C.erfolge(vorEinheit, nachEinheit, cfgE, logE, [logE], new Date(2026,8,10));
+const arten = e.map(x => x.art);
+ok('jede Steigerung zaehlt', e.filter(x=>x.art==='steigerung').length === 3, JSON.stringify(arten));
+ok('saubere Saetze werden benannt', arten.includes('sauber'));
+ok('bewegtes Gewicht auch', arten.includes('tonnage'));
+ok('runde Marke erkannt', e.some(x=>x.art==='rund' && x.text.includes('70 kg')), JSON.stringify(e.filter(x=>x.art==='rund').map(x=>x.text)));
+eq('das Wichtigste steht vorn', e[0].rang <= 1, true);
+
+print('\n--- Zurueck auf Vorpausen-Niveau schlaegt alles ---');
+const vorRef = { lifts:{ squat:{weight:77.5}, bench:{weight:47.5}, row:{weight:45} } };
+const nachRef = { lifts:{ squat:{weight:80},  bench:{weight:47.5}, row:{weight:45} } };
+const eRef = C.erfolge(vorRef, nachRef, cfgE, logE, [logE], new Date(2026,8,10));
+eq('steht ganz oben', eRef[0].art, 'referenz');
+ok('nennt den Wendepunkt', eRef[0].text.includes('Neuland'));
+
+print('\n--- Auch ein durchwachsener Tag hat Erfolge ---');
+const logMies = { date:'2026-09-10', workout:'A', type:'strength', lifts:[
+  { lift:'squat', weight:67.5, sets:5, target:5, reps:[5,5,5,4,3] } ] };
+const eMies = C.erfolge(vorEinheit, vorEinheit, cfgE, logMies, [logMies], new Date(2026,8,10));
+ok('keine Steigerung, aber trotzdem etwas', eMies.length > 0, JSON.stringify(eMies.map(x=>x.art)));
+ok('die geschafften Saetze werden gezaehlt', eMies.some(x=>x.art==='saetze' && x.text.includes('3 von 5')),
+   JSON.stringify(eMies.filter(x=>x.art==='saetze').map(x=>x.text)));
+ok('bewegtes Gewicht trotzdem', eMies.some(x=>x.art==='tonnage'));
+
+print('\n--- Regelmaessigkeit zaehlt ---');
+const zwei = [ {date:'2026-09-07',type:'strength'}, logE ];
+ok('zweite Einheit der Woche',
+   C.erfolge(vorEinheit, nachEinheit, cfgE, logE, zwei, new Date(2026,8,10)).some(x=>x.art==='woche'),
+   'zweite Einheit der Woche fehlt');
+const zehn = Array.from({length:10}, (_,i) => ({ date:`2026-09-0${(i%9)+1}`, type:'strength' }));
+ok('zehnte Einheit insgesamt',
+   C.erfolge(vorEinheit, nachEinheit, cfgE, logE, zehn, new Date(2026,8,10)).some(x=>x.art==='anzahl'));
+
+print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

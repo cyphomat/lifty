@@ -244,6 +244,8 @@ function renderHome() {
     <button id="start" class="btn">Training starten</button>`;
   $('start').onclick = startSession;
 
+  const motto = config.motto;
+  $('motto').innerHTML = motto ? `<p class="motto">${motto}</p>` : '';
   renderProgress(d.fortschritt, d.streak);
   renderWeek();
   renderIcuStatus();
@@ -518,17 +520,30 @@ async function flushQueue() {
 
 function renderDone(before, log) {
   const d = C.directive(state, config, new Date(), log, stimme);
+  // Erst der Erfolg, dann der Bericht. Eine Tabelle mit Pfeilen sagt, was
+  // passiert ist; sie sagt nicht, dass du gerade etwas geschafft hast.
+  const wins = C.erfolge(before, state, config, log, alleLogs.concat([log]), new Date());
+  const kopf = wins[0];
+  const rest = wins.slice(1, 5);
+
   $('done-body').innerHTML = `
-    <div class="card">
-      <div class="kicker">Workout ${log.workout} · ${log.date}</div>
-      <ul>${log.lifts.map(e => {
-        const b = before.lifts[e.lift].weight, a = state.lifts[e.lift].weight;
-        const txt = a > b ? `${P.fmtWeight(a)} ▲` : a < b ? `${P.fmtWeight(a)} ▼ Deload` : 'bleibt';
-        return `<li><span>${config.lifts[e.lift].name} ${e.success ? '✓' : '✕'}</span><span>${txt}</span></li>`;
-      }).join('')}</ul>
-    </div>
-    <p class="spruch">${d.spruch}</p>
-    <p class="fine">Nächstes Mal: Workout ${state.next}. ${d.streak > 0 ? `Serie: ${d.streak} Woche(n).` : ''}</p>`;
+    ${kopf ? `<div class="erfolg-kopf">
+      <span class="kicker">Geschafft</span>
+      <p class="gross">${kopf.text}</p>
+    </div>` : ''}
+    ${rest.length ? `<div class="erfolge">${rest.map(w => `<div class="erfolg">${w.text}</div>`).join('')}</div>` : ''}
+    <details class="info"><summary>Was sich geändert hat</summary>
+      <div class="body">
+        ${log.lifts.map(e => {
+          const b = before.lifts[e.lift].weight, a = state.lifts[e.lift].weight;
+          const txt = a > b ? `${P.fmtWeight(a)} ▲` : a < b ? `${P.fmtWeight(a)} ▼ Deload` : 'bleibt';
+          return `<div class="kv"><span class="k">${e.success ? '✓' : '✕'}</span>
+            <span class="v">${config.lifts[e.lift].name} — ${txt}</span></div>`;
+        }).join('')}
+      </div>
+    </details>
+    <p class="spruch">${zeileFuerHeute(d)}</p>
+    <p class="fine">Nächstes Mal: Workout ${state.next}.${d.streak > 0 ? ` Serie: ${d.streak} Woche(n).` : ''}</p>`;
 }
 
 /* ============================ Verlauf ============================ */
