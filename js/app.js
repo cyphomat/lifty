@@ -581,6 +581,7 @@ async function renderHistory() {
   // quittieren statt mit einer Erklaerung.
   if (!config) {
     $('hist-summary').innerHTML = '';
+    $('hist-angeben').innerHTML = '';
     $('hist-prs').innerHTML = '';
     $('hist-kalender').innerHTML = '';
     $('hist-last').innerHTML = '';
@@ -593,6 +594,7 @@ async function renderHistory() {
     return;
   }
   $('hist-summary').innerHTML = '';
+  $('hist-angeben').innerHTML = '';
   $('hist-prs').innerHTML = '';
   $('hist-kalender').innerHTML = '';
   $('hist-last').innerHTML = '';
@@ -606,6 +608,7 @@ async function renderHistory() {
     alleLogs = logs;
     S.cacheLogs(logs);
     renderStats(logs);
+    renderAngeben(logs);
     renderKalender(logs);
     renderLast(logs);
     renderTonnage(logs);
@@ -620,6 +623,7 @@ async function renderHistory() {
     if (alt && alt.logs.length) {
       alleLogs = alt.logs;
       renderStats(alt.logs);
+      renderAngeben(alt.logs);
       renderKalender(alt.logs);
       renderLast(alt.logs);
       renderTonnage(alt.logs);
@@ -897,6 +901,34 @@ function renderStats(logs) {
       <div class="stat"><div class="n">Bestwert ${(config.lifts.squat || {}).name || "Squat"}</div>
         <div class="v">${s.best.squat ? P.fmtWeight(s.best.squat.weight) : '—'}</div>
         <div class="s">${s.best.squat ? s.best.squat.date : 'noch keiner'}</div></div>
+    </div>`;
+}
+
+const MARSHALL_KG = 55; // Halfstack, Kopf + 4x12-Box, grob gerundet
+
+function renderAngeben(logs) {
+  const box = $('hist-angeben');
+  if (!box) return;
+  const fahrten = alleFahrten.length ? alleFahrten : (S.cached().fahrten || []);
+  const s = ST.summary(logs);
+  const reps = ST.wiederholungenGesamt(logs);
+  const tag = ST.lieblingstag(logs, fahrten);
+  const serie = ST.laengsteSerie(logs, fahrten);
+  const stacks = Math.round(s.tonnage / MARSHALL_KG);
+  box.innerHTML = `
+    <div class="stats">
+      <div class="stat"><div class="n">Bewegtes Gewicht</div>
+        <div class="v">${stacks.toLocaleString('de-DE')}</div>
+        <div class="s">Marshall-Halfstacks, ${MARSHALL_KG} kg das Stück</div></div>
+      <div class="stat"><div class="n">Wiederholungen</div>
+        <div class="v">${reps.toLocaleString('de-DE')}</div>
+        <div class="s">seit dem ersten Log</div></div>
+      <div class="stat"><div class="n">Lieblingstag</div>
+        <div class="v">${tag ? tag.tag : '—'}</div>
+        <div class="s">${tag ? `${tag.anzahl}× am häufigsten` : 'noch kein Muster'}</div></div>
+      <div class="stat"><div class="n">Längste Serie</div>
+        <div class="v">${serie}</div>
+        <div class="s">${serie === 1 ? 'Woche am Stück, Rekord' : 'Wochen am Stück, Rekord'}</div></div>
     </div>`;
 }
 

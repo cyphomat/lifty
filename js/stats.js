@@ -346,3 +346,63 @@ export function formVerlauf(wellness = []) {
     .map(w => ({ date: w.date, ctl: w.ctl, atl: w.atl, form: Math.round((w.ctl - w.atl) * 10) / 10 }))
     .sort((a, b) => a.date.localeCompare(b.date));
 }
+
+/* ── Zum Angeben ──────────────────────────────────────────────────
+   Reine Vergleiche in derselben Einheit oder reine Zaehlungen — nichts
+   geschaetzt, nichts erfunden. Kalorien aus bewegtem Gewicht waeren genau
+   das: Physik vorgetaeuscht, wo eigentlich Stoffwechsel gemeint ist.    */
+
+const WOCHENTAGE = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+
+/** Wiederholungen insgesamt, aus allen Kraftsaetzen — auch nicht geschafften. */
+export function wiederholungenGesamt(logs = []) {
+  return logs.filter(istKraft).reduce((summe, l) =>
+    summe + l.lifts.reduce((s, e) => s + (e.reps || []).reduce((a, r) => a + r, 0), 0), 0);
+}
+
+/**
+ * Wochentag, an dem am haeufigsten trainiert wurde — Kraft, WOD und Rad
+ * zusammen, weil es um das eigene Muster geht, nicht um eine Sportart.
+ * Ein Tag mit zwei Einheiten zaehlt einmal, wie im Trainingskalender auch.
+ */
+export function lieblingstag(logs = [], fahrten = []) {
+  const zaehler = new Array(7).fill(0);
+  const gesehen = new Set();
+  const zaehle = datum => {
+    if (!datum || gesehen.has(datum)) return;
+    gesehen.add(datum);
+    zaehler[new Date(datum + 'T00:00:00').getDay()]++;
+  };
+  for (const l of logs) zaehle(l.date);
+  for (const f of fahrten) zaehle(f.date);
+  if (!gesehen.size) return null;
+  const idx = zaehler.indexOf(Math.max(...zaehler));
+  return { tag: WOCHENTAGE[idx], anzahl: zaehler[idx] };
+}
+
+/**
+ * Laengste Serie aufeinanderfolgender Wochen mit mindestens einer Einheit,
+ * ueber die gesamte Geschichte — der Rekord, nicht die laufende Serie
+ * (die steht schon im Trainingskalender).
+ */
+export function laengsteSerie(logs = [], fahrten = []) {
+  const wochenstart = new Set();
+  const einordnen = datum => {
+    if (!datum) return;
+    const d = new Date(datum + 'T00:00:00');
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    wochenstart.add(tagesKey(d));
+  };
+  for (const l of logs) einordnen(l.date);
+  for (const f of fahrten) einordnen(f.date);
+
+  const sortiert = [...wochenstart].sort();
+  let laengste = 0, laufend = 0, vorher = null;
+  for (const w of sortiert) {
+    const d = new Date(w + 'T00:00:00');
+    laufend = (vorher && d - vorher === 7 * 86400000) ? laufend + 1 : 1;
+    laengste = Math.max(laengste, laufend);
+    vorher = d;
+  }
+  return laengste;
+}

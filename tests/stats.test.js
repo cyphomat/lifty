@@ -205,4 +205,30 @@ eq('Form ist Fitness minus Ermuedung', fv[0].form, 2);
 eq('auch negativ', fv[1].form, -6);
 eq('ohne Daten leer', S.formVerlauf([]).length, 0);
 
+print('\n--- Zum Angeben ---');
+eq('Wiederholungen aus zwei Kraft-Einheiten, WOD zaehlt nicht', S.wiederholungenGesamt(logs), 25+25 + 22+25);
+eq('ohne Logs keine Wiederholungen', S.wiederholungenGesamt([]), 0);
+
+const angebenLogs = [
+  { date:'2026-08-03', type:'strength', lifts:[{ lift:'squat', weight:50, reps:[5,5,5,5,5] }] }, // Montag
+  { date:'2026-08-10', type:'strength', lifts:[{ lift:'squat', weight:50, reps:[5,5,5,5,5] }] }, // Montag
+  { date:'2026-08-17', type:'strength', lifts:[{ lift:'squat', weight:50, reps:[5,5,5,5,5] }] }, // Montag
+  { date:'2026-08-04', type:'wod', label:'AMRAP' },                                              // Dienstag
+  { date:'2026-08-31', type:'strength', lifts:[{ lift:'squat', weight:50, reps:[5,5,5,5,5] }] }, // Montag, nach Luecke
+  { date:'2026-09-07', type:'strength', lifts:[{ lift:'squat', weight:50, reps:[5,5,5,5,5] }] }  // Montag
+];
+const angebenFahrten = [
+  { date:'2026-08-03' }, // gleicher Tag wie eine Einheit — zaehlt nicht doppelt
+  { date:'2026-08-11' }  // Dienstag, eigener Tag
+];
+
+const tagTest = S.lieblingstag(angebenLogs, angebenFahrten);
+eq('Montag ist der haeufigste Tag', tagTest.tag, 'Montag');
+eq('fünfmal Montag', tagTest.anzahl, 5);
+eq('ohne jede Aktivitaet kein Lieblingstag', S.lieblingstag([], []), null);
+
+eq('drei Wochen am Stueck sind die laengste Serie', S.laengsteSerie(angebenLogs, angebenFahrten), 3);
+eq('eine einzelne Einheit ist eine Serie von einer Woche', S.laengsteSerie([angebenLogs[0]], []), 1);
+eq('ohne Daten keine Serie', S.laengsteSerie([], []), 0);
+
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
