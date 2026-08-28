@@ -6,6 +6,7 @@
   <a href="https://cyphomat.github.io/setlist/"><img alt="App öffnen" src="https://img.shields.io/badge/App-öffnen-e8a23d?style=for-the-badge&labelColor=17161b"></a>
   <img alt="Tests" src="https://img.shields.io/badge/Tests-375%20grün-7fa65c?style=for-the-badge&labelColor=17161b">
   <img alt="Build" src="https://img.shields.io/badge/Build-keiner-6f93ad?style=for-the-badge&labelColor=17161b">
+  <img alt="Abhängigkeiten" src="https://img.shields.io/badge/Abhängigkeiten-0-a7a3ab?style=for-the-badge&labelColor=17161b">
 </p>
 
 <p align="center">
@@ -24,26 +25,42 @@
 <td width="33%"><img src="assets/screens/geschafft-dunkel.png" alt="Nach der Einheit"></td>
 </tr>
 <tr>
-<td align="center"><sub>Die Ansage</sub></td>
-<td align="center"><sub>Im Studio</sub></td>
-<td align="center"><sub>Danach</sub></td>
+<td align="center"><b>Die Ansage</b><br><sub>Ton aus Pause, Form und Rad</sub></td>
+<td align="center"><b>Im Studio</b><br><sub>Scheiben, Kadenz, Sätze über dem Ziel</sub></td>
+<td align="center"><b>Danach</b><br><sub>Erst der Erfolg, dann der Bericht</sub></td>
 </tr>
 </table>
 
-<sub>Echte Bildschirme mit Beispieldaten, aufgenommen über <code>tools/shot.html</code>.</sub>
+**Auf dem Mac wird daraus eine Übersicht** — Kalender, Wochenlast, Bestwerte und Verlaufskurven nebeneinander statt untereinander:
+
+<img src="assets/screens/tour-desktop.png" alt="Tour auf dem Mac, breite Ansicht">
+
+<sub>Echte Bildschirme mit Beispieldaten, aufgenommen über <code>tools/shot.html</code>. Keine Mockups.</sub>
 
 ---
 
-## Was sie tut
+## Was sie dir sagt
 
-Jeden Tag eine Ansage, aus Daten statt aus dem Bauch: Pause, offene Fehlversuche, Form vom Rad, Abstand zu den alten Bestwerten.
+Der Unterschied zu einem Logbuch: sie hat eine Meinung zum heutigen Tag — aus Daten, nicht aus dem Bauch.
 
-- **Kraft** läuft nach 5×5: fünf Sätze schaffen → Gewicht steigt, dreimal gerissen → Deload auf 90 %. Arbeitsgewichte werden nie von Hand gesetzt, nur über einen protokollierten Log.
-- **Rad** kommt automatisch — Zwift → Strava → intervals.icu. Setlist zeigt es nur als Hinweis und schreibt jede Krafteinheit dorthin zurück, damit Fitness und Ermüdung in einer Kurve liegen.
-- **Interferenz-Warnung**, wenn eine harte Fahrt weniger als vier Stunden her ist — die letzten Sätze werden zäh, das Maximalkraftniveau nicht.
-- **Jam**: ein Zufalls-Workout, wenn mal keine Lust auf den Plan besteht. Lasten aus dem aktuellen Stand, Skalierung für alles, was du (noch) nicht kannst.
-- **Meilensteine und Minierfolge**: „Gestern vor 5 Jahren 140 kg" neben „heute stehst du bei 65". Nach jeder Einheit steht zuerst das Geschaffte, nicht der Bericht.
-- **Die Stimme** mischt deine eigenen Zeilen aus `stimme.json` mit den mitgelieferten, etwa halbe halbe.
+- **Die Ansage** liest Trainingspause, offene Fehlversuche, laufende Serie und Form vom Rad und entscheidet zwischen `TECHNIK`, `SOLIDE`, `HART` und `SCHWER`.
+- **Interferenz-Warnung**, wenn eine harte Fahrt weniger als vier Stunden her ist — die letzten Sätze werden zäh, das Maximalkraftniveau bleibt unberührt.
+- **Meilensteine** kennen die alten Bestleistungen samt Datum:
+
+  > **Aus deiner Geschichte** — Gestern vor 5 Jahren: 140 kg Back Squat. Heute stehst du bei 65 kg — nicht weil du weniger kannst, sondern weil du wieder anfängst.
+
+- **Minierfolge** stehen nach jeder Einheit ganz oben. Nicht der Bericht, sondern das Geschaffte.
+- **Die Stimme** mischt eigene Zeilen aus `stimme.json` mit 52 mitgelieferten, etwa halbe halbe.
+
+## Wie es zusammenhängt
+
+```
+Zwift ──▶ Strava ──▶ intervals.icu ◀──▶ Setlist ◀──▶ setlist-data (privat)
+                            │                              │
+                       Fahrten, Form                  Kraft-Progression
+```
+
+Setlist besitzt die **Kraft**-Progression — zwei Systeme, die dasselbe Arbeitsgewicht berechnen, laufen unweigerlich auseinander. Das **Rad** läuft andersherum: es kommt automatisch über Zwift → Strava → intervals.icu, Setlist zeigt es nur als Hinweis und schreibt im Gegenzug jede Krafteinheit zurück, damit Fitness und Ermüdung in einer Kurve liegen statt in zwei getrennten Welten.
 
 ## Zweimal und zweimal
 
@@ -60,13 +77,47 @@ Back Squat ist in beiden Workouts dabei und steigt darum doppelt so schnell.
 
 ## Funktionen
 
-**Kraft** — Plattenrechner, Aufwärmsätze aus dem Arbeitsgewicht, Gewicht im Satz nachjustierbar, Pausenuhr mit Verlängerung nach Fehlversuch, Bestwerte getrennt in `Maximum` (nur Max-Out) und `Mindestens` (Arbeitssätze, systematisch zu niedrig).
+### Kraft
 
-**Rad und Kondition** — Wochenlast Kraft+Rad gestapelt, Fitness gegen Ermüdung, Trainingskalender über 26 Wochen, Wattziele aus der eFTP statt Prozentangaben.
+| | |
+|---|---|
+| **5×5-Automat** | Steigerung, Fehlerzähler, Deload auf 90 % nach drei Fehlversuchen. |
+| **Plattenrechner** | Scheiben pro Seite. Nicht exakt ladbare Gewichte werden benannt statt gerundet. |
+| **Soundcheck** | Aufwärmsätze aus dem Arbeitsgewicht: leere Stange, dann 55 / 70 / 85 %. |
+| **Gewicht im Satz** | Anpassbar während der Einheit — das Log bildet ab, was wirklich passiert ist. |
+| **Pausenuhr** | 90 s, nach Fehlversuch 180 s, im Lauf um ±30 s verstellbar. |
+| **Bestwerte** | `Maximum` (nur aus Max-Out) gegen `Mindestens` (aus Arbeitssätzen, systematisch zu niedrig). |
+| **Max-Out** | Krafttest mit e1RM. Dreht den A/B-Wechsel nicht. |
+| **Wissen an der Stange** | Aufklappbar: Begründung, Cue, typischer Fehler, Brücke zum olympischen Heben. |
 
-**App** — Offline-Puffer, aktualisiert sich beim Start selbst, hell/dunkel, Handy und Mac in einer Ansicht (ab 900 px zwei Spalten).
+### Rad und Kondition
 
-Details und Begründungen stehen als Kommentare direkt im Code, dort wo sie hingehören.
+| | |
+|---|---|
+| **Radfahrten** | Fahrten, Stunden, Kilometer, Wochenlast über zwölf Wochen — aus intervals.icu. |
+| **Trainingskalender** | 26 Wochen als Raster: Kraft bernstein, Jam grün, Rad stahlblau. |
+| **Wochenlast gestapelt** | Kraft und Rad in einem Balken — die eine Kurve, wegen der beides zusammengehört. |
+| **Fitness gegen Ermüdung** | Zwei Linien aus intervals.icu — die Fläche dazwischen *ist* die Form. |
+| **Wattziele** | Aus der eFTP statt Prozentangaben. |
+| **Jam** | Fünf Formate, 19 Übungen, Lasten aus dem aktuellen Stand. Nie zwei Langhantelteile. |
+| **Skalierung** | Jede Übung nennt Alternativen. „Kann ich nicht" nimmt sie dauerhaft raus. |
+
+### App
+
+| | |
+|---|---|
+| **Offline** | Einheiten werden gepuffert. Tour und Radansicht zeigen den letzten Stand. |
+| **Selbstaktualisierend** | Prüft die Version beim Start und lädt sich genau einmal neu. |
+| **Hell und dunkel** | Umschalter System / Hell / Dunkel. Zwei echte Fassungen, keine Invertierung. |
+| **Handy und Mac** | Ab 900 px zwei Spalten, in der Tour breitere Raster — dieselbe Reihenfolge, kein Umbau. |
+
+---
+
+## Zwei Entscheidungen, die tragen
+
+**`state.json` ist abgeleitet, nicht gepflegt.** Eine Projektion aus `config.json` und allen Dateien in `einheiten/`. Ein vertippter Eintrag wird nie zum Problem: Datei korrigieren, „state.json neu berechnen", fertig. Arbeitsgewichte werden nie direkt gesetzt — dafür gibt es den Log-Typ `anpassung`.
+
+**„Mindestens" ist nicht „Maximum".** e1RM-Formeln setzen Nähe zum Versagen voraus; ein 5×5-Arbeitssatz ist submaximal, die Formel unterschätzt dort systematisch. Deshalb mischt die Verlaufskurve die Quellen nicht: gestrichelte Linie für Untergrenzen, Max-Outs als eigene Punkte.
 
 ---
 
@@ -83,8 +134,6 @@ Details und Begründungen stehen als Kommentare direkt im Code, dort wo sie hing
 | `js/intervals.js` | Liest Fahrten und Form; schreibt Krafteinheiten zurück. |
 | `js/app.js` | Oberfläche und Ablauf. |
 | `sw.js` | Cacht die App-Hülle. Trainingsdaten bewusst **nicht**. |
-
-`state.json` steht nirgends im Repo, weil es nirgends stehen muss: eine reine Projektion aus `config.json` und allen Dateien in `einheiten/`. „state.json neu berechnen" stellt sie jederzeit wieder her.
 
 ---
 

@@ -3,7 +3,7 @@
 <title>laedt</title>
 <style>
   html,body{margin:0;padding:0;background:#000;overflow:hidden}
-  iframe{display:block;width:390px;height:844px;border:0}
+  iframe{display:block;border:0}
 </style>
 <body>
 <script>
@@ -12,11 +12,15 @@
    Chrome im Kopflos-Modus echte Bildschirme statt Mockups aufnimmt.
    Nur ein Werkzeug — die App selbst kennt diese Datei nicht.
 
-   Aufruf:  tools/shot.html?szene=home&thema=dunkel                        */
+   Aufruf:  tools/shot.html?szene=home&thema=dunkel
+            tools/shot.html?szene=verlauf&thema=dunkel&breite=1440&hoehe=1000 */
 
 const p = new URLSearchParams(location.search);
 const szene = p.get('szene') || 'home';
 const thema = p.get('thema') || 'dunkel';
+const breite = Number(p.get('breite')) || 390;
+const hoehe = Number(p.get('hoehe')) || 844;
+document.querySelector('style').textContent += `iframe{width:${breite}px;height:${hoehe}px}`;
 
 const config = {
   version: 1, bar: 20, rounding: 2.5, motto: 'Lift Heavy Shit',
@@ -90,10 +94,20 @@ const state = {
   history: logs.filter(l => (l.type||'strength')==='strength').map(l => ({ date:l.date, workout:l.workout, type:'strength' }))
 };
 
+// Fitness/Ermuedung als Zeitreihe fuer den Verlauf-Chart — sonst zeigt die
+// Tour dort einen Leerzustand, weil das einzelne "form"-Objekt oben nur die
+// aktuelle Ansage speist, keine Kurve.
+const formVerlauf = Array.from({ length: 30 }, (_, i) => {
+  const t = i / 29;
+  const ctl = Math.round((38 + t * 14) * 10) / 10;
+  const atl = Math.round((34 + t * 13 + Math.sin(i * 0.9) * 6) * 10) / 10;
+  return { date: tage(29 - i), ctl, atl, form: Math.round((ctl - atl) * 10) / 10 };
+});
+
 localStorage.clear();
 localStorage.setItem('setlist.token', 'demo');
 localStorage.setItem('setlist.cache', JSON.stringify({
-  config, state, fahrten,
+  config, state, fahrten, formVerlauf,
   form: { form: 5, stufe: 'frisch', fitness: 52, ermuedung: 47,
           text: 'Ausgeruht. Wenn ein Tag für einen Versuch am oberen Ende taugt, dann dieser.' },
   eftp: 243

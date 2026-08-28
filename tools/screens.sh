@@ -21,6 +21,18 @@ schuss () {
   echo "  $1.png"
 }
 
+# Breite Fassung fuer den Mac-Screenshot im README — ab 1200 px zeigt die
+# Tour drei Spalten Verlaufskurven statt einer. Der Rahmen in shot.html ist
+# sonst fest auf Handy-Breite gebaut, deshalb hier ueber breite/hoehe steuern.
+schuss_desktop () {
+  "$CHROME" --headless=new --disable-gpu --hide-scrollbars \
+    --window-size=1320,1040 --force-device-scale-factor=1.5 \
+    --virtual-time-budget=9000 \
+    --screenshot="assets/screens/$1.png" \
+    "http://localhost:$PORT/tools/shot.html?szene=$2&thema=$3&breite=1280&hoehe=1000" >/dev/null 2>&1
+  echo "  $1.png"
+}
+
 schuss home-dunkel    home    dunkel
 schuss session-dunkel session dunkel
 schuss geschafft-dunkel geschafft dunkel
@@ -31,3 +43,4 @@ schuss warmup-dunkel  warmup  dunkel
 schuss maxout-dunkel  maxout  dunkel
 schuss home-hell      home    hell
 schuss session-hell   session hell
+schuss_desktop tour-desktop verlauf dunkel
