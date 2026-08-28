@@ -722,7 +722,7 @@ if (S.getToken()) {
 
 function starteWod(seed) {
   wodSeed = seed >>> 0;
-  wod = WOD.generateWod(state, wodSeed);
+  wod = WOD.generateWod(state, wodSeed, config);
   swSek = 0; stopUhr();
   $('sw-time').textContent = '0:00';
   $('wod-finish').disabled = true;
@@ -742,6 +742,11 @@ function renderWod() {
           <span class="bez"><b>${t.name}</b>
             ${t.last ? `<span class="last">${P.fmtWeight(t.last)}</span>` : ''}
             <span class="c">${t.cue}</span>
+            ${t.skalierung && t.skalierung.length ? `
+              <details class="skal"><summary>Leichter</summary>
+                <ul>${t.skalierung.map(x => `<li>${x}</li>`).join('')}</ul>
+                <button class="raus" data-raus="${t.id}" data-name="${t.name}">Kann ich nicht — dauerhaft raus</button>
+              </details>` : ''}
           </span>
         </div>`).join('')}
     </div>
@@ -749,6 +754,9 @@ function renderWod() {
     <p class="fine">Nicht zufrieden? Oben rechts neu würfeln. Das WOD zählt nicht in die 5x5-Progression —
     es taucht in der Historie auf, verschiebt aber weder deine Gewichte noch den A/B-Wechsel.</p>`;
   $('sw-start').onclick = startUhr;
+  $('wod-body').querySelectorAll('[data-raus]').forEach(b => {
+    b.onclick = () => uebungAusschliessen(b.dataset.raus, b.dataset.name);
+  });
 }
 
 function startUhr() {
@@ -1262,3 +1270,29 @@ async function einheitenNachtragen() {
 
 $('icu-plan').onclick = planInKalender;
 $('icu-nachtragen').onclick = einheitenNachtragen;
+
+/**
+ * Übung dauerhaft aus dem Generator nehmen. Landet in config.json, damit
+ * es auf jedem Gerät gilt und beim nächsten Würfeln sofort greift — eine
+ * Einstellung im Browserspeicher wäre auf dem nächsten Gerät wieder weg.
+ */
+async function uebungAusschliessen(id, name) {
+  if (!confirm(`„${name}“ dauerhaft aus den Zufalls-Workouts nehmen?`)) return;
+  try {
+    banner('SPEICHERE…', '', 0);
+    const datei = await S.readFile('config.json');
+    if (!datei) throw new Error('config.json nicht lesbar.');
+
+    const neu = datei.data;
+    neu.wod = neu.wod || {};
+    neu.wod.aus = [...new Set([...(neu.wod.aus || []), id])];
+    await S.writeFile('config.json', neu, `${name} aus den Zufalls-Workouts genommen`, datei.sha);
+
+    config = neu;
+    S.cache({ config });
+    starteWod((wodSeed * 7919 + 13) >>> 0);      // neu würfeln, ohne die Übung
+    banner(`${name.toUpperCase()} KOMMT NICHT MEHR VOR`, 'ok', 5000);
+  } catch (e) {
+    banner(e.message, 'err', 8000);
+  }
+}

@@ -460,3 +460,21 @@ dialog::backdrop{background:var(--backdrop)}
   clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);
 }
 .themen button.an{border-color:var(--cyan);color:var(--cyan);background:var(--tint-cyan)}
+
+/* ── Skalierung im WOD ────────────────────────────────────── */
+details.skal{margin-top:7px}
+details.skal>summary{
+  cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--cyan);list-style:none;
+}
+details.skal>summary::-webkit-details-marker{display:none}
+details.skal>summary::after{content:' ▸';color:var(--dim)}
+details.skal[open]>summary::after{content:' ▾'}
+details.skal ul{margin:7px 0 0;padding-left:17px;color:var(--muted);font-size:13px;line-height:1.6}
+details.skal li{margin:2px 0}
+button.raus{
+  margin-top:9px;background:transparent;border:1px solid var(--line);color:var(--amber);
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  padding:8px 11px;cursor:pointer;
+}
+button.raus:active{border-color:var(--amber)}

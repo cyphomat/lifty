@@ -68,3 +68,43 @@ eq('gleicher Text, gleicher Seed', W.seedAus('2026-09-02'), W.seedAus('2026-09-0
 ok('anderer Text, anderer Seed', W.seedAus('2026-09-02') !== W.seedAus('2026-09-03'));
 
 print(`\n========== ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
+
+print('\n--- Jede Uebung hat eine Skalierung ---');
+eq('keine Uebung ohne Alternative',
+   W.MOVES.filter(m => !m.skalierung || !m.skalierung.length).length, 0);
+const klimm = W.MOVES.find(m => m.id === 'pullup');
+ok('Klimmzuege nennen Ring Rows zuerst', klimm.skalierung[0].includes('Ring Rows'), klimm.skalierung[0]);
+ok('mehrere Stufen', klimm.skalierung.length >= 3, klimm.skalierung.length);
+ok('Skalierungen kommen im erzeugten WOD mit',
+   W.generateWod(state, 7).teile.every(t => Array.isArray(t.skalierung)));
+
+print('\n--- Ausgeschlossene Uebungen tauchen nicht auf ---');
+const ohne = { wod: { aus: ['pullup'] } };
+let klimmzuege = 0;
+for (let s = 1; s <= 400; s++) {
+  if (W.generateWod(state, s, ohne).teile.some(t => t.name === 'Klimmzüge')) klimmzuege++;
+}
+eq('Klimmzuege ueber 400 Seeds: nie', klimmzuege, 0);
+let ohneAusschluss = 0;
+for (let s = 1; s <= 400; s++) {
+  if (W.generateWod(state, s).teile.some(t => t.name === 'Klimmzüge')) ohneAusschluss++;
+}
+ok('ohne Ausschluss kommen sie sehr wohl vor', ohneAusschluss > 10, ohneAusschluss);
+
+print('\n--- Auch mit vielen Ausschluessen bleibt es benutzbar ---');
+const vieleAus = { wod: { aus: ['pullup','burpee','boxjump','kbswing','situp','pushup','lunge'] } };
+let leer = 0, zuWenig = 0;
+for (let s = 1; s <= 200; s++) {
+  const w = W.generateWod(state, s, vieleAus);
+  if (!w.teile.length) leer++;
+  if (w.teile.length < 2) zuWenig++;
+  if (w.teile.some(t => vieleAus.wod.aus.includes(t.id))) zuWenig++;
+}
+eq('nie ein leeres Workout', leer, 0);
+eq('nie unter zwei Teilen und nie etwas Ausgeschlossenes', zuWenig, 0);
+
+print('\n--- Notbremse: schliesst man alles aus, bleibt der volle Pool ---');
+const allesAus = { wod: { aus: W.MOVES.map(m => m.id) } };
+ok('lieber ein Workout als gar keins', W.generateWod(state, 3, allesAus).teile.length > 0);
+
+print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
