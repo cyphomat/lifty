@@ -528,7 +528,7 @@ function renderDone(before, log) {
 
   $('done-body').innerHTML = `
     ${kopf ? `<div class="erfolg-kopf">
-      <span class="kicker">Geschafft</span>
+      <span class="kicker">Workout ${log.workout} · ${log.date.slice(8)}.${log.date.slice(5,7)}.</span>
       <p class="gross">${kopf.text}</p>
     </div>` : ''}
     ${rest.length ? `<div class="erfolge">${rest.map(w => `<div class="erfolg">${w.text}</div>`).join('')}</div>` : ''}
