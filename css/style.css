@@ -404,10 +404,10 @@ dialog::backdrop{background:var(--backdrop)}
   --leiste:linear-gradient(180deg,#ffffff,#f2f5f8);
   --backdrop:rgba(16,24,32,.45);
 
-  --tint-cyan:rgba(10,111,146,.08);
-  --tint-cyan-stark:rgba(10,111,146,.16);
-  --tint-lime:rgba(12,122,68,.12);
-  --tint-amber:rgba(138,90,0,.12);
+  --tint-cyan:rgba(10,111,146,.09);
+  --tint-cyan-stark:rgba(10,111,146,.20);
+  --tint-lime:rgba(12,122,68,.20);
+  --tint-amber:rgba(138,90,0,.20);
   --tint-magenta:rgba(179,26,99,.05);
   --tint-invers:rgba(10,111,146,.12);
 
@@ -441,7 +441,8 @@ dialog::backdrop{background:var(--backdrop)}
   box-shadow:0 1px 2px rgba(16,24,32,.05), 0 6px 16px rgba(16,24,32,.05);
 }
 :root[data-theme="light"] .slot.today-slot{border-color:var(--cyan);background:var(--tint-cyan)}
-:root[data-theme="light"] .set{border-color:#c6d1dc}
+:root[data-theme="light"] .set:not(.done):not(.partial){border-color:#c6d1dc}
+:root[data-theme="light"] .set{border-width:2px}
 :root[data-theme="light"] .set.done{color:#0a5f36}
 :root[data-theme="light"] .set.partial{color:#6f4800}
 :root[data-theme="light"] .set.plus{color:#075873}

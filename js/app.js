@@ -211,7 +211,7 @@ function renderHome() {
 
   const gewaehlt = workoutOverride || state.next;
   const plan = P.planWorkout(state, config, gewaehlt);
-  $('swap-workout').textContent = `Stattdessen ${gewaehlt === 'A' ? 'B' : 'A'}`;
+  $('swap-workout').textContent = `Workout ${gewaehlt === 'A' ? 'B' : 'A'}`;
   $('today').innerHTML = `
     <div class="kicker">${workoutOverride ? 'Selbst gewählt' : 'Als Nächstes'}</div>
     <div class="name neon">WORKOUT ${plan.workout}</div>
