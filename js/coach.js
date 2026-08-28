@@ -168,7 +168,7 @@ export function formLage(wellness) {
     text = 'Normal belastet. Plan durchziehen.';
   } else if (form >= -20) {
     stufe = 'muede';
-    text = 'Deutlich ermüdet vom Rad. Technik hat heute Vorrang vor Last — und der Finisher darf ausfallen.';
+    text = 'Deutlich ermüdet vom Rad. Technik hat heute Vorrang vor Last — und das Encore darf ausfallen.';
   } else {
     stufe = 'platt';
     text = 'Stark ermüdet. Wenn heute etwas nicht geht, liegt es nicht an dir. Leichter machen ist hier die richtige Entscheidung, nicht die bequeme.';

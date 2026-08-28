@@ -33,12 +33,12 @@
 <tr>
 <td><img src="assets/screens/verlauf-dunkel.png" alt="Bestwerte"></td>
 <td><img src="assets/screens/rad-dunkel.png" alt="Radfahrten"></td>
-<td><img src="assets/screens/wod-dunkel.png" alt="Zufalls-WOD"></td>
+<td><img src="assets/screens/wod-dunkel.png" alt="Jam"></td>
 </tr>
 <tr>
 <td align="center"><b>Bestwerte</b><br><sub>Abgeleitet, nicht gepflegt</sub></td>
 <td align="center"><b>Rad</b><br><sub>Wochenlast aus intervals.icu</sub></td>
-<td align="center"><b>Zufalls-WOD</b><br><sub>Lasten aus dem aktuellen Stand</sub></td>
+<td align="center"><b>Jam</b><br><sub>Lasten aus dem aktuellen Stand</sub></td>
 </tr>
 </table>
 
@@ -50,7 +50,7 @@
 
 Der Unterschied zu einem Logbuch: sie hat eine Meinung zum heutigen Tag — und die kommt aus Daten, nicht aus einem Zufallsgenerator.
 
-**Die Ansage** liest Pause, offene Fehlversuche, laufende Serie und den Abstand zu den alten Arbeitsgewichten und entscheidet daraus zwischen `TECHNIK`, `SOLIDE`, `HART` und `SCHWER`.
+**Die Ansage** liest Trainingspause, offene Fehlversuche, laufende Serie und den Abstand zu den alten Arbeitsgewichten und entscheidet daraus zwischen `TECHNIK`, `SOLIDE`, `HART` und `SCHWER`.
 
 **Die Form** kommt aus intervals.icu — Fitness minus Ermüdung. Dazu die Interferenz-Warnung, wenn eine harte Fahrt weniger als vier Stunden her ist:
 
@@ -77,9 +77,9 @@ flowchart LR
   A["Setlist<br/>GitHub Pages"] <--> D[("setlist-data<br/>privates Repo")]
   P["iPhone<br/>Homescreen"] --> A
 
-  classDef fremd fill:#0b1119,stroke:#3d4f63,color:#69809a
-  classDef eigen fill:#0b1119,stroke:#00e5ff,color:#00e5ff
-  classDef daten fill:#0b1119,stroke:#ff2d95,color:#ff2d95
+  classDef fremd fill:#17161b,stroke:#57535c,color:#a7a3ab
+  classDef eigen fill:#17161b,stroke:#e8a23d,color:#e8a23d
+  classDef daten fill:#17161b,stroke:#6f93ad,color:#6f93ad
   class Z,S,I fremd
   class A,P eigen
   class D daten
@@ -109,9 +109,9 @@ flowchart TD
   P --> W
   D --> W
 
-  classDef gut fill:#0b1119,stroke:#00ff9d,color:#00ff9d
-  classDef schlecht fill:#0b1119,stroke:#ffb020,color:#ffb020
-  classDef frage fill:#0b1119,stroke:#00e5ff,color:#e8ecf1
+  classDef gut fill:#17161b,stroke:#7fa65c,color:#7fa65c
+  classDef schlecht fill:#17161b,stroke:#c8763f,color:#c8763f
+  classDef frage fill:#17161b,stroke:#e8a23d,color:#f2f0ec
   class P gut
   class F,D schlecht
   class E,G,W frage
@@ -131,10 +131,10 @@ Der Back Squat kommt in beiden Workouts vor und steigt daher doppelt so schnell.
 |---|---|
 | **5×5-Automat** | Steigerung, Fehlerzähler, Deload. Reine Funktionen, kein I/O. |
 | **Plattenrechner** | Scheiben pro Seite. Nicht exakt ladbare Gewichte werden benannt statt gerundet. |
-| **Aufwärmsätze** | Aus dem Arbeitsgewicht gerechnet: leere Stange, dann 55 / 70 / 85 % — mit Scheibenangabe. |
+| **Soundcheck** | Aus dem Arbeitsgewicht gerechnet: leere Stange, dann 55 / 70 / 85 % — mit Scheibenangabe. |
 | **Gewicht im Satz** | Anpassbar während der Einheit. Das Log bildet ab, was passiert ist. |
 | **Wiederholungen** | Tippen zählt das Ziel. Lange drücken öffnet 0 bis 12 — auch darüber. |
-| **Pausenuhr** | 90 s, nach einem Fehlversuch 180 s, im Lauf um ±30 s verstellbar. |
+| **Umbaupause** | 90 s, nach einem Fehlversuch 180 s, im Lauf um ±30 s verstellbar. |
 | **Bestwerte** | Schwerster sauberer Satz, gemessenes Einzel, **Maximum** (nur aus Max-Out) gegen **Mindestens** (aus Arbeitssätzen). |
 | **Max-Out** | Krafttest mit e1RM. Dreht den A/B-Wechsel nicht. |
 | **Wissen an der Stange** | Kadenz sichtbar; aufklappbar Begründung, Cue, typischer Fehler, Brücke zum olympischen Heben. |
@@ -144,7 +144,7 @@ Der Back Squat kommt in beiden Workouts vor und steigt daher doppelt so schnell.
 | | |
 |---|---|
 | **Radfahrten** | Fahrten, Stunden, Kilometer, Wochenlast über zwölf Wochen. |
-| **Trainingskalender** | 26 Wochen als Raster, eine Spalte je Woche. Kraft cyan, WOD grün, Rad magenta, gemischte Tage diagonal geteilt. |
+| **Trainingskalender** | 26 Wochen als Raster, eine Spalte je Woche. Kraft bernstein, Jam grün, Rad stahlblau, gemischte Tage diagonal geteilt. |
 | **Wochenlast gestapelt** | Kraft und Rad in einem Balken — die eine Kurve, wegen der beides zusammengehört. |
 | **Gewichtskurve** | Körpergewicht als Verlauf statt als Zahl. Bei Gewicht zählt nur die Richtung. |
 | **Wochenvolumen** | Bewegtes Gewicht je Woche, beste Woche markiert. |
@@ -153,17 +153,17 @@ Der Back Squat kommt in beiden Workouts vor und steigt daher doppelt so schnell.
 | **Interferenz** | Warnt bei harter oder langer Fahrt unter vier Stunden Abstand. |
 | **Wattziele** | Aus der eFTP statt Prozentangaben. |
 | **Kraft → intervals.icu** | Jede Einheit als Aktivität, damit alles in einer Kurve liegt. |
-| **Zufalls-WOD** | Fünf Formate, 19 Übungen, Lasten aus dem aktuellen Stand. Nie zwei Langhantelteile. |
+| **Jam** | Fünf Formate, 19 Übungen, Lasten aus dem aktuellen Stand. Nie zwei Langhantelteile. |
 | **Skalierung** | Jede Übung nennt Alternativen. „Kann ich nicht" nimmt sie dauerhaft raus. |
 
 ### App
 
 | | |
 |---|---|
-| **Offline** | Einheiten werden gepuffert. Verlauf und Radansicht zeigen den letzten Stand. |
+| **Offline** | Einheiten werden gepuffert. Tour und Radansicht zeigen den letzten Stand. |
 | **Selbstaktualisierend** | Prüft die Version beim Start und lädt sich genau einmal neu. |
 | **Hell und dunkel** | Umschalter System / Hell / Dunkel. Zwei echte Fassungen, keine Invertierung. |
-| **Handy und Mac** | Ab 900 px zwei Spalten, im Verlauf breitere Raster. Auf dem Handy stapeln sie sich — dieselbe Reihenfolge, dasselbe Bild. |
+| **Handy und Mac** | Ab 900 px zwei Spalten, in der Tour breitere Raster. Auf dem Handy stapeln sie sich — dieselbe Reihenfolge, dasselbe Bild. |
 
 ---
 
@@ -260,20 +260,28 @@ e1RM-Formeln setzen Nähe zum Versagen voraus. Ein 5×5-Arbeitssatz ist submaxim
 ```
 Rückgrat      5×5                   messbar progressiv, trägt alles andere
 Auffrischung  Olympische Technik    leicht, im Warm-up-Slot, Qualität statt Last
-Zugabe        Seile · Kondition     als Finisher ans Ende, nie davor
+Encore        Seile · Kondition     ans Ende, nie davor
 ```
 
 Kein Geschmack, sondern der Grund, warum die Progression im Kaloriendefizit funktioniert.
 
+### Backline statt Neon
+
+Ein Röhrenamp glimmt, er strahlt nicht. Deshalb liegt Bernstein auf Zahlen, Kanten und dem, was gerade dran ist — die Flächen bleiben matt. Stahlblau trägt alles Zweitrangige: Rad, Jam, Nebenzahlen. Das ist keine Geschmacksfrage, sondern die Rangordnung: vorher war eine Radfahrt genauso laut wie ein Arbeitssatz, und die Seite hatte keine.
+
 ### Zwei Farbfassungen statt einer Invertierung
 
-Leuchten, vertiefte Flächen und Farbschleier laufen über CSS-Variablen, die die helle Fassung an **einer** Stelle umdefiniert. Glüheffekte werden abgeschaltet, nicht abgeschwächt — auf Weiß werden sie zu Schmutz. Was bleibt: Kantenschnitt, Raster, Monospace-Zahlen.
+Farben, Flächen und Schleier laufen über CSS-Variablen, die die helle Fassung an **einer** Stelle umdefiniert. Aus fast Schwarz wird warmes Papier statt kaltem Weiß, und das Bernstein wird dunkler — sonst verschwindet es auf hellem Grund. Was bleibt: harte Rechtecke, Raster, kondensierte Versalien, Monospace-Zahlen.
+
+### Die Schrift liegt im Repo
+
+Oswald stammt von Google Fonts, wird aber nicht von dort geladen. Die Latin-Variante liegt als 21 KB große `woff2` unter `assets/fonts/` und wandert mit in den Service-Worker-Cache. Ein Font-Request nach außen hieße: eine Abhängigkeit mehr, ein anderes Aussehen offline, und ein Dritter, der mitbekommt, wann die App geöffnet wird. Die Lizenz (SIL OFL) liegt daneben.
 
 ### Die Stimme gehört dem Benutzer
 
 Jeder Satz einer App wurde von jemand anderem geschrieben als dem, der sie benutzt. `stimme.json` löst das: eigene Zeilen mischen sich mit den mitgelieferten, ungefähr halbe halbe. Songtexte gehören nicht hinein — fremde Liedzeilen sind geschützt.
 
-### Woher die Zufalls-Workouts kommen
+### Woher die Jams kommen
 
 Aus `js/wod.js`. Die Formate sind die üblichen, Übungspool und Cues handgeschrieben, die Lasten aus dem aktuellen Stand abgeleitet. Keine externe Datenbank — und damit eine Datei, die man ändern kann. Der Pool ist auf eine konkrete Ausstattung zugeschnitten, die in `config.json` unter `orte` steht.
 
@@ -285,14 +293,16 @@ Aus `js/wod.js`. Die Formate sind die üblichen, Übungspool und Cues handgeschr
 |---|---|
 | `js/program.js` | 5×5-Automat, Plattenrechner, Aufwärmsätze, e1RM. Reine Funktionen, kein I/O. |
 | `js/coach.js` | Ansage, Ton, Form, Interferenz, Meilensteine, Minierfolge. Ebenfalls rein. |
-| `js/wod.js` | Zufalls-WOD, deterministisch über einen Seed. |
+| `js/wod.js` | Jam-Generator, deterministisch über einen Seed. |
 | `js/stats.js` | Tonnage, Bestwerte, Sparklines, Radstatistik. Rechnet, zeichnet nicht. |
-| `js/content.js` | Wissensschicht: Warum je Übung, Cues, Warm-up, Technik, Finisher, 52 Zeilen. |
+| `js/content.js` | Wissensschicht: Warum je Übung, Cues, Soundcheck, Technik, Encore, 52 Zeilen. |
 | `js/store.js` | GitHub-API als Speicher, Offline-Puffer, Wiederholversuche. |
 | `js/intervals.js` | Liest Fahrten, Form und Gewicht; schreibt Krafteinheiten zurück. |
 | `js/app.js` | Oberfläche und Ablauf. |
 | `sw.js` | Cacht die App-Hülle. Trainingsdaten bewusst **nicht**. |
 | `tools/shot.html` | Aufnahme-Vorrichtung für die Screenshots oben. |
+| `tools/icon-gen.py` | Erzeugt die Icons. Reines Python, kein Bildprogramm. |
+| `assets/fonts/` | Oswald als `woff2` plus Lizenz. Selbst gehostet, nicht von Google. |
 
 ---
 
@@ -327,7 +337,7 @@ sh tools/screens.sh
 
 ---
 
-## Fünf Fallen, die Zeit gekostet haben
+## Sechs Fallen, die Zeit gekostet haben
 
 **Jekyll.** GitHub Pages schiebt statische Seiten durch einen Template-Prozessor, der über den JS-Code stolperte — der Build schlug fehl, ohne dass sich an der ausgelieferten Seite etwas änderte. `.nojekyll` schaltet ihn ab.
 
@@ -336,6 +346,8 @@ sh tools/screens.sh
 **`/log`.** Ein Netzwerkabbruch traf reproduzierbar nur `contents/log`, während alles andere durchging — das Muster eines Inhaltsblockers. Der Ordner heißt jetzt `einheiten/`, der Verlauf läuft über `git/trees` und `git/blobs`.
 
 **Ein Fehler im Fehlerbehandler.** Der Rückfall auf den letzten Stand rief die Diagramme auf, die ihrerseits die Konfiguration brauchten — die in dem Moment fehlte. Ergebnis war ein hängendes „Lade…". Die unangenehmste Sorte: sie zeigt sich genau dann, wenn ohnehin schon etwas schiefläuft.
+
+**Eine Umbenennung, die vollständig aussah.** Beim Wechsel der Palette wurden alle Farbrollen umbenannt — und die Suche nach dem alten Namen fand nichts mehr. Drei Diagrammflächen trugen die alte Farbe trotzdem noch, weil sie als `rgba(0,229,255,.13)` dort standen, wo kein Token stand. Ein Rechteck sah türkis unter einer bernsteinfarbenen Linie aus. Gefunden im Browser, nicht im Code. Seitdem läuft jedes Farbliteral über ein Token.
 
 **Ein linearer Hash.** Von zwei eigenen Zeilen erschien immer nur dieselbe. `h*31+c` ist in den untersten Bits linear — die Parität von `hash(x)` und `hash(salz+x)` hängt fest zusammen, egal wo man salzt. Münzwurf und Auswahl waren dadurch gekoppelt. Es brauchte eine Bit-Lawine, kein anderes Salz.
 
@@ -348,7 +360,7 @@ Es ist eine Web-App — die URL genügt. Für ein eigenes Fenster mit Icon:
 - **Safari:** Ablage → *Zum Dock hinzufügen*
 - **Chrome:** Adressleiste → *Installieren*
 
-Auf dem großen Bildschirm wird der Verlauf zur Übersicht: Trainingskalender
+Auf dem großen Bildschirm wird die Tour zur Übersicht: Trainingskalender
 über 26 Wochen, Kraft und Rad gestapelt, vier Kennzahlen nebeneinander,
 Bestwerte zweispaltig und drei Verlaufskurven in einer Reihe.
 

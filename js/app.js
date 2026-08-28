@@ -570,7 +570,7 @@ function renderDone(before, log) {
     <p class="fine">Nächstes Mal: Workout ${state.next}.${d.streak > 0 ? ` Serie: ${d.streak} Woche${d.streak === 1 ? '' : 'n'}.` : ''}</p>`;
 }
 
-/* ============================ Verlauf ============================ */
+/* ============================== Tour ============================== */
 
 async function renderHistory() {
   show('history');
@@ -776,7 +776,7 @@ if (S.getToken()) {
   load();
 } else show('setup');
 
-/* ============================ Zufalls-WOD ============================
+/* =============================== Jam ===============================
    Bewusst getrennt vom 5x5: es wird als eigener Typ geloggt und beruehrt
    weder Arbeitsgewichte noch den A/B-Wechsel.                          */
 
