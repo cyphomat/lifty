@@ -51,12 +51,17 @@ export function progressToReference(state, config) {
   return { gesamt: n ? summe / n : 0, perLift };
 }
 
-/** Stabil ueber den Tag: derselbe Spruch bei jedem Neuzeichnen. */
+/**
+ * Stabil ueber den Tag: derselbe Spruch bei jedem Neuzeichnen. Die
+ * Bit-Lawine (siehe mische() weiter unten) ist hier ebenso noetig wie
+ * bei spruchWaehlen — ohne sie liegt bei kurzen Listen (Technik,
+ * Encore, Mobility haben je 5 Eintraege, und 31 ist kongruent 1 mod 5)
+ * die Auswahl nur um die Quersumme der Zeichen fest, und Tag fuer Tag
+ * kommt praktisch derselbe Eintrag wieder statt einer echten Streuung.
+ */
 function pick(list, seed) {
   if (!list || !list.length) return '';
-  let h = 0;
-  for (const c of String(seed)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  return list[h % list.length];
+  return list[mische(hash(seed)) % list.length];
 }
 
 /**

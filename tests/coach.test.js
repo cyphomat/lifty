@@ -364,4 +364,18 @@ eq('zweite Einheit derselben Woche: schon gehabt', C.mobilityDran({
   history: [{ date: '2026-09-14', type: 'strength' }, { date: '2026-09-16', type: 'wod' }]
 }, HEUTE), false);
 
+print('\n--- Tagesauswahl streut auch bei kurzen Listen ---');
+// Technik, Encore und Mobility haben je fuenf Eintraege — und 31 ist
+// kongruent 1 mod 5. Ohne Bit-Lawine liegt die Auswahl dann nur an der
+// Quersumme der Zeichen fest: ein reiner +1-Zaehler Tag fuer Tag statt
+// echter Streuung. Genau das hat sich angefuehlt wie "immer dasselbe".
+const fuenf = ['a', 'b', 'c', 'd', 'e'];
+const folge = [];
+for (let i = 1; i <= 30; i++) folge.push(C.tagesAuswahl(fuenf, new Date(2026, 8, i), 'x'));
+ok('alle fuenf Eintraege kommen in 30 Tagen vor', new Set(folge).size === 5, `${new Set(folge).size} verschiedene`);
+const deltas = folge.slice(1).map((v, i) => (fuenf.indexOf(v) - fuenf.indexOf(folge[i]) + 5) % 5);
+ok('keine starre Schrittfolge wie bei der alten, unvermischten Auswahl', !deltas.every(d => d === deltas[0]));
+ok('unterschiedliches Salz ergibt unterschiedliche Folgen', // sonst waeren Technik und Encore am selben Tag dieselbe Reihenfolge
+   fuenf.some((_, i) => C.tagesAuswahl(fuenf, new Date(2026, 8, i + 1), 'x') !== C.tagesAuswahl(fuenf, new Date(2026, 8, i + 1), 'y')));
+
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

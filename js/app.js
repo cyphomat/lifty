@@ -501,6 +501,31 @@ function openPicker(li, si) {
   dlg.showModal();
 }
 
+/**
+ * Kurzer Ton per Web Audio — keine Audiodatei noetig, aber der Kontext
+ * darf laut iOS erst nach einer Nutzergeste starten. Session- und WOD-
+ * Start sind selbst schon Nutzergesten, deshalb reicht das lazy Anlegen
+ * hier; ein eigener "Sound freischalten"-Tap waere unnoetige Reibung.
+ * Respektiert den Stumm-Schalter (anders als die Vibration) — beide
+ * zusammen decken beides ab.
+ */
+let audioCtx = null;
+function toene(frequenzen, dauerMs = 160) {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    frequenzen.forEach((freq, i) => {
+      const start = audioCtx.currentTime + i * (dauerMs / 1000);
+      const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+      osc.type = 'sine'; osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.2, start);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + dauerMs / 1000);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(start); osc.stop(start + dauerMs / 1000);
+    });
+  } catch { /* Web Audio nicht verfuegbar — Vibration bleibt */ }
+}
+
 function startRest(seconds) {
   restLeft = seconds;
   $('rest').hidden = false;
@@ -512,6 +537,7 @@ function startRest(seconds) {
     if (restLeft <= 0) {
       clearInterval(restTimer);
       if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      toene([880]);
       setTimeout(stopRest, 2500);
     }
   }, 1000);
@@ -541,6 +567,7 @@ async function finishSession() {
   stopRest();
   renderDone(before, log);
   show('done');
+  toene([660, 880]);
   try {
     await commit(log);
     banner('GESPEICHERT', 'ok');
@@ -902,6 +929,7 @@ async function wodAbschliessen() {
     </div>
     <p class="spruch">Kondition kostet nichts, solange sie am Ende steht. Deine Gewichte sind unberührt.</p>`;
   show('done');
+  toene([660, 880]);
   try {
     await commitWod(log);
     banner('GESPEICHERT', 'ok');
