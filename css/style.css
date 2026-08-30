@@ -610,6 +610,8 @@ h2.backstage::before{
   color:var(--muted);cursor:pointer;border-radius:2px;
 }
 .chips button.an{border-color:var(--akzent);color:var(--akzent);background:var(--tint-akzent)}
+.chips button:disabled{opacity:.35;cursor:default}
+.gefuehl{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
 #bib-random{margin-top:16px}
 #bib-random .name{font-size:22px;margin-top:8px}
 #bib-liste{margin-top:14px}

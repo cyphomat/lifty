@@ -353,6 +353,7 @@ function startSession() {
   session = {
     date: P.ymd(new Date()), started: new Date().toISOString(),
     workout: plan.workout,
+    angesagt: d.intensitaet.label,  // fuer den Abgleich mit dem gefuehlten Aufwand danach
     // planWeight bleibt stehen, damit sichtbar wird, was abweicht.
     lifts: plan.lifts.map(l => ({ ...l, planWeight: l.weight, done: [] }))
   };
@@ -554,6 +555,7 @@ async function finishSession() {
   const log = {
     date: session.date, workout: session.workout,
     started: session.started, finished: new Date().toISOString(),
+    angesagt: session.angesagt,
     lifts: session.lifts.map(l => {
       const reps = l.done.slice(0, l.sets).map(r => r ?? 0);
       return { lift: l.lift, weight: l.weight, sets: l.sets, target: l.reps, reps,
@@ -563,26 +565,31 @@ async function finishSession() {
   const before = state;
   state = P.applyLog(state, config, log);
   letzterLog = log;
+  letzterLogPfad = null;
   S.cache({ state });
   stopRest();
   renderDone(before, log);
   show('done');
   toene([660, 880]);
   try {
-    await commit(log);
+    letzterLogPfad = await commit(log);
     banner('GESPEICHERT', 'ok');
     if (ICU.pushAktiv() && ICU.isConfigured()) ICU.queuePush(log);
   } catch { S.queue(log); banner('KEIN NETZ — WIRD NACHGETRAGEN', '', 6000); }
+  aktiviereGefuehlChips();
   session = null;
   workoutOverride = null;
 }
 
+/** Schreibt die Einheit weg und gibt den tatsaechlich benutzten Pfad
+ * zurueck — das Gefuehl danach (siehe waehleGefuehl) muss wissen, wohin. */
 async function commit(log) {
   let path = `${S.LOG_DIR}/${log.date}.json`;
   if (await S.readFile(path)) path = `${S.LOG_DIR}/${log.date}-2.json`;
   await S.writeFile(path, log, `Einheit ${log.workout} am ${log.date}`);
   const cur = await S.readFile('state.json');
   await S.writeFile('state.json', state, `Zustand nach ${log.date}`, cur ? cur.sha : stateSha);
+  return path;
 }
 
 async function flushQueue() {
@@ -617,7 +624,47 @@ function renderDone(before, log) {
       </div>
     </details>
     <p class="spruch">${zeileFuerHeute(d)}</p>
+    <div class="gefuehl">
+      <p class="tagline">Wie hat sich das angefühlt?</p>
+      <div class="chips" id="gefuehl-chips">
+        ${['leicht', 'normal', 'hart', 'extrem'].map(g =>
+          `<button data-g="${g}" disabled>${GEFUEHL_LABEL[g]}</button>`).join('')}
+      </div>
+    </div>
     <p class="fine">Nächstes Mal: Workout ${state.next}.${d.streak > 0 ? ` Serie: ${d.streak} Woche${d.streak === 1 ? '' : 'n'}.` : ''}</p>`;
+}
+
+const GEFUEHL_LABEL = { leicht: 'Leicht', normal: 'Normal', hart: 'Hart', extrem: 'Extrem schwer' };
+let letzterLogPfad = null;   // Pfad der zuletzt gespeicherten Einheit, fuer das Gefuehl danach
+
+/** Erst tippbar, wenn die Einheit wirklich gespeichert ist — sonst
+ * verspricht der Knopf etwas, das gerade gar nicht sicher landet. */
+function aktiviereGefuehlChips() {
+  const box = $('gefuehl-chips');
+  if (!box) return;
+  box.querySelectorAll('button').forEach(b => {
+    b.disabled = !letzterLogPfad;
+    b.onclick = () => waehleGefuehl(b.dataset.g);
+  });
+}
+
+/**
+ * Traegt das Gefuehl in die bereits gespeicherte Einheit nach — ein
+ * zweiter, kleiner Schreibvorgang statt den ersten aufzuhalten. Die
+ * eigentlichen Trainingsdaten (Gewicht, Wiederholungen) sind schon
+ * sicher, bevor hier ueberhaupt eine Frage gestellt wird.
+ */
+async function waehleGefuehl(wert) {
+  $('gefuehl-chips').querySelectorAll('button').forEach(b => b.classList.toggle('an', b.dataset.g === wert));
+  try {
+    const cur = await S.readFile(letzterLogPfad);
+    if (!cur) return;
+    const log = { ...cur.data, gefuehlt: wert };
+    await S.writeFile(letzterLogPfad, log, `Gefühl: ${wert}`, cur.sha);
+    if (letzterLog) letzterLog.gefuehlt = wert;
+  } catch (e) {
+    banner(`GEFÜHL NICHT GESPEICHERT: ${e.message}`, 'err', 5000);
+  }
 }
 
 /* ============================== Tour ============================== */
