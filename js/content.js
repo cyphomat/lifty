@@ -8,7 +8,7 @@ export const LIFT_INFO = {
     warum: 'Die größte Hebelwirkung auf deinen gesamten Körper. Beine, Rumpf, oberer Rücken — und der stärkste hormonelle Reiz, den du im Defizit kriegen kannst. Deshalb steht sie in beiden Workouts.',
     kadenz: '3 Sekunden runter, unten nicht abfedern, explosiv hoch.',
     cue: 'Bruch aus der Hüfte und den Knien gleichzeitig. Ellbogen unter die Stange, Brust bleibt offen.',
-    fehler: 'Hüfte schießt zuerst hoch — dann wird aus dem Squat ein Good Morning.',
+    fehler: 'Hüfte schießt zuerst hoch — dann wird aus dem Squat ein Good Morning. Zweiter Klassiker: Fersen heben ab, dann übernehmen die Zehen und die Gesäßmuskulatur steigt aus.',
     oly: 'Aus deinem Gewichtheben kennst du die aufrechte Front-Position. Halte im Back Squat denselben Oberkörperwinkel wie im Clean, dann überträgt es sich.'
   },
   bench: {
