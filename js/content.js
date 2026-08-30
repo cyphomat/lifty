@@ -87,7 +87,12 @@ export const MOBILITY = [
   { id: 'bws-rotation', name: 'BWS-Rotation im Vierfüßlerstand', dosis: '10x je Seite', warum: 'Ohne Rotation in der Brustwirbelsäule übernimmt die Schulter, was die Wirbelsäule schuldig bleibt — beim Drücken sofort spürbar.' },
   { id: 'pigeon-pose', name: 'Taubenhaltung (Pigeon Pose)', dosis: '2x 60 Sek je Seite', warum: 'Öffnet die Hüfte in der Außenrotation — die Position, die beim Abstieg zuerst fehlt.' },
   { id: 'sprunggelenk', name: 'Sprunggelenksmobilisation', dosis: '10x je Seite, Knie über die Zehenspitze', warum: 'Steife Sprunggelenke zwingen den Oberkörper in der Kniebeuge nach vorn — das kostet Stabilität, keine Kraft.' },
-  { id: 'skorpion', name: 'Liegende Skorpion-Dehnung', dosis: '8x je Seite', warum: 'Löst die Hüfte in Rotation, ohne die Wirbelsäule zu belasten — gut nach dem Kreuzheben.' }
+  { id: 'skorpion', name: 'Liegende Skorpion-Dehnung', dosis: '8x je Seite', warum: 'Löst die Hüfte in Rotation, ohne die Wirbelsäule zu belasten — gut nach dem Kreuzheben.' },
+  { id: 'wall-slides', name: 'Wandschieben (Thoracic Wall Slides)', dosis: '2x10, langsam', warum: 'Öffnet die Überkopf-Position aus der Brustwirbelsäule statt aus dem unteren Rücken — genau da, wo Strict Press sonst ins Hohlkreuz kippt.' },
+  { id: 'doorway-pec-stretch', name: 'Türrahmen-Dehnung (Brust und Schulter)', dosis: '2x 45 Sek je Seite', warum: 'Verkürzte Brustmuskulatur zieht die Schulter nach vorn — die Position, aus der die Schulterblätter beim Bankdrücken nicht mehr zusammenkommen.' },
+  { id: '90-90-huefte', name: '90/90-Hüftwechsel', dosis: '8x je Seite, langsam wechseln', warum: 'Trainiert Innen- und Außenrotation der Hüfte im selben Satz — die Bewegung, die beim Umsetzen in die Front-Position fehlt, wenn nur eine Richtung geübt wird.' },
+  { id: 'beinbeuger-dehnung', name: 'Aktive Beinbeuger-Dehnung (mit Band)', dosis: '2x8 je Seite', warum: 'Kurze Beinbeuger kippen das Becken beim Kreuzheben-Setup nach hinten, bevor die Stange überhaupt vom Boden ist. Aktiv statt passiv, weil das die Position trainiert, nicht nur die Länge.' },
+  { id: 'handgelenk', name: 'Handgelenksmobilisation', dosis: '10x je Richtung', warum: 'Steife Handgelenke zwingen beim Frontrack und Bankdrücken den Ellbogen aus der Position — meistens erst gemerkt, wenn es schon wehtut.' }
 ];
 
 /* ---------------------------------------------------------------

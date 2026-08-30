@@ -104,7 +104,7 @@ Back Squat ist in beiden Workouts dabei und steigt darum doppelt so schnell.
 | **Wochenlast gestapelt** | Kraft und Rad in einem Balken — die eine Kurve, wegen der beides zusammengehört. |
 | **Fitness gegen Ermüdung** | Zwei Linien aus intervals.icu — die Fläche dazwischen *ist* die Form. |
 | **Wattziele** | Aus der eFTP statt Prozentangaben. |
-| **Jam** | Fünf Formate, 19 Übungen, Lasten aus dem aktuellen Stand. Nie zwei Langhantelteile. |
+| **Jam** | Fünf Formate, 22 Übungen, Lasten aus dem aktuellen Stand. Nie zwei Langhantelteile. |
 | **Skalierung** | Jede Übung nennt Alternativen. „Kann ich nicht" nimmt sie dauerhaft raus. |
 
 ### App

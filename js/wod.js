@@ -66,6 +66,12 @@ export const MOVES = [
   { id:'kbswing',   name:'Kettlebell Swings',   kat:'turnen', reps:[15,25], last:null, cue:'Hüftschwung, keine Schulterarbeit.',
     erklaerung:'Explosive Hüftstreckung ohne Landung — die einfachste Art, Schnellkraft zu trainieren, wenn die Technik für Reißen oder Umsetzen nicht sitzt. Die Arme sind nur Seil, die Arbeit macht die Hüfte.',
     skalierung:['Nur bis Brusthöhe statt über Kopf','Leichtere Kugel','Kurzhantel beidhändig'] },
+  { id:'wallball',  name:'Wall Ball Shots',     kat:'turnen', reps:[15,25], last:null, cue:'Tief in die Hocke, Ball trifft das Ziel auf Streckung.',
+    erklaerung:'Squat und Wurf in einer Bewegung, dieselbe Idee wie der Thruster, nur mit Medizinball statt Langhantel. Die Beine ermüden zuerst, nicht die Schultern — deshalb bleibt die Hocke tief statt flach zu werden.',
+    skalierung:['Leichterer Ball','Niedrigeres Ziel','Ohne Wurf: Squat und separates Überkopfdrücken'] },
+  { id:'du',        name:'Double-Unders',       kat:'turnen', reps:[30,60], last:null, cue:'Handgelenke drehen, nicht die Arme.',
+    erklaerung:'Das Seil geht zweimal durch pro Sprung — hier schlägt Koordination Kraft. Die häufigste Fehlerquelle ist zu hohes Springen statt schnellerer Handgelenke, das kostet nur unnötig Puste.',
+    skalierung:['Single-Unders (einfaches Springseil)','Kürzere Serien','Ohne Seil: Hocksprünge'] },
 
   { id:'ropewave',  name:'Battle Ropes — Waves',       kat:'seil', reps:[20,40], einheit:'Sek', last:null, cue:'Frequenz halten, Rumpf fest.',
     erklaerung:'Dauerbelastung für Schultern, Arme und Rumpf bei null Belastung für Knie und Wirbelsäule. Deshalb der ideale Abschluss nach schwerem Beintag, wenn Springen oder Laufen keine gute Idee mehr ist.',
@@ -85,7 +91,10 @@ export const MOVES = [
     skalierung:['Kürzere Distanz'] },
   { id:'runrow',    name:'Row Sprints',         kat:'mono', reps:[250,400], einheit:'m', last:null, cue:'Zug für Zug, nicht hetzen.',
     erklaerung:'Kurze, harte Ruderintervalle. Anders als die lockere Variante geht es hier um Leistung pro Zug, nicht um Durchhalten.',
-    skalierung:['Kürzere Distanz','Ruhiger und dafür durchgehend'] }
+    skalierung:['Kürzere Distanz','Ruhiger und dafür durchgehend'] },
+  { id:'assaultbike', name:'Assault Bike',      kat:'mono', reps:[10,25],   einheit:'Kal', last:null, cue:'Gleichmäßiger Druck auf Armen und Beinen.',
+    erklaerung:'Ganzkörper-Konditionsgerät ohne Pause — Arme und Beine arbeiten gleichzeitig, der Widerstand steigt mit dem eigenen Tempo. Deshalb fühlt es sich immer härter an, als die Zahl auf dem Zähler verspricht.',
+    skalierung:['Weniger Kalorien','Langsameres, gleichmäßiges Tempo statt Sprint'] }
 ];
 
 export const FORMATE = [

@@ -30,8 +30,11 @@ ok('Jam-Uebung mit Dosis aus dem Wiederholungsbereich', thruster.dosis.includes(
 
 print('\n--- Suche ---');
 eq('leere Suche liefert alles', B.suche(alle, '').length, alle.length);
-eq('Name-Treffer', B.suche(alle, 'Bankdrücken').length, 1);
-eq('Gross-Kleinschreibung egal', B.suche(alle, 'bankdrücken').length, 1);
+// Nur pruefen, dass der Name-Treffer dabei ist — nicht, dass er allein
+// dasteht: andere Uebungen duerfen "Bankdrücken" legitim im Erklaerungs-
+// text erwaehnen (z.B. eine Mobility-Uebung, die sich darauf bezieht).
+ok('Name-Treffer', B.suche(alle, 'Bankdrücken').some(u => u.id === 'lift:bench'));
+ok('Gross-Kleinschreibung egal', B.suche(alle, 'bankdrücken').some(u => u.id === 'lift:bench'));
 ok('Treffer im Erklaerungstext', B.suche(alle, 'Hebelwirkung').length > 0);
 ok('Treffer im Cue', B.suche(alle, 'Ellbogen').length > 0);
 eq('nichts gefunden', B.suche(alle, 'xyzzy123').length, 0);
