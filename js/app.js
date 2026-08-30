@@ -2,7 +2,7 @@ import * as P from './program.js';
 import * as S from './store.js';
 import * as ICU from './intervals.js';
 import * as C from './coach.js';
-import { LIFT_INFO, WARMUP, SKILL, FINISHER, RIDE_INFO } from './content.js';
+import { LIFT_INFO, WARMUP, SKILL, MOBILITY, FINISHER, RIDE_INFO } from './content.js';
 import * as WOD from './wod.js';
 import * as ST from './stats.js';
 
@@ -358,6 +358,7 @@ function startSession() {
     <p class="txt">${d.intensitaet.text}</p>${stoerungsZeile()}</div>`;
 
   const skill = C.tagesAuswahl(SKILL, new Date(), 'skill');
+  const mobility = C.mobilityDran(state) ? C.tagesAuswahl(MOBILITY, new Date(), 'mob') : null;
   $('warmup').innerHTML = `
     <details class="info" open><summary>Soundcheck — nicht überspringen</summary>
       <div class="body">
@@ -385,7 +386,13 @@ function startSession() {
         <p>${skill.warum}</p>
         <p style="color:var(--dim)">Leicht bleiben. Das ist Auffrischung, kein zweites Training — es darf die Sätze danach nicht kosten.</p>
       </div>
-    </details>`;
+    </details>
+    ${mobility ? `<details class="info"><summary>Mobility — ${mobility.name}</summary>
+      <div class="body">
+        <p class="tagline"><b>${mobility.name}</b> · ${mobility.dosis}</p>
+        <p>${mobility.warum}</p>
+      </div>
+    </details>` : ''}`;
   $('warmup').querySelectorAll('.kv.check input').forEach(cb => {
     cb.onchange = () => cb.closest('.kv').classList.toggle('erledigt', cb.checked);
   });

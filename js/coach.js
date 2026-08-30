@@ -133,6 +133,17 @@ export function tagesAuswahl(list, today = new Date(), salz = '') {
   return pick(list, toKey(today) + salz);
 }
 
+/**
+ * Mobility taucht nur bei jeder dritten Krafteinheit auf, nicht bei
+ * jeder — sonst wird aus Beiwerk ein weiterer Pflichtblock. Gezaehlt
+ * werden nur echte Einheiten (kein WOD, keine Anpassung, kein Max-Out),
+ * sonst verschiebt sich der Rhythmus mit jedem Beiwerk-Eintrag.
+ */
+export function mobilityDran(state) {
+  const n = (state.history || []).filter(h => h.type === 'strength').length;
+  return (n + 1) % 3 === 0;
+}
+
 /** Gewichtstrend aus intervals.icu-Wellness. Rohdaten sind verrauscht. */
 export function gewichtsTrend(punkte = []) {
   const clean = punkte.filter(p => p.weight).sort((a, b) => a.date.localeCompare(b.date));

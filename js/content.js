@@ -79,6 +79,18 @@ export const SKILL = [
 ];
 
 /* ---------------------------------------------------------------
+   Mobility. Bewusst selten statt bei jeder Einheit — sonst wird aus
+   Beiwerk ein weiterer Pflichtblock, den man irgendwann überspringt. */
+
+export const MOBILITY = [
+  { name: 'Hüftbeuger-Dehnung (Couch Stretch)', dosis: '2x 60 Sek je Seite', warum: 'Verkürzte Hüftbeuger kippen das Becken nach vorn — genau das, was am Boden der Kniebeuge fehlt.' },
+  { name: 'BWS-Rotation im Vierfüßlerstand', dosis: '10x je Seite', warum: 'Ohne Rotation in der Brustwirbelsäule übernimmt die Schulter, was die Wirbelsäule schuldig bleibt — beim Drücken sofort spürbar.' },
+  { name: 'Taubenhaltung (Pigeon Pose)', dosis: '2x 60 Sek je Seite', warum: 'Öffnet die Hüfte in der Außenrotation — die Position, die beim Abstieg zuerst fehlt.' },
+  { name: 'Sprunggelenksmobilisation', dosis: '10x je Seite, Knie über die Zehenspitze', warum: 'Steife Sprunggelenke zwingen den Oberkörper in der Kniebeuge nach vorn — das kostet Stabilität, keine Kraft.' },
+  { name: 'Liegende Skorpion-Dehnung', dosis: '8x je Seite', warum: 'Löst die Hüfte in Rotation, ohne die Wirbelsäule zu belasten — gut nach dem Kreuzheben.' }
+];
+
+/* ---------------------------------------------------------------
    Finisher. Am Ende, nie davor — sonst frisst die Kondition die
    Kraftprogression, und genau das willst du nicht.                */
 
