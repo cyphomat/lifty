@@ -134,14 +134,20 @@ export function tagesAuswahl(list, today = new Date(), salz = '') {
 }
 
 /**
- * Mobility taucht nur bei jeder dritten Krafteinheit auf, nicht bei
- * jeder — sonst wird aus Beiwerk ein weiterer Pflichtblock. Gezaehlt
- * werden nur echte Einheiten (kein WOD, keine Anpassung, kein Max-Out),
- * sonst verschiebt sich der Rhythmus mit jedem Beiwerk-Eintrag.
+ * Mobility ist wochenweise gedacht statt an eine Trainingsart gebunden —
+ * sie geht genauso gut daheim wie im Studio. Dran ist sie bei der ersten
+ * Einheit (Kraft oder Jam) einer Kalenderwoche, egal an welchem Tag; alle
+ * weiteren Einheiten derselben Woche lassen sie weg. Anpassungen und
+ * Max-Outs zaehlen nicht als Einheit — sonst koennte eine reine
+ * Gewichtskorrektur den Slot der Woche verbrauchen, ohne dass die
+ * Mobility-Karte je zu sehen war.
  */
-export function mobilityDran(state) {
-  const n = (state.history || []).filter(h => h.type === 'strength').length;
-  return (n + 1) % 3 === 0;
+export function mobilityDran(state, today = new Date()) {
+  const woche = isoWeekKey(today);
+  const hist = state.history || [];
+  return !hist.some(h =>
+    (h.type === 'strength' || h.type === 'wod') && h.date &&
+    isoWeekKey(new Date(h.date + 'T00:00:00')) === woche);
 }
 
 /** Gewichtstrend aus intervals.icu-Wellness. Rohdaten sind verrauscht. */

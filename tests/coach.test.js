@@ -347,14 +347,21 @@ for (let i = 1; i <= 200; i++) {
 ok('eigene Zeilen an rund der Haelfte der Tage', eigeneTage > 70 && eigeneTage < 130, `${eigeneTage} von 200`);
 ok('und der fremde Vorrat wird ausgeschoepft', gesehenAlle.size >= 10, `${gesehenAlle.size} verschiedene`);
 
-print('\n--- Mobility nur jede dritte Krafteinheit ---');
-const strengthHist = n => Array.from({ length: n }, (_, i) => ({ date: `2026-01-${i+1}`, type: 'strength' }));
-eq('vor der ersten Einheit noch nicht dran', C.mobilityDran({ history: [] }), false);
-eq('nach zwei Einheiten dran (dritte steht an)', C.mobilityDran({ history: strengthHist(2) }), true);
-eq('nach drei Einheiten nicht dran', C.mobilityDran({ history: strengthHist(3) }), false);
-eq('nach fuenf Einheiten dran (sechste steht an)', C.mobilityDran({ history: strengthHist(5) }), true);
-const mitBeiwerk = [...strengthHist(2), { date: '2026-01-03', type: 'wod' }, { date: '2026-01-04', type: 'anpassung' }];
-eq('WOD und Anpassung zaehlen nicht mit', C.mobilityDran({ history: mitBeiwerk }), true);
-eq('ohne Historie-Feld nicht dran', C.mobilityDran({}), false);
+print('\n--- Mobility einmal pro Kalenderwoche ---');
+// HEUTE ist Di, 15.09.2026 — dieselbe ISO-Woche wie Mo 14.09. bis So 20.09.
+eq('ohne Historie dran', C.mobilityDran({ history: [] }, HEUTE), true);
+eq('Krafteinheit diese Woche: nicht mehr dran',
+   C.mobilityDran({ history: [{ date: '2026-09-14', type: 'strength' }] }, HEUTE), false);
+eq('WOD diese Woche zaehlt genauso',
+   C.mobilityDran({ history: [{ date: '2026-09-16', type: 'wod' }] }, HEUTE), false);
+eq('Einheit letzte Woche zaehlt nicht fuer diese',
+   C.mobilityDran({ history: [{ date: '2026-09-07', type: 'strength' }] }, HEUTE), true);
+eq('Anpassung allein verbraucht den Slot nicht',
+   C.mobilityDran({ history: [{ date: '2026-09-14', type: 'anpassung' }] }, HEUTE), true);
+eq('Max-Out allein verbraucht den Slot nicht',
+   C.mobilityDran({ history: [{ date: '2026-09-14', type: 'maxout' }] }, HEUTE), true);
+eq('zweite Einheit derselben Woche: schon gehabt', C.mobilityDran({
+  history: [{ date: '2026-09-14', type: 'strength' }, { date: '2026-09-16', type: 'wod' }]
+}, HEUTE), false);
 
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

@@ -813,6 +813,7 @@ function starteWod(seed) {
 }
 
 function renderWod() {
+  const mobility = C.mobilityDran(state) ? C.tagesAuswahl(MOBILITY, new Date(), 'mob') : null;
   $('wod-body').innerHTML = `
     <div class="card">
       <div class="kicker">${wod.dauer ? `${wod.dauer} Minuten` : wod.runden > 1 ? `${wod.runden} Runden` : 'Auf Zeit'}</div>
@@ -836,7 +837,13 @@ function renderWod() {
     </div>
     <button id="sw-start" class="btn">${swLaeuft ? 'Läuft…' : 'Uhr starten'}</button>
     <p class="fine">Nicht zufrieden? Oben rechts neu würfeln. Das WOD zählt nicht in die 5x5-Progression —
-    es taucht in der Historie auf, verschiebt aber weder deine Gewichte noch den A/B-Wechsel.</p>`;
+    es taucht in der Historie auf, verschiebt aber weder deine Gewichte noch den A/B-Wechsel.</p>
+    ${mobility ? `<details class="info"><summary>Mobility — ${mobility.name}</summary>
+      <div class="body">
+        <p class="tagline"><b>${mobility.name}</b> · ${mobility.dosis}</p>
+        <p>${mobility.warum}</p>
+      </div>
+    </details>` : ''}`;
   $('sw-start').onclick = startUhr;
   $('wod-body').querySelectorAll('[data-raus]').forEach(b => {
     b.onclick = () => uebungAusschliessen(b.dataset.raus, b.dataset.name);
