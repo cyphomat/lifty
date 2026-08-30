@@ -247,3 +247,22 @@ export async function alleAktivitaeten(from, to) {
   const list = await get(`/athlete/${id}/activities?oldest=${from}&newest=${to}`);
   return Array.isArray(list) ? list : [];
 }
+
+/**
+ * Ob rund um die Sessionzeit schon eine fremde Aktivitaet existiert —
+ * typischerweise die automatische Trainingserkennung der Apple Watch
+ * ueber die Herzfrequenz, die selbststaendig ueber Strava nach
+ * intervals.icu laeuft. Dann nicht zusaetzlich pushen: sonst zaehlt
+ * dieselbe Einheit doppelt in Fitness und Ermuedung.
+ */
+export function schonErfasst(log, vorhanden = []) {
+  if (!log || !log.started || !log.finished) return false;
+  const start = new Date(log.started).getTime();
+  const ende = new Date(log.finished).getTime();
+  const spielraum = 30 * 60 * 1000;
+  return vorhanden.some(a => {
+    if ((a.external_id || '').startsWith('setlist-')) return false;
+    const t = new Date(a.start_date_local || '').getTime();
+    return Number.isFinite(t) && t >= start - spielraum && t <= ende + spielraum;
+  });
+}

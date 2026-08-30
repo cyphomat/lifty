@@ -454,10 +454,16 @@ function bindSet(btn) {
 
 function recordSet(li, si, reps) {
   const l = session.lifts[li];
-  const offen = $('session-body').querySelectorAll('details.info[open]');
   const offenIdx = [...$('session-body').querySelectorAll('details.info')].map(d => d.open);
   if (reps === undefined) delete l.done[si];
-  else { l.done[si] = reps; startRest(reps >= l.reps ? config.rest.normal : config.rest.afterFail); }
+  else {
+    l.done[si] = reps;
+    // Nach dem letzten Satz der ganzen Einheit gibt es nichts mehr, wofuer
+    // man pausieren wuerde — der Timer lief bisher trotzdem einfach weiter.
+    const fertig = session.lifts.every(x => x.done.length === x.sets && x.done.every(v => v !== undefined));
+    if (fertig) stopRest();
+    else startRest(reps >= l.reps ? config.rest.normal : config.rest.afterFail);
+  }
   renderSession();
   // Aufgeklappte Erklaerungen ueberleben das Neuzeichnen.
   $('session-body').querySelectorAll('details.info').forEach((d, i) => d.open = !!offenIdx[i]);
@@ -1199,6 +1205,15 @@ async function uebertrageNachIcu(log) {
   const aktivitaet = ICU.alsAktivitaet(log, config);
   if (!aktivitaet) return;                       // ohne Dauer keine erfundene Last
   try {
+    // Die Apple Watch erkennt Krafttraining oft selbst ueber die
+    // Herzfrequenz und schickt es via Strava nach intervals.icu — dann
+    // nicht nochmal pushen, sonst zaehlt dieselbe Einheit doppelt.
+    const tag = aktivitaet.start_date_local.slice(0, 10);
+    const vorhanden = await ICU.alleAktivitaeten(tag, tag);
+    if (ICU.schonErfasst(log, vorhanden)) {
+      banner('INTERVALS.ICU · SCHON VON DER UHR ERFASST', 'ok', 5000);
+      return;
+    }
     await ICU.pushAktivitaet(aktivitaet);
     banner(`AN INTERVALS.ICU · LAST ${aktivitaet.icu_training_load}`, 'ok', 4000);
   } catch (e) {

@@ -109,4 +109,30 @@ eq('per Kennung erkannt', I.fehlendeAktivitaeten([akt], [{ external_id: akt.exte
 eq('per Datum und Name erkannt',
    I.fehlendeAktivitaeten([akt], [{ start_date_local:'2026-09-02T19:00:00', name:'Kraft — Workout A' }]).length, 0);
 
+print('\n--- Die Uhr hat es schon erfasst? ---');
+// start_date_local ist Ortszeit ohne Zone (wie intervals.icu sie liefert) —
+// deshalb hier ueber die lokalen Datumsteile derselben Instanz gebaut,
+// statt eine Uhrzeit fest zu verdrahten. Sonst haengt der Test von der
+// Zeitzone der ausfuehrenden Maschine ab.
+const alsLocal = d => {
+  const z = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}`;
+};
+const sessionStart = new Date(kraft.started);
+const mitten = alsLocal(new Date(sessionStart.getTime() + 20 * 60000));
+const kurzVorher = alsLocal(new Date(sessionStart.getTime() - 20 * 60000));
+const weitWeg = alsLocal(new Date(sessionStart.getTime() - 5 * 3600000));
+
+eq('keine Aktivitaeten: nichts erfasst', I.schonErfasst(kraft, []), false);
+eq('fremde Aktivitaet mitten in der Session: erfasst',
+   I.schonErfasst(kraft, [{ start_date_local: mitten, external_id: null }]), true);
+eq('fremde Aktivitaet kurz vor dem Start: erfasst',
+   I.schonErfasst(kraft, [{ start_date_local: kurzVorher, external_id: null }]), true);
+eq('fremde Aktivitaet weit ausserhalb: nicht erfasst',
+   I.schonErfasst(kraft, [{ start_date_local: weitWeg, external_id: null }]), false);
+eq('eigener Push zaehlt nicht als fremd',
+   I.schonErfasst(kraft, [{ start_date_local: mitten, external_id: 'setlist-2026-09-02-strength-A' }]), false);
+eq('ohne Start-/Endzeit nicht pruefbar',
+   I.schonErfasst({ date: '2026-09-05', type: 'wod', dauerSekunden: 720 }, [{ start_date_local: mitten }]), false);
+
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
