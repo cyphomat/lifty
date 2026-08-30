@@ -406,3 +406,33 @@ export function laengsteSerie(logs = [], fahrten = []) {
   }
   return laengste;
 }
+
+// Ansage-Stufen aus intensitaet() in coach.js — HART und SCHWER teilen sich
+// dieselbe Stufe, beide sagen "wird hart", nur aus verschiedenem Grund.
+const ANSAGE_STUFE = { TECHNIK: 0, SOLIDE: 1, HART: 2, SCHWER: 2 };
+const GEFUEHL_STUFE = { leicht: 0, normal: 1, hart: 2, extrem: 3 };
+
+/**
+ * Ansage gegen tatsaechliches Gefuehl — macht die Vorhersage ueberpruefbar
+ * statt behauptet. Nur Einheiten, die beides tragen, fliessen ein; aeltere
+ * Logs kennen weder angesagt noch gefuehlt und werden stillschweigend
+ * uebersprungen statt als Fehlschlag gezaehlt zu werden.
+ */
+export function ansageAbgleich(logs = []) {
+  const eintraege = logs
+    .filter(l => istKraft(l) && l.angesagt in ANSAGE_STUFE && l.gefuehlt in GEFUEHL_STUFE)
+    .map(l => {
+      const soll = ANSAGE_STUFE[l.angesagt], ist = GEFUEHL_STUFE[l.gefuehlt];
+      const urteil = ist === soll ? 'treffer' : ist > soll ? 'schwerer' : 'leichter';
+      return { date: l.date, workout: l.workout, angesagt: l.angesagt, gefuehlt: l.gefuehlt, urteil };
+    })
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  return {
+    eintraege,
+    gesamt: eintraege.length,
+    treffer: eintraege.filter(e => e.urteil === 'treffer').length,
+    schwerer: eintraege.filter(e => e.urteil === 'schwerer').length,
+    leichter: eintraege.filter(e => e.urteil === 'leichter').length
+  };
+}

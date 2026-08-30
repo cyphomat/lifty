@@ -231,4 +231,28 @@ eq('drei Wochen am Stueck sind die laengste Serie', S.laengsteSerie(angebenLogs,
 eq('eine einzelne Einheit ist eine Serie von einer Woche', S.laengsteSerie([angebenLogs[0]], []), 1);
 eq('ohne Daten keine Serie', S.laengsteSerie([], []), 0);
 
+print('\n--- Ansage gegen Gefuehl ---');
+const kraftLog = (date, angesagt, gefuehlt) =>
+  ({ date, type: 'strength', workout: 'A', angesagt, gefuehlt, lifts: [{ lift: 'squat', weight: 50, reps: [5,5,5,5,5] }] });
+const abgleichLogs = [
+  kraftLog('2026-09-01', 'SOLIDE', 'normal'),   // Treffer
+  kraftLog('2026-09-08', 'TECHNIK', 'leicht'),  // Treffer
+  kraftLog('2026-09-15', 'SOLIDE', 'hart'),     // schwerer als angesagt
+  kraftLog('2026-09-22', 'SCHWER', 'normal'),   // leichter als angesagt
+  kraftLog('2026-09-29', 'HART', 'extrem'),     // schwerer als angesagt
+  { date: '2026-10-06', type: 'strength', workout: 'B', lifts: [{ lift: 'squat', weight: 50, reps: [5,5,5,5,5] }] }, // kein angesagt/gefuehlt -> raus
+  { date: '2026-10-07', type: 'wod', label: 'AMRAP', angesagt: 'SOLIDE', gefuehlt: 'hart' } // kein Kraft-Log -> raus
+];
+const abgleich = S.ansageAbgleich(abgleichLogs);
+eq('nur Kraft-Logs mit beiden Feldern zaehlen', abgleich.gesamt, 5);
+eq('zwei Treffer', abgleich.treffer, 2);
+eq('zwei schwerer als angesagt', abgleich.schwerer, 2);
+eq('ein leichter als angesagt', abgleich.leichter, 1);
+eq('neueste Einheit zuerst', abgleich.eintraege[0].date, '2026-09-29');
+eq('SCHWER und HART teilen sich die Stufe',
+   S.ansageAbgleich([kraftLog('2026-09-01', 'SCHWER', 'hart')]).eintraege[0].urteil, 'treffer');
+eq('leere Liste bleibt leer', S.ansageAbgleich([]).gesamt, 0);
+eq('unbekannte Ansage wird uebersprungen',
+   S.ansageAbgleich([kraftLog('2026-09-01', 'IRGENDWAS', 'normal')]).gesamt, 0);
+
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

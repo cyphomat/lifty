@@ -1,6 +1,6 @@
 // Nur die App-Huelle wird gecacht. Trainingsdaten laufen immer live ueber
 // die GitHub-API — veraltete Gewichte im Studio waeren schlimmer als ein Ladebalken.
-const CACHE = 'setlist-2026-08-28.63';
+const CACHE = 'setlist-2026-08-28.64';
 const SHELL = ['./', 'index.html', 'css/style.css', 'js/app.js', 'js/program.js', 'js/store.js', 'js/intervals.js', 'js/coach.js', 'js/content.js', 'js/wod.js', 'js/stats.js', 'js/bibliothek.js', 'manifest.json', 'assets/fonts/oswald-latin-var.woff2', 'icons/icon-512.png'];
 
 self.addEventListener('install', e => {

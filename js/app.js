@@ -680,6 +680,7 @@ async function renderHistory() {
     $('hist-summary').innerHTML = '';
     $('hist-angeben').innerHTML = '';
     $('hist-prs').innerHTML = '';
+    $('hist-ansage').innerHTML = '';
     $('hist-kalender').innerHTML = '';
     $('hist-last').innerHTML = '';
     $('hist-tonnage').innerHTML = '';
@@ -693,6 +694,7 @@ async function renderHistory() {
   $('hist-summary').innerHTML = '';
   $('hist-angeben').innerHTML = '';
   $('hist-prs').innerHTML = '';
+  $('hist-ansage').innerHTML = '';
   $('hist-kalender').innerHTML = '';
   $('hist-last').innerHTML = '';
   $('hist-tonnage').innerHTML = '';
@@ -711,6 +713,7 @@ async function renderHistory() {
     renderTonnage(logs);
     renderFormVerlauf();
     renderPRs(logs);
+    renderAnsageAbgleich(logs);
     renderCharts(logs);
     renderRad();
     renderListe(logs);
@@ -726,6 +729,7 @@ async function renderHistory() {
       renderTonnage(alt.logs);
       renderFormVerlauf();
       renderPRs(alt.logs);
+      renderAnsageAbgleich(alt.logs);
       renderCharts(alt.logs);
       renderRad();
       renderListe(alt.logs);
@@ -1361,6 +1365,44 @@ function renderPRs(logs) {
     „Mindestens“ stammt aus Arbeitssätzen. Die sind bewusst submaximal, deshalb
     unterschätzt jede Formel dort — der Wert ist eine Untergrenze, kein Maximum.
     Ein belastbares Maximum liefert nur ein Max-Out.</p>`;
+}
+
+// Ansage-Stufe, Farbe und Text je Urteil — auf einen Blick statt einer Zahl,
+// die man erst deuten muesste.
+const ANSAGE_TONE = { TECHNIK: 'technik', SOLIDE: 'normal', HART: 'hart', SCHWER: 'hart' };
+const URTEIL_TEXT = { treffer: 'Treffer', schwerer: 'Schwerer als angesagt', leichter: 'Leichter als angesagt' };
+const URTEIL_FARBE = { treffer: 'var(--gruen)', schwerer: 'var(--rost)', leichter: 'var(--stahl)' };
+
+/**
+ * Macht die Ansage ueberpruefbar statt behauptet: was vor der Einheit
+ * vorhergesagt wurde (TECHNIK/SOLIDE/HART/SCHWER), gegen das, was du
+ * danach als Gefuehl eingetragen hast.
+ */
+function renderAnsageAbgleich(logs) {
+  const a = ST.ansageAbgleich(logs);
+  if (!a.gesamt) {
+    $('hist-ansage').innerHTML = `<p class="fine">Noch keine Einheit mit Ansage und Gefühl zusammen —
+      taucht auf, sobald du die Frage auf dem Geschafft-Screen ein paar Mal beantwortet hast.</p>`;
+    return;
+  }
+
+  const zeilen = a.eintraege.map(e => `
+    <div class="pr" style="border-left:2px solid ${URTEIL_FARBE[e.urteil]}">
+      <div class="k">${e.date.slice(8)}.${e.date.slice(5, 7)}. · Workout ${e.workout}</div>
+      <div class="reihe"><span class="l">Angesagt</span>
+        <span class="v"><span class="tone ${ANSAGE_TONE[e.angesagt]}" style="font-size:9.5px;padding:2px 7px">${e.angesagt}</span></span></div>
+      <div class="reihe"><span class="l">Gefühlt</span><span class="v">${GEFUEHL_LABEL[e.gefuehlt]}</span></div>
+      <div class="reihe"><span class="l">Urteil</span><span class="v" style="color:${URTEIL_FARBE[e.urteil]}">${URTEIL_TEXT[e.urteil]}</span></div>
+    </div>`).join('');
+
+  $('hist-ansage').innerHTML = `
+    <div class="pr" style="border-left:2px solid var(--akzent)">
+      <div class="k">${a.treffer} von ${a.gesamt} Einheiten trafen die Ansage</div>
+      <div class="reihe"><span class="l">Schwerer als angesagt</span><span class="v">${a.schwerer}</span></div>
+      <div class="reihe"><span class="l">Leichter als angesagt</span><span class="v">${a.leichter}</span></div>
+    </div>
+    ${zeilen}
+    <p class="fine">Nur Einheiten, bei denen du die Frage nach dem Gefühl beantwortet hast.</p>`;
 }
 
 /* ================= Scheiben und Form ================= */
