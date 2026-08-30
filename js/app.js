@@ -101,6 +101,7 @@ async function loadIntervals() {
   }
   icu = { stand: 'laedt', text: 'Lade…' };
   renderIcuStatus();
+  await verarbeiteIcuQueue();
 
   try {
     // Bewusst 90 Tage statt nur der laufenden Woche: sonst sieht man bei
@@ -527,7 +528,7 @@ async function finishSession() {
   try {
     await commit(log);
     banner('GESPEICHERT', 'ok');
-    await uebertrageNachIcu(log);
+    if (ICU.pushAktiv() && ICU.isConfigured()) ICU.queuePush(log);
   } catch { S.queue(log); banner('KEIN NETZ — WIRD NACHGETRAGEN', '', 6000); }
   session = null;
   workoutOverride = null;
@@ -877,7 +878,7 @@ async function wodAbschliessen() {
   try {
     await commitWod(log);
     banner('GESPEICHERT', 'ok');
-    await uebertrageNachIcu(log);
+    if (ICU.pushAktiv() && ICU.isConfigured()) ICU.queuePush(log);
   } catch { S.queue(log); banner('KEIN NETZ — WIRD NACHGETRAGEN', '', 6000); }
   wod = null;
 }
@@ -1196,29 +1197,46 @@ function formZeile() {
 /* ================= Übertragung nach intervals.icu ================= */
 
 /**
- * Nach dem lokalen Speichern: Einheit als Aktivität nach intervals.icu.
- * Läuft bewusst NACH dem Commit und schluckt Fehler nicht — aber sie
- * dürfen das lokale Protokoll nie gefährden, das bleibt die Wahrheit.
+ * Einheit als Aktivität nach intervals.icu übertragen — aufgerufen aus der
+ * Warteschlange beim nächsten App-Start, nicht mehr direkt beim Abschluss
+ * (siehe queueIcuPush): die Apple Watch erkennt Krafttraining oft selbst
+ * über die Herzfrequenz und schickt es via Strava nach intervals.icu, aber
+ * erst mit Verzögerung. Ein sofortiger Abgleich käme dem meist zuvor und
+ * die Einheit stünde doppelt in Fitness und Ermüdung.
+ *
+ * Gibt true zurück, wenn nichts mehr zu tun ist (gepusht, als Dublette
+ * erkannt oder gar nicht zuständig), false, wenn es später erneut
+ * versucht werden soll — dann bleibt der Eintrag in der Warteschlange.
  */
 async function uebertrageNachIcu(log) {
-  if (!ICU.pushAktiv() || !ICU.isConfigured()) return;
+  if (!ICU.pushAktiv() || !ICU.isConfigured()) return true;
   const aktivitaet = ICU.alsAktivitaet(log, config);
-  if (!aktivitaet) return;                       // ohne Dauer keine erfundene Last
+  if (!aktivitaet) return true;                  // ohne Dauer keine erfundene Last
   try {
-    // Die Apple Watch erkennt Krafttraining oft selbst ueber die
-    // Herzfrequenz und schickt es via Strava nach intervals.icu — dann
-    // nicht nochmal pushen, sonst zaehlt dieselbe Einheit doppelt.
     const tag = aktivitaet.start_date_local.slice(0, 10);
     const vorhanden = await ICU.alleAktivitaeten(tag, tag);
     if (ICU.schonErfasst(log, vorhanden)) {
-      banner('INTERVALS.ICU · SCHON VON DER UHR ERFASST', 'ok', 5000);
-      return;
+      banner(`INTERVALS.ICU · ${log.date} SCHON VON DER UHR ERFASST`, 'ok', 5000);
+      return true;
     }
     await ICU.pushAktivitaet(aktivitaet);
-    banner(`AN INTERVALS.ICU · LAST ${aktivitaet.icu_training_load}`, 'ok', 4000);
+    banner(`${log.date} AN INTERVALS.ICU · LAST ${aktivitaet.icu_training_load}`, 'ok', 4000);
+    return true;
   } catch (e) {
     banner(`INTERVALS.ICU: ${e.message}`, 'err', 7000);
+    return false;
   }
+}
+
+/** Warteschlange aus queueIcuPush beim App-Start abarbeiten. */
+async function verarbeiteIcuQueue() {
+  const q = ICU.pendingPush();
+  if (!q.length) return;
+  const rest = [];
+  for (const log of q) {
+    if (!(await uebertrageNachIcu(log))) rest.push(log);
+  }
+  ICU.clearPushQueue(rest);
 }
 
 /* ================= Radfahrten ================= */

@@ -172,6 +172,27 @@ export function pushAktiv() {
 }
 export function setPushAktiv(an) { localStorage.setItem(PUSH_KEY, an ? '1' : '0'); }
 
+const QUEUE_KEY = 'setlist.icu.pendingPush';
+/**
+ * Einheiten, die beim Abschluss noch nicht geprueft werden konnten — siehe
+ * schonErfasst: direkt nach dem Training hat die Apple Watch ihre eigene
+ * Aktivitaet meist noch gar nicht ueber Strava nachgereicht, ein sofortiger
+ * Abgleich waere blind. Die Warteschlange wird erst beim naechsten
+ * App-Start abgearbeitet, wenn genug Zeit vergangen ist.
+ */
+export function pendingPush() {
+  try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); }
+  catch { return []; }
+}
+export function queuePush(log) {
+  const q = pendingPush();
+  q.push(log);
+  localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
+}
+export function clearPushQueue(rest) {
+  localStorage.setItem(QUEUE_KEY, JSON.stringify(rest));
+}
+
 /* ---------------------------------------------------------------
    Geplante Einheiten in den Kalender. `external_id` greift laut Doku
    nur fuer dieselbe OAuth-Anwendung — mit einem API-Key ist darauf
