@@ -361,8 +361,9 @@ function startSession() {
   $('warmup').innerHTML = `
     <details class="info" open><summary>Soundcheck — nicht überspringen</summary>
       <div class="body">
-        ${WARMUP.allgemein.concat(WARMUP[plan.workout]).map(w =>
-          `<div class="kv"><span class="k">${w.t}</span><span class="v"><b>${w.was}</b> — ${w.detail}</span></div>`).join('')}
+        ${WARMUP.allgemein.concat(WARMUP[plan.workout]).map((w, i) =>
+          `<label class="kv check"><input type="checkbox" data-w="${i}">
+            <span class="k">${w.t}</span><span class="v"><b>${w.was}</b> — ${w.detail}</span></label>`).join('')}
       </div>
     </details>
     <details class="info"><summary>Aufwärmsätze mit Scheiben</summary>
@@ -385,6 +386,9 @@ function startSession() {
         <p style="color:var(--dim)">Leicht bleiben. Das ist Auffrischung, kein zweites Training — es darf die Sätze danach nicht kosten.</p>
       </div>
     </details>`;
+  $('warmup').querySelectorAll('.kv.check input').forEach(cb => {
+    cb.onchange = () => cb.closest('.kv').classList.toggle('erledigt', cb.checked);
+  });
 
   const fin = C.tagesAuswahl(FINISHER, new Date(), 'fin');
   $('finisher').innerHTML = `

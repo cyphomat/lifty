@@ -206,6 +206,10 @@ details.info[open]>summary::after{content:' ▾'}
 .kv{display:flex;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:13.5px}
 .kv .k{font-family:var(--mono);color:var(--stahl);flex:none;min-width:74px;font-size:12px;letter-spacing:.06em}
 .kv .v{color:var(--muted)}
+.kv.check{cursor:pointer;align-items:flex-start}
+.kv.check input{flex:none;width:auto;margin:3px 0 0}
+.kv.check.erledigt .k,.kv.check.erledigt .v{color:var(--dim);text-decoration:line-through}
+.kv.check.erledigt .v b{color:var(--dim)}
 
 /* ── Session ──────────────────────────────────────────────── */
 .lift{margin-top:20px}
