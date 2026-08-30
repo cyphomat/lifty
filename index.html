@@ -68,6 +68,7 @@
 <section id="view-home" class="view" hidden>
   <header class="head">
     <h1><span class="glow">Setlist</span></h1>
+    <button id="go-bibliothek" class="icon-btn text" aria-label="Bibliothek">BIB</button>
     <button id="go-history" class="icon-btn" aria-label="Tour">≡</button>
   </header>
   <div class="pad" style="padding-bottom:0"><div id="motto"></div></div>
@@ -78,6 +79,7 @@
       <div class="actions">
         <button id="swap-workout" class="btn ghost small">Workout wechseln</button>
         <button id="go-wod" class="btn small">Jam</button>
+        <button id="go-mobility" class="btn ghost small">Mobility</button>
         <button id="go-maxout" class="btn ghost small">Max-Out</button>
       </div>
     </div>
@@ -211,6 +213,22 @@
     <button id="force-update" class="btn ghost">Nach Update suchen</button>
     <button id="rebuild" class="btn ghost">state.json neu berechnen</button>
     <button id="logout" class="btn ghost danger">Zugänge entfernen</button>
+  </div>
+</section>
+
+<!-- ============ BIBLIOTHEK ============ -->
+<section id="view-bibliothek" class="view" hidden>
+  <header class="head">
+    <button id="bib-back" class="icon-btn" aria-label="Zurück">‹</button>
+    <h1>Bibliothek</h1>
+  </header>
+  <div class="pad">
+    <input id="bib-suche" type="text" placeholder="Übung suchen…" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div id="bib-kategorien" class="chips"></div>
+    <div id="bib-random"></div>
+    <div id="bib-liste"></div>
+    <p class="fine">Notizen und eigene Videolinks landen in <code>bibliothek.json</code> in deinem privaten
+    Repo — dieselbe Wissensschicht wächst mit dir mit, statt sich bei jedem Neuladen zu wiederholen.</p>
   </div>
 </section>
 

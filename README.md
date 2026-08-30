@@ -130,6 +130,7 @@ Back Squat ist in beiden Workouts dabei und steigt darum doppelt so schnell.
 | `js/wod.js` | Jam-Generator, deterministisch über einen Seed. |
 | `js/stats.js` | Tonnage, Bestwerte, Sparklines, Radstatistik. |
 | `js/content.js` | Wissensschicht: Cues, Soundcheck, Technik, Encore, Stimme. |
+| `js/bibliothek.js` | Buendelt alle Uebungen zu einer durchsuchbaren Liste. |
 | `js/store.js` | GitHub-API als Speicher, Offline-Puffer. |
 | `js/intervals.js` | Liest Fahrten und Form; schreibt Krafteinheiten zurück. |
 | `js/app.js` | Oberfläche und Ablauf. |
@@ -141,7 +142,7 @@ Back Squat ist in beiden Workouts dabei und steigt darum doppelt so schnell.
 
 ```sh
 JSC=/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc
-for t in program coach wod stats intervals; do $JSC --module-file=tests/$t.test.js; done
+for t in program coach wod stats intervals bibliothek; do $JSC --module-file=tests/$t.test.js; done
 ```
 
 375 Tests, ausgeführt von der JS-Engine, die in macOS ohnehin steckt. Kein Node, kein Build.

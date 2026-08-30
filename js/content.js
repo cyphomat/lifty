@@ -71,11 +71,11 @@ export const WARMUP = {
    Auffrischung von etwas, das du kannst, kein neuer Trainingsreiz. */
 
 export const SKILL = [
-  { name: 'Snatch Balance', dosis: '3x3, leer bis leicht', warum: 'Holt dir die Overhead-Position zurück, ohne Ermüdung zu kosten.' },
-  { name: 'Hang Power Clean', dosis: '4x2, technisch', warum: 'Explosive Hüftstreckung — der Teil, der nach einer Pause zuerst geht.' },
-  { name: 'Overhead Squat', dosis: '3x5, leere Stange', warum: 'Ehrliches Feedback über Mobilität. Ignorier es nicht.' },
-  { name: 'Clean Pull', dosis: '3x3 @ 60 %', warum: 'Erster Zug, saubere Position, keine Landung.' },
-  { name: 'Sots Press', dosis: '3x5, leer', warum: 'Unbequem, aber nichts öffnet die Schulter schneller.' }
+  { id: 'snatch-balance', name: 'Snatch Balance', dosis: '3x3, leer bis leicht', warum: 'Holt dir die Overhead-Position zurück, ohne Ermüdung zu kosten.' },
+  { id: 'hang-power-clean', name: 'Hang Power Clean', dosis: '4x2, technisch', warum: 'Explosive Hüftstreckung — der Teil, der nach einer Pause zuerst geht.' },
+  { id: 'overhead-squat', name: 'Overhead Squat', dosis: '3x5, leere Stange', warum: 'Ehrliches Feedback über Mobilität. Ignorier es nicht.' },
+  { id: 'clean-pull', name: 'Clean Pull', dosis: '3x3 @ 60 %', warum: 'Erster Zug, saubere Position, keine Landung.' },
+  { id: 'sots-press', name: 'Sots Press', dosis: '3x5, leer', warum: 'Unbequem, aber nichts öffnet die Schulter schneller.' }
 ];
 
 /* ---------------------------------------------------------------
@@ -83,11 +83,11 @@ export const SKILL = [
    Beiwerk ein weiterer Pflichtblock, den man irgendwann überspringt. */
 
 export const MOBILITY = [
-  { name: 'Hüftbeuger-Dehnung (Couch Stretch)', dosis: '2x 60 Sek je Seite', warum: 'Verkürzte Hüftbeuger kippen das Becken nach vorn — genau das, was am Boden der Kniebeuge fehlt.' },
-  { name: 'BWS-Rotation im Vierfüßlerstand', dosis: '10x je Seite', warum: 'Ohne Rotation in der Brustwirbelsäule übernimmt die Schulter, was die Wirbelsäule schuldig bleibt — beim Drücken sofort spürbar.' },
-  { name: 'Taubenhaltung (Pigeon Pose)', dosis: '2x 60 Sek je Seite', warum: 'Öffnet die Hüfte in der Außenrotation — die Position, die beim Abstieg zuerst fehlt.' },
-  { name: 'Sprunggelenksmobilisation', dosis: '10x je Seite, Knie über die Zehenspitze', warum: 'Steife Sprunggelenke zwingen den Oberkörper in der Kniebeuge nach vorn — das kostet Stabilität, keine Kraft.' },
-  { name: 'Liegende Skorpion-Dehnung', dosis: '8x je Seite', warum: 'Löst die Hüfte in Rotation, ohne die Wirbelsäule zu belasten — gut nach dem Kreuzheben.' }
+  { id: 'huefte-couch-stretch', name: 'Hüftbeuger-Dehnung (Couch Stretch)', dosis: '2x 60 Sek je Seite', warum: 'Verkürzte Hüftbeuger kippen das Becken nach vorn — genau das, was am Boden der Kniebeuge fehlt.' },
+  { id: 'bws-rotation', name: 'BWS-Rotation im Vierfüßlerstand', dosis: '10x je Seite', warum: 'Ohne Rotation in der Brustwirbelsäule übernimmt die Schulter, was die Wirbelsäule schuldig bleibt — beim Drücken sofort spürbar.' },
+  { id: 'pigeon-pose', name: 'Taubenhaltung (Pigeon Pose)', dosis: '2x 60 Sek je Seite', warum: 'Öffnet die Hüfte in der Außenrotation — die Position, die beim Abstieg zuerst fehlt.' },
+  { id: 'sprunggelenk', name: 'Sprunggelenksmobilisation', dosis: '10x je Seite, Knie über die Zehenspitze', warum: 'Steife Sprunggelenke zwingen den Oberkörper in der Kniebeuge nach vorn — das kostet Stabilität, keine Kraft.' },
+  { id: 'skorpion', name: 'Liegende Skorpion-Dehnung', dosis: '8x je Seite', warum: 'Löst die Hüfte in Rotation, ohne die Wirbelsäule zu belasten — gut nach dem Kreuzheben.' }
 ];
 
 /* ---------------------------------------------------------------
@@ -95,11 +95,11 @@ export const MOBILITY = [
    Kraftprogression, und genau das willst du nicht.                */
 
 export const FINISHER = [
-  { name: 'Battle Ropes — Waves', dosis: '8x 20 Sek an / 40 Sek Pause', warum: 'Hoher Puls, null Belastung für Knie und Wirbelsäule. Perfekt nach schwerem Beintag.' },
-  { name: 'Battle Ropes — Slams', dosis: '6x 15 Sek maximal', warum: 'Ganzkörper, explosiv. Der Rest vom Gewichtheber in dir.' },
-  { name: 'Battle Ropes — Alternating', dosis: '5x 30 Sek', warum: 'Rumpf muss gegen die Rotation arbeiten. Unterschätzt.' },
-  { name: 'Farmer Walk', dosis: '4x 40 m schwer', warum: 'Griff, Rumpf, Haltung — alles, was den Deadlift trägt.' },
-  { name: 'Row (Erg)', dosis: '5x 250 m, 1 Min Pause', warum: 'Wenn die Seile besetzt sind.' }
+  { id: 'ropes-waves', name: 'Battle Ropes — Waves', dosis: '8x 20 Sek an / 40 Sek Pause', warum: 'Hoher Puls, null Belastung für Knie und Wirbelsäule. Perfekt nach schwerem Beintag.' },
+  { id: 'ropes-slams', name: 'Battle Ropes — Slams', dosis: '6x 15 Sek maximal', warum: 'Ganzkörper, explosiv. Der Rest vom Gewichtheber in dir.' },
+  { id: 'ropes-alternating', name: 'Battle Ropes — Alternating', dosis: '5x 30 Sek', warum: 'Rumpf muss gegen die Rotation arbeiten. Unterschätzt.' },
+  { id: 'farmer-walk', name: 'Farmer Walk', dosis: '4x 40 m schwer', warum: 'Griff, Rumpf, Haltung — alles, was den Deadlift trägt.' },
+  { id: 'row-erg', name: 'Row (Erg)', dosis: '5x 250 m, 1 Min Pause', warum: 'Wenn die Seile besetzt sind.' }
 ];
 
 /* ---------------------------------------------------------------

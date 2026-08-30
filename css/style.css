@@ -114,6 +114,7 @@ code{background:var(--sunken);color:var(--akzent);padding:2px 6px;border-radius:
   border-radius:2px;
 }
 .icon-btn:active{background:var(--tint-akzent)}
+.icon-btn.text{width:auto;padding:0 12px;font-size:11px;letter-spacing:.1em;font-family:var(--mono)}
 
 /* ── Flaechen ─────────────────────────────────────────────── */
 .card{
@@ -252,11 +253,12 @@ details.info[open]>summary::after{content:' ▾'}
 .btn.ghost{border-color:var(--line);color:var(--muted);background:transparent}
 .btn.ghost.danger{border-color:rgba(255,77,94,.4);color:var(--rot)}
 
-input[type=password],input[type=text],input[type=number]{
+input[type=password],input[type=text],input[type=number],textarea{
   width:100%;padding:15px;font-size:16px;border:1px solid var(--line);
   background:var(--sunken);color:var(--fg);margin:12px 0;font-family:var(--mono);
 }
-input:focus{outline:none;border-color:var(--akzent);box-shadow:var(--gb-fokus)}
+textarea{resize:vertical;line-height:1.5}
+input:focus,textarea:focus{outline:none;border-color:var(--akzent);box-shadow:var(--gb-fokus)}
 
 .banner{
   position:fixed;top:0;left:0;right:0;z-index:50;
@@ -290,8 +292,8 @@ dialog::backdrop{background:var(--backdrop)}
 @media (prefers-reduced-motion:reduce){ *{transition:none!important} body::after{display:none} }
 
 /* ── Aktionsleiste ────────────────────────────────────────── */
-.actions{display:flex;gap:9px;margin-top:12px}
-.actions .btn{margin-top:0;flex:1}
+.actions{display:flex;gap:9px;margin-top:12px;flex-wrap:wrap}
+.actions .btn{margin-top:0;flex:1 1 calc(50% - 5px)}
 .btn.small{padding:13px 8px;font-size:11px;letter-spacing:.14em}
 
 /* ── Zufalls-WOD ──────────────────────────────────────────── */
@@ -536,6 +538,7 @@ button.raus:active{border-color:var(--rost)}
 @media (min-width: 900px) {
   #view-home { max-width: 1080px; }
   #view-history { max-width: 1080px; }
+  #view-bibliothek { max-width: 1080px; }
 
   .zwei-spalten{
     display:grid;
@@ -595,3 +598,32 @@ h2.backstage{
 h2.backstage::before{
   content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--line));
 }
+
+/* ── Bibliothek ───────────────────────────────────────────────
+   Wachsende Wissensschicht: Grundlifts, Technik, Mobility, Finisher
+   und Jam-Bewegungen durchsuchbar, mit Platz fuer eigene Notizen. */
+#view-bibliothek input[type=text]{margin-top:16px}
+.chips{display:flex;gap:8px;margin-top:4px;flex-wrap:wrap}
+.chips button{
+  padding:9px 12px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;border:1px solid var(--line);background:transparent;
+  color:var(--muted);cursor:pointer;border-radius:2px;
+}
+.chips button.an{border-color:var(--akzent);color:var(--akzent);background:var(--tint-akzent)}
+#bib-random{margin-top:16px}
+#bib-random .name{font-size:22px;margin-top:8px}
+#bib-liste{margin-top:14px}
+#bib-liste details.info{background:var(--panel);border:1px solid var(--line);margin-bottom:8px;border-radius:2px}
+#bib-liste details.info>summary{padding:13px 15px}
+.bib-kat{
+  float:right;font-size:9.5px;color:var(--stahl);letter-spacing:.1em;
+  border:1px solid var(--line);padding:2px 7px;border-radius:2px;
+}
+.bib-detail .tagline{margin-top:0}
+.bib-video{
+  display:inline-block;font-family:var(--mono);font-size:12px;letter-spacing:.06em;
+  color:var(--akzent);text-decoration:none;border-bottom:1px solid currentColor;margin:4px 0 10px;
+}
+.bib-notiz{min-height:70px;font-size:14px}
+.bib-eigenesvideo{font-size:13px;padding:12px}
+.bib-detail .bib-speichern{margin-top:2px;width:auto;padding:11px 18px}

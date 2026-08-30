@@ -5,6 +5,7 @@ import * as C from './coach.js';
 import { LIFT_INFO, WARMUP, SKILL, MOBILITY, FINISHER, RIDE_INFO } from './content.js';
 import * as WOD from './wod.js';
 import * as ST from './stats.js';
+import * as B from './bibliothek.js';
 
 let config = null, state = null, stateSha = null, session = null;
 let ridesByDate = new Map(), letzterLog = null, trend = null;
@@ -29,11 +30,13 @@ let stimme = null;              // deine eigenen Zeilen aus stimme.json
 let gewichtsPunkte = [];        // Rohwerte fuer die Gewichtskurve
 let formPunkte = [];            // Fitness und Ermuedung ueber die Zeit
 let eftp = null;                // geschaetzte FTP, fuer Wattziele
+let bibliothek = {};            // eigene Notizen/Videos je Uebung, aus bibliothek.json
+let bibZufall = null, bibKategorie = null;
 
 const $ = id => document.getElementById(id);
 const VERSION_KEY = 'setlist.version';
 let laufendeVersion = localStorage.getItem(VERSION_KEY) || '—';
-const VIEWS = ['setup', 'home', 'session', 'wod', 'maxout', 'done', 'history'];
+const VIEWS = ['setup', 'home', 'session', 'wod', 'maxout', 'done', 'history', 'bibliothek'];
 const show = n => { VIEWS.forEach(v => $('view-' + v).hidden = v !== n); window.scrollTo(0, 0); };
 
 let bannerTimer = null;
@@ -52,20 +55,22 @@ function banner(msg, kind = '', ms = 3500) {
 
 async function load() {
   try {
-    const [c, st, sti] = await Promise.all([
-      S.readFile('config.json'), S.readFile('state.json'), S.readFile('stimme.json')
+    const [c, st, sti, bib] = await Promise.all([
+      S.readFile('config.json'), S.readFile('state.json'), S.readFile('stimme.json'), S.readFile('bibliothek.json')
     ]);
     stimme = sti ? sti.data : null;
     if (!c) throw new Error('config.json fehlt in setlist-data.');
     config = c.data;
     state = st ? st.data : P.initialState(config);
     stateSha = st ? st.sha : null;
+    bibliothek = bib ? bib.data : {};
     datenQuelle = 'netz';
-    S.cache({ config, state, stimme });
+    S.cache({ config, state, stimme, bibliothek });
   } catch (e) {
     const c = S.cached();
     if (c.config) {
       config = c.config; state = c.state; stimme = c.stimme || null; stateSha = null;
+      bibliothek = c.bibliothek || {};
       datenQuelle = 'cache';
       banner('OFFLINE — LETZTER STAND', '', 4000);
     } else {
@@ -696,6 +701,7 @@ $('swap-workout').onclick = () => {
   renderHome();
 };
 $('go-wod').onclick = () => { starteWod(WOD.seedAus(P.ymd(new Date()))); };
+$('go-mobility').onclick = () => zeigeBibliothek('Mobility');
 $('go-maxout').onclick = starteMaxout;
 $('mo-back').onclick = () => show('home');
 $('mo-weight').oninput = renderMaxoutErgebnis;
@@ -709,6 +715,9 @@ $('wod-finish').onclick = wodAbschliessen;
 $('sw-toggle').onclick = () => swLaeuft ? stopUhr() : startUhr();
 $('go-history').onclick = renderHistory;
 $('hist-back').onclick = () => show('home');
+$('go-bibliothek').onclick = () => zeigeBibliothek();
+$('bib-back').onclick = () => show('home');
+$('bib-suche').oninput = renderBibliothek;
 $('rebuild').onclick = rebuild;
 $('logout').onclick = () => {
   if (!confirm('Token und Key aus diesem Browser entfernen?')) return;
@@ -908,6 +917,94 @@ async function commitWod(log) {
   await S.writeFile(path, log, `WOD am ${log.date}`);
   const cur = await S.readFile('state.json');
   await S.writeFile('state.json', state, `Zustand nach WOD ${log.date}`, cur ? cur.sha : stateSha);
+}
+
+/* ============================ Bibliothek ============================
+   Wachsende Wissensschicht ueber allem, was schon an Inhalt existiert —
+   Grundlifts, Technik, Mobility, Finisher, Jam-Bewegungen. Notizen und
+   eigene Videolinks landen in bibliothek.json, damit sie mitwachsen
+   statt bei jedem Neuladen wieder bei null anzufangen.                  */
+
+const escHtml = s => String(s ?? '').replace(/[&<>"']/g, c =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function zeigeBibliothek(kategorie = null) {
+  bibZufall = null;               // bei jedem Aufruf neu ziehen
+  bibKategorie = kategorie;
+  $('bib-suche').value = '';
+  renderBibliothek();
+  show('bibliothek');
+}
+
+function bibDetailHtml(u) {
+  const eintrag = bibliothek[u.id] || {};
+  const video = eintrag.video ? escHtml(eintrag.video) : B.youtubeSuche(u.name);
+  return `
+    <div class="bib-detail" data-id="${u.id}">
+      ${u.dosis ? `<p class="tagline"><b>${u.dosis}</b></p>` : ''}
+      ${u.aktuell ? `<div class="kv"><span class="k">Aktuell</span><span class="v">${u.aktuell}</span></div>` : ''}
+      ${u.info ? `<p>${u.info}</p>` : ''}
+      ${u.cue ? `<div class="kv"><span class="k">Cue</span><span class="v">${u.cue}</span></div>` : ''}
+      ${u.fehler ? `<div class="kv"><span class="k">Fehler</span><span class="v">${u.fehler}</span></div>` : ''}
+      <a class="bib-video" href="${video}" target="_blank" rel="noopener">Video ansehen ↗</a>
+      <textarea class="bib-notiz" rows="3" placeholder="Eigene Notiz…">${escHtml(eintrag.notiz)}</textarea>
+      <input class="bib-eigenesvideo" type="text" placeholder="Eigener YouTube-Link (optional)" value="${escHtml(eintrag.video)}">
+      <button class="btn ghost small bib-speichern">Notiz speichern</button>
+    </div>`;
+}
+
+function renderBibliothek() {
+  const alle = B.alleUebungen(config, state);
+  const treffer = B.suche(alle, $('bib-suche').value, bibKategorie);
+
+  $('bib-kategorien').innerHTML = ['Alle', ...B.KATEGORIEN].map(k => {
+    const aktiv = k === 'Alle' ? !bibKategorie : k === bibKategorie;
+    return `<button class="${aktiv ? 'an' : ''}" data-k="${k}">${k}</button>`;
+  }).join('');
+  $('bib-kategorien').querySelectorAll('button').forEach(b => {
+    b.onclick = () => { bibKategorie = b.dataset.k === 'Alle' ? null : b.dataset.k; renderBibliothek(); };
+  });
+
+  if (!bibZufall) bibZufall = B.zufaellig(alle);
+  $('bib-random').innerHTML = bibZufall ? `
+    <div class="card">
+      <div class="kicker">Zufällig aus der Bibliothek · ${bibZufall.kategorie}</div>
+      <div class="name">${bibZufall.name}</div>
+      ${bibDetailHtml(bibZufall)}
+    </div>` : '';
+
+  $('bib-liste').innerHTML = treffer.length
+    ? treffer.map(u => `
+      <details class="info"><summary>${u.name}<span class="bib-kat">${u.kategorie}</span></summary>
+        <div class="body">${bibDetailHtml(u)}</div>
+      </details>`).join('')
+    : '<p class="fine">Keine Übung gefunden.</p>';
+
+  document.querySelectorAll('.bib-detail .bib-speichern').forEach(btn => {
+    btn.onclick = () => {
+      const box = btn.closest('.bib-detail');
+      speichereBibNotiz(box.dataset.id,
+        box.querySelector('.bib-notiz').value.trim(),
+        box.querySelector('.bib-eigenesvideo').value.trim());
+    };
+  });
+}
+
+/** Vor dem Schreiben frisch lesen statt einer gemerkten sha zu vertrauen —
+ * dieselbe Vorsicht wie beim Zustand nach einer Einheit (siehe commit()). */
+async function speichereBibNotiz(id, notiz, video) {
+  try {
+    const cur = await S.readFile('bibliothek.json');
+    const aktuell = cur ? cur.data : {};
+    if (notiz || video) aktuell[id] = { notiz, video };
+    else delete aktuell[id];
+    await S.writeFile('bibliothek.json', aktuell, `Notiz: ${id}`, cur ? cur.sha : null);
+    bibliothek = aktuell;
+    S.cache({ bibliothek });
+    banner('NOTIZ GESPEICHERT', 'ok');
+  } catch (e) {
+    banner(`SPEICHERN FEHLGESCHLAGEN: ${e.message}`, 'err', 6000);
+  }
 }
 
 /* ============================ Auswertung ============================ */
