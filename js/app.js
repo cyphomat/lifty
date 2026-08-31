@@ -268,7 +268,6 @@ function renderHome() {
   renderWeek();
   renderIcuStatus();
   renderWeights(d.fortschritt);
-  renderBodyTrend();
 }
 
 function renderProgress(f, streak) {
