@@ -64,7 +64,7 @@ export async function rides(from, to) {
     }));
 }
 
-/** Wellness-Daten: Gewicht, Fitness (ctl) und Ermuedung (atl). */
+/** Wellness-Daten: Gewicht, Fitness (ctl), Ermuedung (atl), HRV und Schlaf. */
 export async function wellness(from, to) {
   const id = localStorage.getItem(KEY_ID);
   if (!id) return [];
@@ -76,7 +76,10 @@ export async function wellness(from, to) {
     eftp: w.eftp || null,
     ctl: w.ctl != null ? w.ctl : null,
     atl: w.atl != null ? w.atl : null,
-    restingHR: w.restingHR || null
+    restingHR: w.restingHR || null,
+    // hrv kommt bei Apple-Health-Quellen (z.B. via HealthFit) als SDNN in ms.
+    hrv: w.hrv != null ? w.hrv : null,
+    sleepSecs: w.sleepSecs != null ? w.sleepSecs : null
   }));
 }
 

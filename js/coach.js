@@ -68,7 +68,7 @@ function pick(list, seed) {
  * Die eine Aussage, die oben steht: Wo stehst du, was will der Tag,
  * und in welchem Ton wird das gesagt.
  */
-export function directive(state, config, today = new Date(), letzterLog = null, stimme = null) {
+export function directive(state, config, today = new Date(), letzterLog = null, stimme = null, erholung = null) {
   const hist = state.history || [];
   const letzte = hist.length ? hist[hist.length - 1].date : null;
   const tage = daysSince(letzte, today);
@@ -108,15 +108,29 @@ export function directive(state, config, today = new Date(), letzterLog = null, 
     situation,
     kopf,
     spruch: spruchWaehlen(situation, toKey(today), stimme && stimme.sprueche),
-    intensitaet: intensitaet(situation, workout),
+    intensitaet: intensitaet(situation, workout, erholung),
     streak,
     tageSeitLetzter: tage,
-    fortschritt
+    fortschritt,
+    erholung
   };
 }
 
-/** Sagt klar an, was der Tag sein soll. Kein "je nach Gefühl". */
-function intensitaet(situation, workout) {
+/**
+ * Sagt klar an, was der Tag sein soll. Kein "je nach Gefühl" — außer die
+ * Erholung selbst widerspricht dem: HRV oder Schlaf gehen vor Situation,
+ * weil beide etwas sehen, das Fitness/Ermüdung (reine Trainingslast) nicht
+ * erfasst. Deshalb zuerst geprüft, auch vor einer offenen Rechnung.
+ */
+function intensitaet(situation, workout, erholung) {
+  if (erholung && erholung.stufe === 'belastet') {
+    return { stufe: 'technik', label: 'TECHNIK',
+      text: `HRV deutlich unter deinem Schnitt (${erholung.hrv} ms gegen ${erholung.basis} ms sonst) — Körper meldet Stress, den die Trainingslast allein nicht erklärt. Heute Position, nicht Last.` };
+  }
+  if (erholung && erholung.stufe === 'kurz') {
+    return { stufe: 'technik', label: 'TECHNIK',
+      text: `Nur ${erholung.schlafStunden} Stunden geschlafen — das drückt Kraftleistung stärker als ein normaler harter Tag. Heute Position, nicht Last.` };
+  }
   if (situation === 'comeback' || situation === 'leicht' || situation === 'nachDeload') {
     return { stufe: 'technik', label: 'TECHNIK', text: 'Heute geht es um Position, nicht um Last. Sauber vor schwer.' };
   }
@@ -202,6 +216,35 @@ export function formLage(wellness) {
     ermuedung: Math.round(wellness.atl),
     datum: wellness.date || null
   };
+}
+
+/**
+ * Erholung aus HRV und Schlaf — beides aus intervals.icu, haeufig via
+ * HealthFit aus Apple Health durchgereicht. Ein einzelner HRV-Rohwert
+ * sagt fuer sich nichts, nur die Abweichung von der eigenen Grundlinie
+ * zaehlt: die Basis ist der Schnitt der bis zu sieben Tage davor, nicht
+ * ein allgemeiner Normwert. Schlafdauer ist dagegen auch absolut
+ * aussagekraeftig. Sieht etwas, das Fitness/Ermuedung (reine
+ * Trainingslast) nicht erfasst — Krankheit, Stress, eine kurze Nacht.
+ */
+export function erholung(wellness = []) {
+  const clean = [...wellness].filter(w => w.hrv != null || w.sleepSecs != null)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  if (!clean.length) return null;
+  const heute = clean[clean.length - 1];
+
+  const vorherigeHrv = clean.slice(0, -1).filter(w => w.hrv != null).slice(-7).map(w => w.hrv);
+  const basis = vorherigeHrv.length >= 3
+    ? Math.round(vorherigeHrv.reduce((s, v) => s + v, 0) / vorherigeHrv.length)
+    : null;
+  const hrv = heute.hrv != null ? Math.round(heute.hrv) : null;
+  const schlafStunden = heute.sleepSecs != null ? Math.round(heute.sleepSecs / 360) / 10 : null;
+
+  let stufe = 'ok';
+  if (basis != null && hrv != null && hrv < basis * 0.85) stufe = 'belastet';
+  else if (schlafStunden != null && schlafStunden < 6) stufe = 'kurz';
+
+  return { stufe, hrv, basis, schlafStunden, datum: heute.date };
 }
 
 /* ---------------------------------------------------------------

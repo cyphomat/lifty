@@ -24,6 +24,7 @@ let wod = null, wodSeed = 0, swTimer = null, swSek = 0, swLaeuft = false;
 let alleLogs = [];              // zuletzt geladene Einheiten, fuer Bestwerte
 let mo = { lift: 'squat' };     // laufender Krafttest
 let form = null;                // Form aus intervals.icu (ctl - atl)
+let erholung = null;            // HRV/Schlaf aus intervals.icu, gegen die eigene Basis
 let alleFahrten = [];           // Radfahrten der letzten 90 Tage
 let stoerung = null;            // Interferenz Rad -> Eisen
 let stimme = null;              // deine eigenen Zeilen aus stimme.json
@@ -87,6 +88,7 @@ async function load() {
     stoerung = C.interferenz(zwischen.fahrten);
   }
   if (zwischen.form) form = zwischen.form;
+  if (zwischen.erholung) erholung = zwischen.erholung;
   if (zwischen.gewicht) gewichtsPunkte = zwischen.gewicht;
   if (zwischen.formVerlauf) formPunkte = zwischen.formVerlauf;
   if (zwischen.eftp) eftp = zwischen.eftp;
@@ -145,9 +147,10 @@ async function loadIntervals() {
     S.cache({ formVerlauf: formPunkte });
     trend = C.gewichtsTrend(roh);
     form = C.formLage(ICU.letzteForm(roh));
+    erholung = C.erholung(roh);
     const mitFtp = [...roh].filter(w => w.eftp).sort((a, b) => b.date.localeCompare(a.date))[0];
     eftp = mitFtp ? Math.round(mitFtp.eftp) : null;
-    S.cache({ form, eftp });
+    S.cache({ form, erholung, eftp });
     renderBodyTrend();
     renderHome();
   } catch (e) {
@@ -234,13 +237,14 @@ function renderConnections() {
 /* ============================ Home ============================ */
 
 function renderHome() {
-  const d = C.directive(state, config, new Date(), letzterLog, stimme);
+  const d = C.directive(state, config, new Date(), letzterLog, stimme, erholung);
 
   $('directive').innerHTML = `
     <div class="directive">
       <span class="tone ${d.intensitaet.stufe}">${d.intensitaet.label} · ${d.kopf}</span>
       <p class="txt">${d.intensitaet.text}</p>
       ${formZeile()}
+      ${erholungsZeile()}
       ${stoerungsZeile()}
     </div>
     ${meilensteinKarte()}
@@ -349,7 +353,7 @@ function renderBodyTrend() {
 
 function startSession() {
   const plan = P.planWorkout(state, config, workoutOverride || state.next);
-  const d = C.directive(state, config, new Date(), letzterLog, stimme);
+  const d = C.directive(state, config, new Date(), letzterLog, stimme, erholung);
   session = {
     date: P.ymd(new Date()), started: new Date().toISOString(),
     workout: plan.workout,
@@ -600,7 +604,7 @@ async function flushQueue() {
 }
 
 function renderDone(before, log) {
-  const d = C.directive(state, config, new Date(), log, stimme);
+  const d = C.directive(state, config, new Date(), log, stimme, erholung);
   // Erst der Erfolg, dann der Bericht. Eine Tabelle mit Pfeilen sagt, was
   // passiert ist; sie sagt nicht, dass du gerade etwas geschafft hast.
   const wins = C.erfolge(before, state, config, log, alleLogs.concat([log]), new Date());
@@ -1423,6 +1427,21 @@ function formZeile() {
     <span class="fw" style="color:${farbe}">Form ${form.form > 0 ? '+' : ''}${form.form}</span>
     <span class="ft">${form.text}</span>
     <span class="fd">Fitness ${form.fitness} · Ermüdung ${form.ermuedung} · aus intervals.icu</span>
+  </p>`;
+}
+
+/** HRV/Schlaf aus intervals.icu — separat von Form, weil beide etwas anderes sehen. */
+function erholungsZeile() {
+  if (!erholung) return '';
+  const farbe = { ok: 'var(--gruen)', kurz: 'var(--rost)', belastet: 'var(--rot)' }[erholung.stufe];
+  const label = { ok: 'unauffällig', kurz: 'knapp', belastet: 'belastet' }[erholung.stufe];
+  const teile = [];
+  if (erholung.hrv != null) teile.push(`HRV ${erholung.hrv} ms${erholung.basis != null ? ` (Schnitt ${erholung.basis})` : ''}`);
+  if (erholung.schlafStunden != null) teile.push(`Schlaf ${erholung.schlafStunden} h`);
+  return `<p class="formzeile" style="border-top-color:${farbe}">
+    <span class="fw" style="color:${farbe}">Erholung ${label}</span>
+    <span class="ft">${teile.join(' · ') || 'Keine Werte für heute.'}</span>
+    <span class="fd">aus intervals.icu${erholung.stufe !== 'ok' ? ' · fließt in die Ansage ein' : ''}</span>
   </p>`;
 }
 

@@ -69,6 +69,24 @@ s = base(); s.history = [{date:'2026-09-14'}]; s.next = 'B';
 Object.values(s.lifts).forEach(l => l.weight = 999);
 eq('Workout B wird als schwer angesagt', C.directive(s, config, HEUTE).intensitaet.label, 'SCHWER');
 
+print('\n--- Erholung (HRV/Schlaf) geht vor der Situation ---');
+const belastet = { stufe: 'belastet', hrv: 38, basis: 50, schlafStunden: null };
+const kurzeNacht = { stufe: 'kurz', hrv: null, basis: null, schlafStunden: 4.5 };
+const erholt = { stufe: 'ok', hrv: 55, basis: 50, schlafStunden: 7.5 };
+
+s = base(); s.history = [{date:'2026-09-14'}]; s.next = 'B';
+Object.values(s.lifts).forEach(l => l.weight = 999);
+eq('schlechte HRV erzwingt Technik trotz Workout B',
+   C.directive(s, config, HEUTE, null, null, belastet).intensitaet.stufe, 'technik');
+eq('kurzer Schlaf erzwingt ebenfalls Technik',
+   C.directive(s, config, HEUTE, null, null, kurzeNacht).intensitaet.stufe, 'technik');
+eq('unauffaellige Erholung aendert nichts',
+   C.directive(s, config, HEUTE, null, null, erholt).intensitaet.label, 'SCHWER');
+
+s = base(); s.history = [{date:'2026-09-14'}]; s.lifts.bench.fails = 1;
+eq('schlechte HRV geht sogar vor einer offenen Rechnung',
+   C.directive(s, config, HEUTE, null, null, belastet).intensitaet.stufe, 'technik');
+
 print('\n--- Deload wird erkannt ---');
 s = base(); s.history = [{date:'2026-09-14'}]; s.lifts.squat.weight = 42.5;
 const log = { lifts: [{ lift:'squat', weight: 47.5 }] };
@@ -109,6 +127,29 @@ ok('jede Stufe hat einen Text', ['frisch','neutral','muede','platt']
   .every(s => { const w = { frisch:{ctl:50,atl:40}, neutral:{ctl:50,atl:55}, muede:{ctl:50,atl:65}, platt:{ctl:50,atl:75} }[s];
                 return C.formLage(w).text.length > 20; }));
 eq('Grenzfall genau null ist neutral', C.formLage({ ctl: 50, atl: 50 }).stufe, 'neutral');
+
+print('\n--- Erholung aus HRV und Schlaf ---');
+eq('ohne Daten nichts', C.erholung([]), null);
+eq('undefiniert wird wie leer behandelt', C.erholung(undefined), null);
+
+const stabileHrv = Array.from({ length: 7 }, (_, i) => ({ date: `2026-09-0${i + 1}`, hrv: 50 }));
+eq('HRV im normalen Bereich: ok',
+   C.erholung([...stabileHrv, { date: '2026-09-08', hrv: 48 }]).stufe, 'ok');
+eq('HRV deutlich unter dem Schnitt: belastet',
+   C.erholung([...stabileHrv, { date: '2026-09-08', hrv: 38 }]).stufe, 'belastet');
+eq('Basis ist der Schnitt der bis zu sieben Tage davor',
+   C.erholung([...stabileHrv, { date: '2026-09-08', hrv: 38 }]).basis, 50);
+eq('zu wenige HRV-Werte fuer eine Basis: kein Ausschlag trotz Abfall',
+   C.erholung([{ date: '2026-09-01', hrv: 50 }, { date: '2026-09-02', hrv: 30 }]).stufe, 'ok');
+
+eq('kurzer Schlaf ohne HRV-Daten: kurz',
+   C.erholung([{ date: '2026-09-01', sleepSecs: 5 * 3600 }]).stufe, 'kurz');
+eq('genug Schlaf: ok',
+   C.erholung([{ date: '2026-09-01', sleepSecs: 7.5 * 3600 }]).stufe, 'ok');
+eq('Schlafdauer wird auf Zehntelstunden gerundet',
+   C.erholung([{ date: '2026-09-01', sleepSecs: 7.52 * 3600 }]).schlafStunden, 7.5);
+eq('HRV-Problem sticht kurzen aber ausreichenden Schlaf',
+   C.erholung([...stabileHrv, { date: '2026-09-08', hrv: 38, sleepSecs: 7 * 3600 }]).stufe, 'belastet');
 
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
 
