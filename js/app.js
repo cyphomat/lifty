@@ -764,8 +764,11 @@ async function rebuild() {
 /* ============================ Start ============================ */
 
 $('save-token').onclick = async () => {
+  const owner = $('owner').value.trim();
+  if (!owner) return banner('GITHUB-NUTZERNAME FEHLT', 'err');
   const t = $('token').value.trim();
   if (!t) return banner('GITHUB-TOKEN FEHLT', 'err');
+  S.setRepo(owner, $('repo').value.trim());
   S.setToken(t);
   const k = $('icukey').value.trim();
   if (k) {
@@ -802,7 +805,7 @@ $('bib-suche').oninput = renderBibliothek;
 $('rebuild').onclick = rebuild;
 $('logout').onclick = () => {
   if (!confirm('Token und Key aus diesem Browser entfernen?')) return;
-  S.clearToken(); ICU.clearCreds(); location.reload();
+  S.clearToken(); S.clearRepo(); ICU.clearCreds(); location.reload();
 };
 $('finish').onclick = finishSession;
 $('abort').onclick = () => { if (confirm('Einheit verwerfen?')) { stopRest(); session = null; show('home'); } };

@@ -47,10 +47,13 @@
   <header class="head"><h1><span class="glow">Setlist</span> · setup</h1></header>
   <div class="pad">
     <h2>1 · GitHub — deine Daten</h2>
-    <p class="lead">Damit liest und schreibt die App dein privates Repo <code>setlist-data</code>.</p>
+    <p class="lead">Damit liest und schreibt die App dein eigenes privates Datenrepo.</p>
+    <input id="owner" type="text" placeholder="Dein GitHub-Nutzername" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <input id="repo" type="text" placeholder="Name des Datenrepos" value="setlist-data" autocomplete="off" autocapitalize="off" spellcheck="false">
     <ol class="steps">
+      <li>Leg unter diesem Namen ein <b>privates</b> Repo an — mindestens mit einer <code>config.json</code></li>
       <li><b>Settings → Developer settings → Personal access tokens → Fine-grained tokens</b></li>
-      <li><b>Generate new token</b>, Zugriff auf <b>nur</b> <code>setlist-data</code></li>
+      <li><b>Generate new token</b>, Zugriff auf <b>nur</b> dieses Repo</li>
       <li>Permissions: <b>Contents → Read and write</b>. Sonst nichts.</li>
     </ol>
     <input id="token" type="password" placeholder="github_pat_..." autocomplete="off" autocapitalize="off" spellcheck="false">

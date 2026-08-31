@@ -7,8 +7,26 @@ const QUEUE_KEY = 'setlist.queue';
 const CACHE_KEY = 'setlist.cache';
 const LOGS_KEY = 'setlist.logs';
 
-export const OWNER = 'cyphomat';
-export const REPO = 'setlist-data';
+const OWNER_KEY = 'setlist.owner';
+const REPO_KEY = 'setlist.repo';
+// Fallback fuer Installationen von vor dieser Funktion: kein setlist.owner
+// im localStorage bedeutet "die urspruengliche, fest verdrahtete Instanz".
+// Wer neu einrichtet, tippt im Setup-Screen sein eigenes Repo ein — dieser
+// Fallback greift dann nie, weil setRepo() sofort etwas Eigenes speichert.
+const STANDARD_OWNER = 'cyphomat';
+const STANDARD_REPO = 'setlist-data';
+
+export function getOwner() { return localStorage.getItem(OWNER_KEY) || STANDARD_OWNER; }
+export function getRepo() { return localStorage.getItem(REPO_KEY) || STANDARD_REPO; }
+export function setRepo(owner, repo) {
+  localStorage.setItem(OWNER_KEY, (owner || '').trim());
+  localStorage.setItem(REPO_KEY, (repo || '').trim() || STANDARD_REPO);
+}
+export function clearRepo() {
+  localStorage.removeItem(OWNER_KEY);
+  localStorage.removeItem(REPO_KEY);
+}
+
 // Bewusst nicht "log": Inhaltsblocker, Netzwerkfilter und Firmen-WLANs
 // verwerfen Adressen mit diesem Wegstueck regelmaessig, weil dort sonst
 // Tracking-Daten abfliessen. Der Ordner heisst deshalb neutral.
@@ -49,11 +67,11 @@ async function api(path, options = {}, versuch = 1) {
       await new Promise(r => setTimeout(r, 400 * versuch));
       return api(path, options, versuch + 1);
     }
-    const wo = path.split('?')[0].replace(`/repos/${OWNER}/${REPO}/contents`, '');
+    const wo = path.split('?')[0].replace(`/repos/${getOwner()}/${getRepo()}/contents`, '');
     throw new Error(`Keine Verbindung zu GitHub${wo ? ` (${wo})` : ''} — ${navigator.onLine ? 'Server nicht erreichbar' : 'Gerät ist offline'}.`);
   }
   if (res.status === 401 || res.status === 403) {
-    throw new Error('Token ungültig oder ohne Schreibrecht auf setlist-data.');
+    throw new Error(`Token ungültig oder ohne Schreibrecht auf ${getRepo()}.`);
   }
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`GitHub ${res.status}: ${(await res.text()).slice(0, 140)}`);
@@ -62,7 +80,7 @@ async function api(path, options = {}, versuch = 1) {
 
 /** Datei lesen. Gibt { data, sha } oder null zurueck. */
 export async function readFile(path) {
-  const j = await api(`/repos/${OWNER}/${REPO}/contents/${path}?ref=main`);
+  const j = await api(`/repos/${getOwner()}/${getRepo()}/contents/${path}?ref=main`);
   if (!j || !j.content) return null;
   return { data: JSON.parse(b64decode(j.content)), sha: j.sha };
 }
@@ -75,7 +93,7 @@ export async function writeFile(path, data, message, sha) {
     branch: 'main'
   };
   if (sha) body.sha = sha;
-  return api(`/repos/${OWNER}/${REPO}/contents/${path}`, {
+  return api(`/repos/${getOwner()}/${getRepo()}/contents/${path}`, {
     method: 'PUT',
     body: JSON.stringify(body)
   });
@@ -88,7 +106,7 @@ export async function writeFile(path, data, message, sha) {
  * Der alte Ordnername wird mitgelesen, damit nichts verloren geht.
  */
 export async function readAllLogs() {
-  const tree = await api(`/repos/${OWNER}/${REPO}/git/trees/main?recursive=1`);
+  const tree = await api(`/repos/${getOwner()}/${getRepo()}/git/trees/main?recursive=1`);
   if (!tree || !Array.isArray(tree.tree)) return [];
   const dateien = tree.tree.filter(f =>
     f.type === 'blob' && f.path.endsWith('.json') &&
@@ -96,7 +114,7 @@ export async function readAllLogs() {
 
   const out = [];
   for (const f of dateien) {
-    const blob = await api(`/repos/${OWNER}/${REPO}/git/blobs/${f.sha}`);
+    const blob = await api(`/repos/${getOwner()}/${getRepo()}/git/blobs/${f.sha}`);
     if (!blob || !blob.content) continue;
     try { out.push(JSON.parse(b64decode(blob.content))); }
     catch { /* eine kaputte Datei darf nicht den ganzen Verlauf kippen */ }

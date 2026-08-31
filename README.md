@@ -177,19 +177,17 @@ Leg ein **privates** Repo namens `setlist-data` an. Dort hinein kommt mindestens
 
 `state.json` **nicht** anlegen — die App leitet den Startzustand beim ersten Mal selbst aus `config.json` ab (`firstWorkout`, `start`-Gewichte) und schreibt ihn erst nach der ersten abgeschlossenen Einheit zurück. `einheiten/` als Ordner reicht leer. Wirklich optional sind dagegen `stimme.json` (eigene Sprüche, siehe `js/content.js` für die Struktur) sowie `records` und `ziele` in `config.json`, wenn du Meilensteine oder alte Bestleistungen wie im Original willst — schau notfalls direkt in Daniels `setlist-data`, welche Felder es dafür gibt.
 
-**3 · App auf dein Repo zeigen lassen**
-
-In deinem Fork, `js/store.js`, Zeile 10: `OWNER` auf deinen GitHub-Nutzernamen ändern (und `REPO`, falls dein Datenrepo anders heißt als `setlist-data`). Ohne diesen Schritt schreibt die App weiter Richtung `cyphomat/setlist-data` — und scheitert dort einfach an fehlenden Rechten.
-
-**4 · Veröffentlichen**
+**3 · Veröffentlichen**
 
 Im Fork unter **Settings → Pages**: Source auf den `main`-Branch stellen. Nach ein bis zwei Minuten läuft die App unter `https://<du>.github.io/setlist/`.
 
-**5 · GitHub-Token erzeugen**
+**4 · GitHub-Token erzeugen**
 
-**Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token.** Zugriff nur auf dein `setlist-data`-Repo, Permission **Contents → Read and write**, sonst nichts. Beim ersten Öffnen der App landest du automatisch auf dem Setup-Screen und trägst den Token dort ein — er bleibt ausschließlich im `localStorage` deines Browsers.
+**Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token.** Zugriff nur auf dein Datenrepo, Permission **Contents → Read and write**, sonst nichts.
 
-**6 · intervals.icu — optional**
+Beim ersten Öffnen landest du automatisch auf dem Setup-Screen. Dort trägst du deinen **GitHub-Nutzernamen**, den **Namen deines Datenrepos** (steht schon auf `setlist-data` vor) und den Token ein — kein Code-Editieren nötig, das Repo-Ziel ist direkt in der App einstellbar. Alle drei bleiben ausschließlich im `localStorage` deines Browsers.
+
+**5 · intervals.icu — optional**
 
 Nur nötig, wenn du auch Radeinheiten/Form/HRV/Schlaf willst. Key liegt unter **Settings → Developer** in deinem intervals.icu-Konto.
 
