@@ -138,6 +138,65 @@ Back Squat ist in beiden Workouts dabei und steigt darum doppelt so schnell.
 
 ---
 
+## Selbst einrichten
+
+Setlist ist für genau eine Person gebaut — dich. Es gibt keinen Login mit mehreren Konten; wer die App benutzt, ist der oder die, dessen `setlist-data`-Repo hinterlegt ist. Um eine eigene, unabhängige Instanz zu bekommen, brauchst du ein GitHub-Konto und etwa zehn Minuten.
+
+**1 · App-Code forken**
+
+Fork dieses Repo (`cyphomat/setlist`) in dein eigenes GitHub-Konto. Das ist der öffentliche Teil — Code, kein Personenbezug.
+
+**2 · Eigenes Datenrepo anlegen**
+
+Leg ein **privates** Repo namens `setlist-data` an. Dort hinein kommt mindestens eine `config.json` — das ist die einzige Datei, die du von Hand brauchst:
+
+```json
+{
+  "bar": 20,
+  "rounding": 2.5,
+  "deload": { "afterFails": 3, "factor": 0.9 },
+  "lifts": {
+    "squat":    { "name": "Back Squat",   "increment": 2.5, "start": 40 },
+    "bench":    { "name": "Bench Press",  "increment": 2.5, "start": 30 },
+    "row":      { "name": "Barbell Row",  "increment": 2.5, "start": 30 },
+    "ohp":      { "name": "Strict Press", "increment": 2.5, "start": 20 },
+    "deadlift": { "name": "Deadlift",     "increment": 5.0, "start": 50 }
+  },
+  "workouts": {
+    "A": [{ "lift": "squat", "sets": 5, "reps": 5 }, { "lift": "bench", "sets": 5, "reps": 5 }, { "lift": "row", "sets": 5, "reps": 5 }],
+    "B": [{ "lift": "squat", "sets": 5, "reps": 5 }, { "lift": "ohp", "sets": 5, "reps": 5 }, { "lift": "deadlift", "sets": 1, "reps": 5 }]
+  },
+  "firstWorkout": "A",
+  "rest": { "normal": 90, "afterFail": 180 },
+  "plates": [25, 20, 15, 10, 5, 2.5, 1.25],
+  "week": { "slots": [{ "day": 1, "type": "strength" }, { "day": 4, "type": "strength" }] }
+}
+```
+
+`start` ist dein Einstiegsgewicht je Übung, `increment` die Steigerung pro erfolgreicher Einheit. `week.slots` legt fest, welche Wochentage etwas anstehen (`day`: 1 = Montag … 7 = Sonntag) — **anders als die übrigen Felder ist das nicht optional**, ohne `week` stürzt der Home-Screen beim Aufbau der Wochenübersicht ab. Willst du auch Radslots (`"type": "ride"`), brauchst du zusätzlich ein nicht-leeres `rides`-Array (`label`/`detail` je Eintrag) — sonst dasselbe Problem.
+
+`state.json` **nicht** anlegen — die App leitet den Startzustand beim ersten Mal selbst aus `config.json` ab (`firstWorkout`, `start`-Gewichte) und schreibt ihn erst nach der ersten abgeschlossenen Einheit zurück. `einheiten/` als Ordner reicht leer. Wirklich optional sind dagegen `stimme.json` (eigene Sprüche, siehe `js/content.js` für die Struktur) sowie `records` und `ziele` in `config.json`, wenn du Meilensteine oder alte Bestleistungen wie im Original willst — schau notfalls direkt in Daniels `setlist-data`, welche Felder es dafür gibt.
+
+**3 · App auf dein Repo zeigen lassen**
+
+In deinem Fork, `js/store.js`, Zeile 10: `OWNER` auf deinen GitHub-Nutzernamen ändern (und `REPO`, falls dein Datenrepo anders heißt als `setlist-data`). Ohne diesen Schritt schreibt die App weiter Richtung `cyphomat/setlist-data` — und scheitert dort einfach an fehlenden Rechten.
+
+**4 · Veröffentlichen**
+
+Im Fork unter **Settings → Pages**: Source auf den `main`-Branch stellen. Nach ein bis zwei Minuten läuft die App unter `https://<du>.github.io/setlist/`.
+
+**5 · GitHub-Token erzeugen**
+
+**Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token.** Zugriff nur auf dein `setlist-data`-Repo, Permission **Contents → Read and write**, sonst nichts. Beim ersten Öffnen der App landest du automatisch auf dem Setup-Screen und trägst den Token dort ein — er bleibt ausschließlich im `localStorage` deines Browsers.
+
+**6 · intervals.icu — optional**
+
+Nur nötig, wenn du auch Radeinheiten/Form/HRV/Schlaf willst. Key liegt unter **Settings → Developer** in deinem intervals.icu-Konto.
+
+Fertig. Die erste Einheit legt `state.json` automatisch an; alles danach ist Ableitung, kein manuelles Pflegen.
+
+---
+
 ## Aufbau
 
 | Datei | Rolle |
