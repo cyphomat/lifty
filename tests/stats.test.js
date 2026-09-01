@@ -255,4 +255,103 @@ eq('leere Liste bleibt leer', S.ansageAbgleich([]).gesamt, 0);
 eq('unbekannte Ansage wird uebersprungen',
    S.ansageAbgleich([kraftLog('2026-09-01', 'IRGENDWAS', 'normal')]).gesamt, 0);
 
+
+print('\n--- Watt pro Kilogramm ---');
+// Deine echten Werte vom 01.09.2026 als Ausgangspunkt: 136 W bei 120,5 kg.
+const wel = [
+  { date:'2026-06-01', eftp:130, weight:124.0 },
+  { date:'2026-07-01', eftp:132, weight:0 },      // Gewicht fehlt: faellt raus
+  { date:'2026-08-01', eftp:null, weight:122.0 }, // eFTP fehlt: faellt raus
+  { date:'2026-09-01', eftp:136, weight:120.5 }
+];
+const wkg = S.wattProKg(wel);
+eq('nur Tage mit beiden Haelften', wkg.length, 2);
+eq('aufsteigend sortiert', wkg[0].date, '2026-06-01');
+eq('130 durch 124', wkg[0].wkg, 1.048);
+eq('136 durch 120,5', wkg[1].wkg, 1.129);
+eq('leere Wellness bleibt leer', S.wattProKg([]).length, 0);
+eq('unsortierte Eingabe wird sortiert',
+   S.wattProKg([wel[3], wel[0]])[0].date, '2026-06-01');
+
+print('\n--- Woher die Veraenderung kam ---');
+const tr = S.wattProKgTrend(wkg);
+eq('Zuwachs in W/kg', tr.delta, 0.081);
+eq('sechs Watt mehr', tr.wattDelta, 6);
+eq('dreieinhalb Kilo weniger', tr.kgDelta, -3.5);
+ok('beide Anteile sind positiv', tr.ausLeistung > 0 && tr.ausGewicht > 0,
+   `${tr.ausLeistung} / ${tr.ausGewicht}`);
+// Die Zerlegung ist exakt, nicht geschaetzt: sie muss ohne Rest aufgehen.
+ok('Leistung plus Gewicht ergibt genau das Delta',
+   Math.abs((tr.ausLeistung + tr.ausGewicht) - tr.delta) < 0.002,
+   `${tr.ausLeistung} + ${tr.ausGewicht} != ${tr.delta}`);
+eq('92 Tage dazwischen', tr.tage, 92);
+eq('ein einzelner Punkt ergibt keinen Trend', S.wattProKgTrend([wkg[0]]), null);
+eq('leer ergibt keinen Trend', S.wattProKgTrend([]), null);
+
+// Nur abnehmen, gleiche Leistung: der ganze Zuwachs kommt vom Gewicht.
+const nurGewicht = S.wattProKgTrend(S.wattProKg([
+  { date:'2026-06-01', eftp:136, weight:124.0 },
+  { date:'2026-09-01', eftp:136, weight:120.5 }]));
+eq('kein Anteil aus der Leistung', nurGewicht.ausLeistung, 0);
+ok('der ganze Zuwachs kommt vom Gewicht',
+   Math.abs(nurGewicht.ausGewicht - nurGewicht.delta) < 0.002);
+
+print('\n--- Plan gegen Ist ---');
+const ZIELE = {
+  'Grundlage Z2': { label:'Grundlage Z2', ftp:[0.56, 0.75], struktur:'dauerhaft' },
+  'Sweet Spot':   { label:'Sweet Spot',   ftp:[0.88, 0.93], struktur:'intervalle' }
+};
+const planFuer = d => ({ '2026-09-01': ZIELE['Grundlage Z2'],
+                         '2026-09-05': ZIELE['Sweet Spot'],
+                         '2026-09-08': ZIELE['Grundlage Z2'] }[d] || null);
+
+// Der echte Fall: geplant war Grundlage, gefahren wurde mit 0,91 —
+// ein Zwift-Group-Ride faehrt, was die Gruppe faehrt.
+const radFahrten = [
+  { date:'2026-09-01', intensitaet:0.91, minutes:45, name:'Zwift - Group Ride' },
+  { date:'2026-09-05', intensitaet:0.79, minutes:60, name:'Sweet Spot' },
+  { date:'2026-09-08', intensitaet:0.68, minutes:90, name:'Grundlage' },
+  { date:'2026-09-10', intensitaet:0.70, minutes:50, name:'Ohne Plan' },
+  { date:'2026-09-11', intensitaet:null, minutes:40, name:'Ohne Leistungsmesser' }
+];
+const ab = S.intensitaetsAbgleich(radFahrten, planFuer);
+eq('Fahrten ohne Intensitaet fallen raus', ab.length, 4);
+eq('geplant locker, gefahren hart', ab[0].stufe, 'zuHart');
+eq('und das Ziel steht dabei', ab[0].ziel.join('-'), '0.56-0.75');
+eq('Intervallfahrt unter dem Ziel ist nicht "zu locker"', ab[1].stufe, 'unklar');
+eq('Grundlage im Zielbereich', ab[2].stufe, 'imZiel');
+eq('ohne Plan kein Urteil', ab[3].stufe, 'ohnePlan');
+
+// Dieselbe Unterschreitung bei einer dauerhaften Fahrt ist sehr wohl ein Urteil.
+const locker = S.intensitaetsAbgleich(
+  [{ date:'2026-09-08', intensitaet:0.40, minutes:90 }], planFuer);
+eq('dauerhafte Fahrt deutlich unter dem Ziel', locker[0].stufe, 'zuLocker');
+
+// Die Toleranz faengt Randfaelle ab, statt bei 0,76 gleich Alarm zu schlagen.
+const knapp = S.intensitaetsAbgleich(
+  [{ date:'2026-09-08', intensitaet:0.77, minutes:90 }], planFuer);
+eq('knapp ueber dem Ziel bleibt im Ziel', knapp[0].stufe, 'imZiel');
+
+print('\n--- Bilanz ---');
+const bil = S.abgleichBilanz(ab);
+eq('einmal im Ziel', bil.imZiel, 1);
+eq('einmal zu hart', bil.zuHart, 1);
+eq('einmal unklar', bil.unklar, 1);
+eq('einmal ohne Plan', bil.ohnePlan, 1);
+eq('beurteilbar waren zwei', bil.beurteilt, 2);
+eq('Quote rechnet nur mit den beurteilbaren', bil.quote, 50);
+eq('ohne Eintraege keine Quote', S.abgleichBilanz([]).quote, null);
+
+
+print('\n--- Angezeigte Anteile ergeben die angezeigte Summe ---');
+// Getrennt gerundet ergaben +0,12 und +0,09 die Summe +0,22.
+const an = S.anteileAufSumme(0.216, 0.124);
+eq('Summe auf zwei Stellen', an.summe, 0.22);
+eq('erster Anteil normal gerundet', an.a, 0.12);
+eq('der Rest geht an den zweiten', an.b, 0.1);
+ok('und beides ergibt die Summe', Math.abs(an.a + an.b - an.summe) < 1e-9);
+const neg = S.anteileAufSumme(-0.07, -0.044);
+ok('auch bei fallenden Werten', Math.abs(neg.a + neg.b - neg.summe) < 1e-9);
+eq('ohne Rest bleibt es, wie es ist', S.anteileAufSumme(0.3, 0.1).b, 0.2);
+
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

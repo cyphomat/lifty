@@ -117,7 +117,24 @@ export async function rides(from, to) {
       name: a.name || 'Fahrt',
       minutes: Math.round((a.moving_time || 0) / 60),
       km: Math.round((a.distance || 0) / 100) / 10,
-      load: a.icu_training_load || null
+      load: a.icu_training_load || null,
+      // Ab hier die Felder fuer die Auswertung. Namen sind nicht geraten,
+      // sondern aus dem Schema unter /api/v1/docs (Activity) gelesen: es
+      // heisst `icu_average_watts`, ein `average_watts` gibt es nicht.
+      intensitaet: a.icu_intensity != null ? a.icu_intensity : null,
+      np: a.icu_weighted_avg_watts || null,
+      watt: a.icu_average_watts || null,
+      hf: a.average_heartrate || null,
+      hfMax: a.max_heartrate || null,
+      effizienz: a.icu_efficiency_factor != null ? a.icu_efficiency_factor : null,
+      entkopplung: a.decoupling != null ? a.decoupling : null,
+      ftpDamals: a.icu_ftp || null,
+      trainer: !!a.trainer,
+      // {id, secs} je Zone. Nur die belegten, sonst blaeht das den
+      // Zwischenspeicher fuer nichts auf.
+      zonen: Array.isArray(a.icu_zone_times)
+        ? a.icu_zone_times.filter(z => z && z.secs).map(z => ({ id: z.id, secs: z.secs }))
+        : null
     })));
 }
 

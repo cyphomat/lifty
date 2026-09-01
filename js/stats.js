@@ -208,6 +208,113 @@ export function radStats(rides = []) {
 }
 
 /** Wochenweise Last — zeigt Rhythmus und Lücken deutlicher als eine Liste. */
+/* ---------------------------------------------------------------
+   Watt pro Kilogramm. Die Kurve, die im Defizit steigt, waehrend die
+   absoluten Watt stehenbleiben.
+
+   Beides liegt in intervals.icu: `eftp` und `weight` aus den
+   Wellness-Daten. Es braucht also kein einziges neues Feld — nur die
+   Division, die bisher niemand gemacht hat.                         */
+
+/** Punkte mit beiden Haelften. Tage ohne Gewicht oder ohne eFTP fallen raus. */
+export function wattProKg(wellness = []) {
+  return wellness
+    .filter(w => w.eftp > 0 && w.weight > 0)
+    .map(w => ({
+      date: w.date,
+      wkg: Math.round((w.eftp / w.weight) * 1000) / 1000,
+      eftp: Math.round(w.eftp),
+      weight: Math.round(w.weight * 10) / 10
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/**
+ * Woher die Veraenderung kam. Ein Plus in W/kg kann aus mehr Leistung
+ * stammen oder aus weniger Gewicht — das ist derselbe Zahlenwert und ein
+ * voellig anderer Vorgang. Die Zerlegung ist exakt, nicht geschaetzt:
+ *   b.eftp/b.kg - a.eftp/a.kg
+ *     = (b.eftp - a.eftp)/a.kg  +  b.eftp * (1/b.kg - 1/a.kg)
+ * Der erste Summand ist der Anteil der Leistung, der zweite der des
+ * Gewichts, und zusammen ergeben sie die Differenz ohne Rest.
+ */
+export function wattProKgTrend(punkte = []) {
+  if (punkte.length < 2) return null;
+  const a = punkte[0], b = punkte[punkte.length - 1];
+  const ausLeistung = (b.eftp - a.eftp) / a.weight;
+  const ausGewicht = b.eftp * (1 / b.weight - 1 / a.weight);
+  const r = n => Math.round(n * 1000) / 1000;
+  return {
+    von: a, bis: b,
+    delta: r(b.wkg - a.wkg),
+    ausLeistung: r(ausLeistung),
+    ausGewicht: r(ausGewicht),
+    kgDelta: Math.round((b.weight - a.weight) * 10) / 10,
+    wattDelta: b.eftp - a.eftp,
+    tage: Math.round((new Date(b.date) - new Date(a.date)) / 86400000)
+  };
+}
+
+/**
+ * Zwei Anteile so runden, dass sie die gerundete Summe exakt ergeben.
+ * Getrennt gerundet ergaben +0,12 und +0,09 eine Summe von +0,22 — die
+ * Rechnung stimmt, die Anzeige sah nach Schlamperei aus. Der Rest der
+ * Rundung geht an den zweiten Anteil, statt in einer dritten Zahl zu
+ * verschwinden, die niemand zuordnen kann.
+ */
+export function anteileAufSumme(summe, teilA, stellen = 2) {
+  const f = 10 ** stellen;
+  const s = Math.round(summe * f) / f;
+  const a = Math.round(teilA * f) / f;
+  return { summe: s, a, b: Math.round((s - a) * f) / f };
+}
+
+/* ---------------------------------------------------------------
+   Plan gegen Ist. Die Frage ist nicht "wie stark bist du", sondern
+   "hast du gemacht, was dran war" — und der Fehler, der wirklich
+   etwas kostet, ist die leichte Einheit, die hart gefahren wurde.  */
+
+// Wie weit die Intensitaet neben dem Ziel liegen darf, bevor es zaehlt.
+const TOLERANZ = 0.03;
+
+/**
+ * Eine Fahrt gegen ihren Plan. `planFuer(datum)` liefert `{ label, ftp:
+ * [von, bis], struktur }` oder null — als Funktion uebergeben, damit diese
+ * Datei nichts ueber Wochenplaene wissen muss und pruefbar bleibt.
+ *
+ * Bei Intervallen wird "zu locker" bewusst NICHT geurteilt: der Schnitt
+ * ueber die ganze Fahrt enthaelt Aufwaermen und Pausen und liegt darum
+ * zwangslaeufig unter dem Ziel der Intervalle. Ein Urteil, das die Methode
+ * gar nicht hergibt, waere schlimmer als keins.
+ */
+export function intensitaetsAbgleich(fahrten = [], planFuer = () => null) {
+  return fahrten
+    .filter(f => f && f.intensitaet != null && f.date)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map(f => {
+      const plan = planFuer(f.date);
+      const ist = Math.round(f.intensitaet * 100) / 100;
+      const basis = { date: f.date, ist, minuten: f.minutes || null, name: f.name || null };
+      if (!plan || !Array.isArray(plan.ftp) || plan.ftp.length !== 2) {
+        return { ...basis, stufe: 'ohnePlan', label: plan ? plan.label : null, ziel: null };
+      }
+      const [von, bis] = plan.ftp;
+      const gemein = { ...basis, label: plan.label, ziel: [von, bis], struktur: plan.struktur || 'dauerhaft' };
+      if (ist > bis + TOLERANZ) return { ...gemein, stufe: 'zuHart' };
+      if (ist >= von - TOLERANZ) return { ...gemein, stufe: 'imZiel' };
+      return { ...gemein, stufe: gemein.struktur === 'intervalle' ? 'unklar' : 'zuLocker' };
+    });
+}
+
+/** Zaehlwerk ueber den Abgleich. `quote` laesst aus, was nicht beurteilbar ist. */
+export function abgleichBilanz(eintraege = []) {
+  const z = { imZiel: 0, zuHart: 0, zuLocker: 0, unklar: 0, ohnePlan: 0 };
+  for (const e of eintraege) if (z[e.stufe] !== undefined) z[e.stufe]++;
+  const beurteilt = z.imZiel + z.zuHart + z.zuLocker;
+  return { ...z, gesamt: eintraege.length, beurteilt,
+           quote: beurteilt ? Math.round((z.imZiel / beurteilt) * 100) : null };
+}
+
 export function radWochen(rides = [], wochen = 12, heute = new Date()) {
   const montag = d => {
     const m = new Date(d);

@@ -111,20 +111,27 @@ export const FINISHER = [
    Radeinheiten mit Begruendung. "Zone 2" ohne Warum ist eine
    Anweisung; mit Warum ist es eine Entscheidung.                  */
 
+// `struktur` entscheidet, wie streng man die Intensitaet der ganzen Fahrt
+// lesen darf. Bei einer dauerhaften Fahrt ist der Schnitt ueber die Fahrt
+// die Fahrt. Bei Intervallen druecken Aufwaermen und Pausen den Schnitt
+// unter das Ziel der Intervalle — "zu locker" waere dort ein Fehlurteil.
 export const RIDE_INFO = {
   'Grundlage Z2': {
+    struktur: 'dauerhaft',
     intensitaet: 'locker',
     ftp: [0.56, 0.75],
     warum: 'Baut das aerobe Fundament und verbrennt Fett, ohne deine Beine für den Squat zu ruinieren. Der wichtigste Teil deines Radumfangs — und der, den alle zu hart fahren.',
     achtung: 'Wenn du dich unterhalten kannst, stimmt es. Wenn es sich gut anfühlt, ist es meistens zu hart.'
   },
   'Sweet Spot': {
+    struktur: 'intervalle',
     intensitaet: 'mittel',
     ftp: [0.88, 0.93],
     warum: 'Bestes Verhältnis von Reiz zu Erholungskosten. Hebt die Schwelle, ohne dich für Tage zu zerstören.',
     achtung: 'Zäh, aber kontrolliert. Du solltest das letzte Intervall genauso fahren können wie das erste.'
   },
   'VO2max': {
+    struktur: 'intervalle',
     intensitaet: 'hart',
     ftp: [1.06, 1.20],
     warum: 'Hebt die Decke. Wenige, kurze, wirklich harte Intervalle.',

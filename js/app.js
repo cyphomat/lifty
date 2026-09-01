@@ -38,6 +38,7 @@ let alleFahrten = [];           // Radfahrten der letzten 90 Tage
 let stoerung = null;            // Interferenz Rad -> Eisen
 let stimme = null;              // deine eigenen Zeilen aus stimme.json
 let gewichtsPunkte = [];        // Rohwerte fuer die Gewichtskurve
+let wkgPunkte = [];             // Watt pro Kilogramm, aus eFTP und Gewicht
 let formPunkte = [];            // Fitness und Ermuedung ueber die Zeit
 let eftp = null;                // geschaetzte FTP, fuer Wattziele
 let bibliothek = {};            // eigene Notizen/Videos je Uebung, aus bibliothek.json
@@ -118,6 +119,7 @@ async function load() {
   if (zwischen.erholung) erholung = zwischen.erholung;
   if (zwischen.gewicht) gewichtsPunkte = zwischen.gewicht;
   if (zwischen.formVerlauf) formPunkte = zwischen.formVerlauf;
+  if (zwischen.wkg) wkgPunkte = zwischen.wkg;
   if (zwischen.eftp) eftp = zwischen.eftp;
 
   await flushQueue();
@@ -183,6 +185,10 @@ async function loadIntervals() {
     S.cache({ gewicht: gewichtsPunkte });
     formPunkte = ST.formVerlauf(roh);
     S.cache({ formVerlauf: formPunkte });
+    // Beide Haelften liegen schon hier: eFTP und Gewicht kommen aus
+    // derselben Abfrage. Es braucht nur die Division.
+    wkgPunkte = ST.wattProKg(roh);
+    S.cache({ wkg: wkgPunkte });
     trend = C.gewichtsTrend(roh);
     form = C.formLage(ICU.letzteForm(roh));
     erholung = C.erholung(roh);
@@ -755,9 +761,11 @@ async function renderHistory() {
     renderLast(logs);
     renderTonnage(logs);
     renderFormVerlauf();
+    renderWattProKg();
     renderPRs(logs);
     renderAnsageAbgleich(logs);
     renderCharts(logs);
+    renderIntensitaet();
     renderRad();
     renderListe(logs);
   } catch (e) {
@@ -771,9 +779,11 @@ async function renderHistory() {
       renderLast(alt.logs);
       renderTonnage(alt.logs);
       renderFormVerlauf();
+      renderWattProKg();
       renderPRs(alt.logs);
       renderAnsageAbgleich(alt.logs);
       renderCharts(alt.logs);
+      renderIntensitaet();
       renderRad();
       renderListe(alt.logs);
       banner(t('msg.offlineStand', { datum: new Date(alt.zeit).toLocaleDateString(locale()) }), '', 5000);
@@ -2350,6 +2360,133 @@ function renderTonnage(logs) {
       <div class="h" style="margin:7px 0 0">
         <span class="t">${t('ton.beste', { t: (beste.tonnage/1000).toFixed(1) })}</span>
         <span class="t">${t('last.dieseWoche')}</span></div>
+    </div>`;
+}
+
+/**
+ * Watt pro Kilogramm.
+ *
+ * Im Defizit ist das die einzige Leistungskurve, die ehrlich steigen kann:
+ * die absoluten Watt bleiben stehen oder fallen, das ist Physiologie und
+ * kein Rückschritt — sieht in einer Wattkurve aber genau danach aus. Deshalb
+ * steht unter der Kurve auch, WOHER die Veränderung kam. Ein Plus aus dem
+ * Gewicht ist ein anderer Vorgang als ein Plus aus der Leistung, und beides
+ * in einer Zahl zu verstecken wäre die halbe Wahrheit.
+ */
+function renderWattProKg() {
+  const box = $('hist-wkg');
+  if (!box) return;
+  if (wkgPunkte.length < 2) {
+    box.innerHTML = `<p class="fine">${t('wkg.leer')}</p>`;
+    return;
+  }
+  const breite = 300, hoehe = 74, rand = 5;
+  const werte = wkgPunkte.map(p => p.wkg);
+  const min = Math.min(...werte), max = Math.max(...werte);
+  const spanne = max - min || 1;
+  const n = wkgPunkte.length;
+  const x = i => rand + (i / (n - 1)) * (breite - 2 * rand);
+  const y = v => rand + (1 - (v - min) / spanne) * (hoehe - 2 * rand);
+  const linie = wkgPunkte.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.wkg).toFixed(1)}`).join(' ');
+  const flaeche = `M${x(0).toFixed(1)},${hoehe} ${linie.slice(1)} L${x(n - 1).toFixed(1)},${hoehe} Z`;
+
+  const tr = ST.wattProKgTrend(wkgPunkte);
+  const jetzt = wkgPunkte[n - 1];
+  // Die beiden Anteile werden gegen die gerundete Summe gerundet, sonst
+  // ergeben +0,12 und +0,09 auf dem Bildschirm nicht die genannten +0,22.
+  const anteile = ST.anteileAufSumme(tr.delta, tr.ausLeistung);
+  const rauf = tr && tr.delta > 0;
+  const farbe = rauf ? 'var(--gruen)' : tr && tr.delta < 0 ? 'var(--rost)' : 'var(--muted)';
+  const zahl = v => `${v > 0 ? '+' : ''}${v.toFixed(2)}`;
+
+  box.innerHTML = `
+    <div class="radbar">
+      <div class="h"><span class="t">${t('wkg.titel')}</span>
+        <span class="r" style="color:${farbe}">${jetzt.wkg.toFixed(2)} W/kg</span></div>
+      <svg viewBox="0 0 ${breite} ${hoehe}" preserveAspectRatio="none" aria-hidden="true">
+        <path d="${flaeche}" fill="${rauf ? 'var(--tint-gruen)' : 'var(--tint-rost)'}"/>
+        <path d="${linie}" fill="none" stroke="${farbe}" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+      <div class="h" style="margin:7px 0 0">
+        <span class="t">${t('wkg.stand', { w: jetzt.eftp, kg: jetzt.weight.toFixed(1) })}</span>
+        <span class="t" style="color:${farbe}">${zahl(anteile.summe)} ${t('wkg.inTagen', { n: tr.tage })}</span>
+      </div>
+      <p class="fine" style="margin:6px 0 0">${t('wkg.zerlegung', {
+        leistung: zahl(anteile.a), gewicht: zahl(anteile.b),
+        watt: `${tr.wattDelta > 0 ? '+' : ''}${tr.wattDelta}`,
+        kg: `${tr.kgDelta > 0 ? '+' : ''}${tr.kgDelta.toFixed(1)}`
+      })}</p>
+    </div>`;
+}
+
+/**
+ * Was für den Tag angesagt war — und was daraus wurde.
+ *
+ * Möglich ist das erst, seit der Wochenplan aus dem Datum folgt und nicht
+ * mehr aus der Länge der Historie: nur so lässt sich für eine Fahrt von
+ * vor sechs Wochen noch rekonstruieren, was damals dranstand.
+ */
+function planFuerDatum(datum) {
+  if (!state || !config) return null;
+  const woche = P.planWeek(state, config, new Date(datum + 'T12:00:00'));
+  const slot = woche.find(s => s.date === datum && s.type === 'ride');
+  if (!slot) return null;
+  const info = RIDE_INFO[slot.label];
+  return info ? { label: slot.label, ftp: info.ftp, struktur: info.struktur } : null;
+}
+
+function renderIntensitaet() {
+  const box = $('hist-intensitaet');
+  if (!box) return;
+  const fahrten = fahrtenListe();
+  const eintraege = ST.intensitaetsAbgleich(fahrten, planFuerDatum);
+  if (!eintraege.length) {
+    box.innerHTML = `<p class="fine">${t('int.leer')}</p>`;
+    return;
+  }
+  const bil = ST.abgleichBilanz(eintraege);
+  const FARBE = { imZiel: 'var(--gruen)', zuHart: 'var(--rot)',
+                  zuLocker: 'var(--stahl)', unklar: 'var(--muted)', ohnePlan: 'var(--muted)' };
+
+  // Die zwölf jüngsten, chronologisch — mehr trägt die Zeile nicht.
+  const zeigen = eintraege.slice(-12);
+
+  // Die Skala beginnt NICHT bei null. Ein Intensitätsfaktor von 0 ist kein
+  // Zustand, den es gibt — mit Nulllinie sehen 0,64 und 0,91 fast gleich
+  // aus, und genau dieser Unterschied ist die ganze Aussage. Untergrenze
+  // und Obergrenze stehen deshalb unter dem Diagramm, damit die gestauchte
+  // Skala nicht heimlich übertreibt.
+  const UNTEN = 0.40, OBEN = 1.20;
+  const pos = v => Math.max(0, Math.min(100, ((v - UNTEN) / (OBEN - UNTEN)) * 100));
+
+  const balken = zeigen.map(e => {
+    const hoehe = Math.max(3, pos(e.ist));
+    const ziel = e.ziel
+      ? `<span class="zielband" style="bottom:${pos(e.ziel[0]).toFixed(1)}%;height:${Math.max(2, pos(e.ziel[1]) - pos(e.ziel[0])).toFixed(1)}%"></span>` : '';
+    return `<span class="isbar ${e.stufe}" title="${escHtml(e.date)} · ${escHtml(t('int.' + e.stufe))} · IF ${e.ist.toFixed(2)}">
+        ${ziel}<span class="fill" style="height:${hoehe.toFixed(1)}%;background:${FARBE[e.stufe]}"></span>
+      </span>`;
+  }).join('');
+
+  const letzte = zeigen[zeigen.length - 1];
+  box.innerHTML = `
+    <div class="radbar">
+      <div class="h"><span class="t">${t('int.titel')}</span>
+        <span class="r" style="color:${bil.quote != null && bil.quote >= 60 ? 'var(--gruen)' : 'var(--rost)'}">${
+          bil.quote != null ? t('int.quote', { p: bil.quote, n: bil.beurteilt }) : t('int.keineQuote')}</span></div>
+      <div class="isbars">${balken}</div>
+      <div class="h" style="margin:5px 0 0">
+        <span class="t">${t('int.skala', { unten: Math.round(UNTEN * 100), oben: Math.round(OBEN * 100) })}</span>
+        <span class="t">${t('int.zielband')}</span></div>
+      <div class="h" style="margin:7px 0 0">
+        <span class="t" style="color:var(--gruen)">${t('int.zaehlerZiel', { n: bil.imZiel })}</span>
+        <span class="t" style="color:var(--rot)">${t('int.zaehlerHart', { n: bil.zuHart })}</span>
+        <span class="t" style="color:var(--stahl)">${t('int.zaehlerLocker', { n: bil.zuLocker })}</span>
+      </div>
+      ${letzte && letzte.stufe === 'zuHart' ? `<p class="fine" style="margin:6px 0 0;color:var(--rost)">${
+        t('int.warnung', { label: escHtml(letzte.label), ist: Math.round(letzte.ist * 100),
+                           bis: Math.round(letzte.ziel[1] * 100) })}</p>` : ''}
+      ${bil.unklar ? `<p class="fine" style="margin:6px 0 0">${t('int.unklarHinweis', { n: bil.unklar })}</p>` : ''}
     </div>`;
 }
 

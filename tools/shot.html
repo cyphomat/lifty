@@ -77,13 +77,23 @@ const vorStunden = h => { const d = new Date(Date.now() - h*3600000); const z=n=
   return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}:00`; };
 
 const fahrten = [
-  { id:'a1', date:tage(0), zeit:vorStunden(3), name:'Zwift — VO2max Blocks', minutes:50, km:24, load:96 },
-  { id:'a1b', date:tage(1),  name:'Zwift — Watopia Flat',  minutes:55, km:31.5, load:78 },
-  { id:'a2', date:tage(4),  name:'Feierabendrunde',        minutes:90, km:52,   load:121 },
-  { id:'a3', date:tage(8),  name:'Zwift — Alpe du Zwift',  minutes:70, km:22,   load:96 },
-  { id:'a4', date:tage(15), name:'Lange Runde',            minutes:150,km:88,   load:180 },
-  { id:'a5', date:tage(22), name:'Zwift — Gruppenfahrt',   minutes:50, km:15.3, load:73 }
+  { id:'a1', date:tage(0), zeit:vorStunden(3), name:'Zwift — VO2max Blocks', minutes:50, km:24, load:96, intensitaet:1.08, np:268, watt:241, hf:152 },
+  { id:'a1b', date:tage(1),  name:'Zwift — Watopia Flat',  minutes:55, km:31.5, load:78, intensitaet:0.71, np:172, watt:165, hf:131 },
+  { id:'a2', date:tage(4),  name:'Feierabendrunde',        minutes:90, km:52,   load:121, intensitaet:0.68, np:165, watt:158, hf:128 },
+  { id:'a3', date:tage(8),  name:'Zwift — Alpe du Zwift',  minutes:70, km:22,   load:96, intensitaet:0.79, np:192, watt:184, hf:141 },
+  { id:'a4', date:tage(15), name:'Lange Runde',            minutes:150,km:88,   load:180, intensitaet:0.64, np:156, watt:148, hf:126 },
+  // Der Fall, um den es geht: geplant war Grundlage, gefahren wurde Schwelle.
+  { id:'a5', date:tage(22), name:'Zwift — Gruppenfahrt',   minutes:50, km:15.3, load:73, intensitaet:0.91, np:221, watt:206, hf:149 }
 ];
+
+// Watt pro Kilogramm: leichter Zuwachs aus beiden Richtungen — ein paar
+// Watt mehr, ein paar Kilo weniger.
+const wkg = Array.from({ length: 26 }, (_, i) => {
+  const t = i / 25;
+  const eftp = Math.round(232 + t * 11);
+  const weight = Math.round((88.4 - t * 2.9) * 10) / 10;
+  return { date: tage(25 - i), eftp, weight, wkg: Math.round((eftp / weight) * 1000) / 1000 };
+});
 
 const state = {
   version: 1, derivedFrom: logs.length, updated: new Date().toISOString(), next: 'A',
@@ -123,7 +133,7 @@ if (!lokal) {
 localStorage.clear();
 localStorage.setItem('setlist.token', 'demo');
 localStorage.setItem('setlist.cache', JSON.stringify({
-  config, state, fahrten, formVerlauf,
+  config, state, fahrten, formVerlauf, wkg,
   form: { form: 5, stufe: 'frisch', fitness: 52, ermuedung: 47,
           text: 'Ausgeruht. Wenn ein Tag für einen Versuch am oberen Ende taugt, dann dieser.' },
   eftp: 243
