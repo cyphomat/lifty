@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://cyphomat.github.io/setlist/"><img alt="Open app" src="https://img.shields.io/badge/App-open-e8a23d?style=for-the-badge&labelColor=17161b"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/Tests-617%20green-7fa65c?style=for-the-badge&labelColor=17161b">
+  <img alt="Tests" src="https://img.shields.io/badge/Tests-644%20green-7fa65c?style=for-the-badge&labelColor=17161b">
   <img alt="Build" src="https://img.shields.io/badge/Build-none-6f93ad?style=for-the-badge&labelColor=17161b">
   <img alt="Dependencies" src="https://img.shields.io/badge/Dependencies-0-a7a3ab?style=for-the-badge&labelColor=17161b">
 </p>
@@ -203,6 +203,30 @@ On first open you land on the setup screen automatically. There you enter your *
 
 Only needed if you also want bike sessions, form, HRV and sleep. The key lives under **Settings → Developer** in your intervals.icu account.
 
+**6 · Getting updates**
+
+Your fork stays where you branched off — the original keeps moving, but your fork never
+finds out on its own. So the app tells you: if your fork is on an older version, a hint
+appears once at start, and under *Backstage → App* you see which version is upstream and
+which one you are running.
+
+Updating then takes two clicks on GitHub:
+
+1. Your fork → the **This branch is N commits behind** notice at the top → **Sync fork**
+2. **Update branch**
+
+GitHub Pages rebuilds, and the app reloads itself once the next time you open it. Your
+data is untouched — it lives in your own `setlist-data`, which has nothing to do with the
+app code.
+
+If you have made your own changes to the code, use the command line:
+
+```sh
+git remote add upstream https://github.com/cyphomat/setlist.git   # once
+git fetch upstream && git merge upstream/main
+git push
+```
+
 Done. The first session creates `state.json` automatically; everything after that is derivation, not manual upkeep.
 
 ---
@@ -248,6 +272,7 @@ off under *Backstage → Connections*.
 | `js/i18n.js` | Interface texts in German and English. |
 | `js/geraete.js` | Places, equipment, whether a movement is doable. |
 | `js/sicher.js` | Escapes foreign text, validates URLs. |
+| `js/aktualisierung.js` | Compares your version against the original. |
 | `js/boot.js` | Theme and storage migration before first paint. |
 | `js/store.js` | GitHub API as storage, offline buffer. |
 | `js/intervals.js` | Reads rides and form; writes strength sessions back. |
@@ -260,10 +285,10 @@ off under *Backstage → Connections*.
 
 ```sh
 JSC=/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc
-for t in program coach wod stats intervals bibliothek i18n geraete sicher store grundlagen icu-queue; do $JSC --module-file=tests/$t.test.js; done
+for t in program coach wod stats intervals bibliothek i18n geraete sicher store grundlagen icu-queue aktualisierung; do $JSC --module-file=tests/$t.test.js; done
 ```
 
-617 tests, run by the JS engine that ships with macOS anyway. No Node, no build.
+644 tests, run by the JS engine that ships with macOS anyway. No Node, no build.
 
 ---
 

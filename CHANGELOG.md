@@ -10,6 +10,29 @@ sonst merkt die installierte App nichts von einer neuen Fassung.
 
 ---
 
+## 2026-09-01.76
+
+### Neu
+- **Ein Fork merkt jetzt, dass es etwas Neues gibt.** Wer die App selbst betreibt, hat das
+  Repo geforkt — und ein Fork bleibt stehen, wo er abgezweigt ist, ohne dass es jemandem
+  auffällt. Die App vergleicht ihre Version beim Start mit der des Originals und sagt
+  einmalig Bescheid; unter *Backstage → App* steht dann, welche Version oben liegt und
+  welche hier läuft, samt Weg zum Aktualisieren (**Sync fork → Update branch**).
+- Beide READMEs bekommen einen Schritt „Updates holen", auch für den Fall eigener
+  Code-Änderungen über `upstream`-Remote.
+
+### Bewusst so
+- **Nur ein Hinweis, keine Selbstaktualisierung.** Ein Fork, der sich selbst überschreibt,
+  wäre eine Fernsteuerung fremder Repos.
+- **Höchstens einmal je neuer Version.** Ein Hinweis bei jedem Start wird nach dem dritten
+  Mal weggeklickt statt gelesen.
+- **Auf der Seite des Originals wird gar nicht erst gefragt** — dort ist man selbst die
+  Quelle. Ebenso wenig beim lokalen Entwickeln.
+- Versionen werden in Datum und laufende Nummer zerlegt verglichen. Als Zeichenkette wäre
+  `.100` kleiner als `.75`, und genau dann fände ein Fork sein Update nicht.
+
+---
+
 ## 2026-09-01.75
 
 Ergebnis eines Sicherheits- und Datenschutz-Durchgangs.

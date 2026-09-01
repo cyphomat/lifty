@@ -9,6 +9,7 @@ import * as B from './bibliothek.js';
 import { t, locale, sprache, setSprache, uebersetzeStatisch } from './i18n.js';
 import * as G from './geraete.js';
 import { escHtml, sicherLink } from './sicher.js';
+import * as A from './aktualisierung.js';
 
 let config = null, state = null, stateSha = null, session = null;
 let ridesByDate = new Map(), letzterLog = null, trend = null;
@@ -113,6 +114,7 @@ async function load() {
   renderHome();
   show('home');
   loadIntervals();
+  pruefeUrsprung();
 }
 
 /** Nur Beiwerk: Fehler hier duerfen die App nie blockieren — aber sichtbar sein. */
@@ -871,8 +873,39 @@ async function leereCaches() {
   } catch { /* nicht kritisch */ }
 }
 
+// Version im Original-Repo, sobald bekannt. null = nicht geprueft oder
+// nicht erreichbar — dann wird nichts behauptet.
+let versionOben = null;
+
 function renderVersion() {
-  $('version-box').innerHTML = `<p class="fine" style="margin:0 0 6px">${t('bs.version', { v: laufendeVersion })}</p>`;
+  const veraltet = versionOben && A.istVeraltet(laufendeVersion, versionOben);
+  $('version-box').innerHTML =
+    `<p class="fine" style="margin:0 0 6px">${t('bs.version', { v: laufendeVersion })}</p>` +
+    (veraltet
+      ? `<p class="fine" style="margin:0 0 10px;color:var(--rost)">${
+          t('fork.hinweis', { oben: escHtml(versionOben), hier: escHtml(laufendeVersion) })}</p>`
+      : '');
+}
+
+/**
+ * Nachsehen, ob am Original weitergearbeitet wurde. Nur fuer Forks — auf der
+ * Seite des Originals ist man selbst die Quelle.
+ *
+ * Das Banner kommt hoechstens einmal je neuer Version: ein Hinweis, der bei
+ * jedem Start erscheint, wird nach dem dritten Mal weggeklickt statt gelesen.
+ */
+const FORK_KEY = 'setlist.forkGesehen';
+
+async function pruefeUrsprung() {
+  if (!A.istFork(location.hostname)) return;
+  const oben = await S.versionImUrsprung(A.URSPRUNG.owner, A.URSPRUNG.repo);
+  if (!oben) return;
+  versionOben = oben;
+  renderVersion();
+  if (!A.istVeraltet(laufendeVersion, oben)) return;
+  if (localStorage.getItem(FORK_KEY) === oben) return;
+  localStorage.setItem(FORK_KEY, oben);
+  banner(t('fork.neu'), '', 8000);
 }
 
 $('force-update').onclick = () => pruefeVersion(true);

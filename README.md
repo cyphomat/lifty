@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://cyphomat.github.io/setlist/"><img alt="App öffnen" src="https://img.shields.io/badge/App-öffnen-e8a23d?style=for-the-badge&labelColor=17161b"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/Tests-617%20grün-7fa65c?style=for-the-badge&labelColor=17161b">
+  <img alt="Tests" src="https://img.shields.io/badge/Tests-644%20grün-7fa65c?style=for-the-badge&labelColor=17161b">
   <img alt="Build" src="https://img.shields.io/badge/Build-keiner-6f93ad?style=for-the-badge&labelColor=17161b">
   <img alt="Abhängigkeiten" src="https://img.shields.io/badge/Abhängigkeiten-0-a7a3ab?style=for-the-badge&labelColor=17161b">
 </p>
@@ -203,6 +203,30 @@ Beim ersten Öffnen landest du automatisch auf dem Setup-Screen. Dort trägst du
 
 Nur nötig, wenn du auch Radeinheiten/Form/HRV/Schlaf willst. Key liegt unter **Settings → Developer** in deinem intervals.icu-Konto.
 
+**6 · Updates holen**
+
+Dein Fork bleibt stehen, wo du ihn abgezweigt hast — am Original wird weitergearbeitet,
+aber davon bekommt er von sich aus nichts mit. Die App sagt dir deshalb Bescheid: läuft
+dein Fork auf einem älteren Stand, erscheint beim Start einmalig ein Hinweis, und unter
+*Backstage → App* steht, welche Version oben liegt und welche bei dir.
+
+Aktualisieren geht dann in zwei Klicks auf GitHub:
+
+1. Dein Fork → oben der Hinweis **This branch is N commits behind** → **Sync fork**
+2. **Update branch**
+
+GitHub Pages baut danach neu, und beim nächsten Öffnen lädt sich die App einmal selbst
+neu. Deine Daten sind davon nicht berührt — die liegen in deinem eigenen `setlist-data`,
+das mit dem App-Code nichts zu tun hat.
+
+Falls du eigene Änderungen am Code gemacht hast, geht es über die Kommandozeile:
+
+```sh
+git remote add upstream https://github.com/cyphomat/setlist.git   # einmalig
+git fetch upstream && git merge upstream/main
+git push
+```
+
 Fertig. Die erste Einheit legt `state.json` automatisch an; alles danach ist Ableitung, kein manuelles Pflegen.
 
 ---
@@ -252,6 +276,7 @@ Wiederholungen. Abschaltbar unter *Backstage → Verbindungen*.
 | `js/i18n.js` | Oberflächentexte auf Deutsch und Englisch. |
 | `js/geraete.js` | Orte, Ausstattung, Machbarkeit einer Bewegung. |
 | `js/sicher.js` | Maskiert Fremdtext, prüft Adressen. |
+| `js/aktualisierung.js` | Vergleicht die eigene Version mit der des Originals. |
 | `js/boot.js` | Thema und Speicherumzug vor dem ersten Bild. |
 | `js/store.js` | GitHub-API als Speicher, Offline-Puffer. |
 | `js/intervals.js` | Liest Fahrten und Form; schreibt Krafteinheiten zurück. |
@@ -264,10 +289,10 @@ Wiederholungen. Abschaltbar unter *Backstage → Verbindungen*.
 
 ```sh
 JSC=/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc
-for t in program coach wod stats intervals bibliothek i18n geraete sicher store grundlagen icu-queue; do $JSC --module-file=tests/$t.test.js; done
+for t in program coach wod stats intervals bibliothek i18n geraete sicher store grundlagen icu-queue aktualisierung; do $JSC --module-file=tests/$t.test.js; done
 ```
 
-617 Tests, ausgeführt von der JS-Engine, die in macOS ohnehin steckt. Kein Node, kein Build.
+644 Tests, ausgeführt von der JS-Engine, die in macOS ohnehin steckt. Kein Node, kein Build.
 
 ---
 

@@ -360,6 +360,10 @@ export const TEXTE = {
     'bs.rebuildFrage': 'state.json vollständig aus allen Log-Dateien neu berechnen?',
     'bs.darstellungBanner': 'DARSTELLUNG: {was}',
 
+    'fork.neu': 'NEUE APP-VERSION VERFÜGBAR',
+    'fork.hinweis': 'Am Original wird weiterentwickelt: dort steht <b class="num" style="color:var(--akzent)">{oben}</b>, hier läuft <b class="num">{hier}</b>. Zum Aktualisieren auf GitHub in deinem Fork oben auf <b>Sync fork → Update branch</b> — danach lädt sich die App beim nächsten Start von allein neu.',
+    'fork.aktuell': 'Dein Fork ist auf demselben Stand wie das Original.',
+
     /* ---- Meldungen ---- */
     'msg.offline': 'OFFLINE — LETZTER STAND',
     'msg.offlineStand': 'OFFLINE — STAND VOM {datum}',
@@ -734,6 +738,10 @@ export const TEXTE = {
     'bs.logoutFrage': 'Remove token and key from this browser?',
     'bs.rebuildFrage': 'Rebuild state.json completely from all log files?',
     'bs.darstellungBanner': 'APPEARANCE: {was}',
+
+    'fork.neu': 'NEW APP VERSION AVAILABLE',
+    'fork.hinweis': 'The original keeps moving: it is on <b class="num" style="color:var(--akzent)">{oben}</b>, you are running <b class="num">{hier}</b>. To update, open your fork on GitHub and hit <b>Sync fork → Update branch</b> — the app then reloads itself on the next start.',
+    'fork.aktuell': 'Your fork is on the same version as the original.',
 
     /* ---- Messages ---- */
     'msg.offline': 'OFFLINE — LAST KNOWN STATE',

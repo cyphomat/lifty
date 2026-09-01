@@ -97,6 +97,24 @@ export async function repoOeffentlich() {
   }
 }
 
+/**
+ * Die Version, die im Original-Repo steht. Damit merkt ein Fork, dass am
+ * App-Code weitergearbeitet wurde — von sich aus erfaehrt er das nie.
+ *
+ * Liest eine einzelne oeffentliche Datei, mehr nicht. Faellt still aus, wenn
+ * es nicht geht: ein fehlgeschlagener Hinweis darf das Training nicht stoeren.
+ */
+export async function versionImUrsprung(owner, repo) {
+  try {
+    const j = await api(`/repos/${owner}/${repo}/contents/version.json?ref=main`);
+    if (!j || !j.content) return null;
+    const v = JSON.parse(b64decode(j.content)).version;
+    return typeof v === 'string' ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Datei lesen. Gibt { data, sha } oder null zurueck. */
 export async function readFile(path) {
   const j = await api(`/repos/${getOwner()}/${getRepo()}/contents/${path}?ref=main`);
