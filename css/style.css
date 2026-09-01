@@ -275,7 +275,7 @@ dialog{
   box-shadow:var(--gb-dialog);max-width:320px;
 }
 dialog::backdrop{background:var(--backdrop)}
-#picker-title{margin:0 0 16px;font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--akzent);text-align:center}
+#picker-title,#ort-picker-title{margin:0 0 16px;font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--akzent);text-align:center}
 .picker-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .picker-opts button{
   padding:19px 0;font-size:24px;font-weight:600;font-family:var(--display);
@@ -663,3 +663,24 @@ h2.backstage::before{
 }
 .pers-rekord input{margin:0}
 #pers-speichern{margin-top:14px}
+
+/* ── Ort im Kopf ──────────────────────────────────────────── */
+/* Der Name kann lang sein ("Crossfit Box Nord"). Er darf die Kopfzeile
+   nicht sprengen, also bekommt er eine Obergrenze und wird beschnitten —
+   die volle Auswahl steht ohnehin im Dialog. */
+.icon-btn.ort{
+  width:auto;max-width:38vw;padding:0 11px;font-family:var(--mono);
+  font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.icon-btn.ort.an{color:var(--akzent);border-color:var(--akzent);background:var(--tint-akzent)}
+.ort-opts{display:flex;flex-direction:column;gap:8px}
+.ort-opts button{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:14px 15px;border:1px solid var(--line);background:var(--sunken);
+  color:var(--fg);cursor:pointer;text-align:left;width:100%;
+}
+.ort-opts button.an{border-color:var(--akzent);background:var(--tint-akzent)}
+.ort-opts .n{font-family:var(--display);font-size:16px;letter-spacing:.03em;text-transform:uppercase}
+.ort-opts button.an .n{color:var(--akzent)}
+.ort-opts .z{font-family:var(--mono);font-size:11px;color:var(--dim);white-space:nowrap}

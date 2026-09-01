@@ -10,6 +10,25 @@ sonst merkt die installierte App nichts von einer neuen Fassung.
 
 ---
 
+## 2026-09-01.79
+
+### Neu
+- **Der Ort steht jetzt im Kopf.** Ein Knopf in der Kopfzeile zeigt, wo du gerade
+  trainierst, und öffnet die Auswahl — auf dem Startbildschirm wie im Jam. Vorher ging das
+  nur im Jam, und man musste erst dorthin navigieren, um umzustellen.
+- In der Auswahl steht je Ort, wie viele Jam-Bewegungen dort möglich sind (`14/31`) —
+  sonst wählt man einen Ort und merkt erst danach, dass kaum etwas übrig bleibt.
+- Im Jam ersetzt der Knopf die alte Chipreihe. Ein Umstellen dort würfelt weiterhin sofort
+  neu, mit gleichem Seed und anderem Vorrat; der Hinweis unter der Kopfzeile bleibt.
+
+### Bewusst so
+- **Ohne eingerichtete Orte bleibt der Knopf weg.** Ein Schalter mit genau einer Stellung
+  ist kein Schalter — und alles verhält sich dann exakt wie vorher.
+- Lange Ortsnamen werden in der Kopfzeile beschnitten statt sie zu sprengen; im Dialog
+  steht der volle Name.
+
+---
+
 ## 2026-09-01.78
 
 Die Schicht, die aus einem Programm *deine* App macht — bisher lag sie nur in

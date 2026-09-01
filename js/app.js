@@ -257,6 +257,7 @@ function renderConnections() {
 /* ============================ Home ============================ */
 
 function renderHome() {
+  renderOrtKnopf();
   const d = C.directive(state, config, new Date(), letzterLog, stimme, erholung);
 
   $('directive').innerHTML = `
@@ -1070,22 +1071,64 @@ function machbareAnzahl(geraete) {
   return { n: G.machbare(moeglich, geraete).length, gesamt: moeglich.length };
 }
 
-function renderWodGyms() {
-  const box = $('wod-gyms'), hinweis = $('wod-gym-hinweis');
-  if (!box) return;
+/**
+ * Der Ort steht im Kopf, nicht in der Ansicht. Wo du gerade trainierst,
+ * gilt fuer alles — nicht nur fuer den Jam —, und beim Reinkommen ins
+ * Studio will man das umstellen, ohne erst irgendwo hineinzunavigieren.
+ *
+ * Ohne eingerichtete Orte bleibt der Knopf weg. Ein Schalter mit genau
+ * einer Stellung ist kein Schalter.
+ */
+function renderOrtKnopf() {
   const orte = G.gyms(config);
-  if (!orte.length) { box.innerHTML = ''; hinweis.innerHTML = ''; return; }
-
   const gewaehlt = gymWahl();
-  box.innerHTML = [{ id: '', name: t('gym.ueberall') }, ...orte].map(o =>
-    `<button data-gym="${o.id}" class="${o.id === gewaehlt ? 'an' : ''}">${o.name}</button>`).join('');
-  box.querySelectorAll('button').forEach(b => {
+  const o = orte.find(x => x.id === gewaehlt);
+  const text = o ? o.name : t('gym.ueberall');
+
+  for (const id of ['gym-wahl', 'gym-wahl-wod']) {
+    const b = $(id);
+    if (!b) continue;
+    b.hidden = !orte.length;
+    if (!orte.length) continue;
+    b.textContent = text;
+    b.classList.toggle('an', !!o);
+    b.onclick = oeffneOrtPicker;
+  }
+}
+
+function oeffneOrtPicker() {
+  const dlg = $('ort-picker');
+  const gewaehlt = gymWahl();
+  const orte = [{ id: '', name: t('gym.ueberall') }, ...G.gyms(config)];
+
+  $('ort-picker-opts').innerHTML = orte.map(o => {
+    // Wie viele Bewegungen hier gehen, gehoert an die Auswahl: sonst waehlt
+    // man einen Ort und merkt erst danach, dass kaum etwas uebrig bleibt.
+    const g = o.id ? G.aktiveGeraete(config, o.id) : null;
+    const zahl = g ? machbareAnzahl(g) : null;
+    return `<button data-gym="${escHtml(o.id)}" class="${o.id === gewaehlt ? 'an' : ''}">
+      <span class="n">${escHtml(o.name)}</span>
+      <span class="z">${zahl ? escHtml(`${zahl.n}/${zahl.gesamt}`) : ''}</span>
+    </button>`;
+  }).join('');
+
+  $('ort-picker-opts').querySelectorAll('button').forEach(b => {
     b.onclick = () => {
+      dlg.close();
       localStorage.setItem(GYM_KEY, b.dataset.gym);
-      starteWod(wodSeed);          // gleicher Seed, anderer Vorrat
+      renderOrtKnopf();
+      // Im Jam sofort neu wuerfeln — gleicher Seed, anderer Vorrat.
+      if (!$('view-wod').hidden) starteWod(wodSeed);
+      else renderWodGymHinweis();
     };
   });
+  dlg.showModal();
+}
 
+function renderWodGymHinweis() {
+  const hinweis = $('wod-gym-hinweis');
+  if (!hinweis) return;
+  if (!G.gyms(config).length) { hinweis.innerHTML = ''; return; }
   const geraete = gymGeraete();
   if (!geraete) { hinweis.innerHTML = `<p class="fine">${t('gym.hinweis')}</p>`; return; }
   const { n, gesamt } = machbareAnzahl(geraete);
@@ -1095,7 +1138,8 @@ function renderWodGyms() {
 }
 
 function renderWod() {
-  renderWodGyms();
+  renderOrtKnopf();
+  renderWodGymHinweis();
   const mobility = C.mobilityDran(state) ? C.tagesAuswahl(MOBILITY, new Date(), 'mob') : null;
   $('wod-body').innerHTML = `
     <div class="card">
@@ -1891,6 +1935,7 @@ async function speichereGyms() {
     if (gymWahl() && !G.gym(config, gymWahl())) localStorage.removeItem(GYM_KEY);
     gymEntwurf = null;
     renderGymVerwaltung();
+    renderOrtKnopf();
     banner(t('gym.gespeichert'), 'ok');
   } catch (e) {
     banner(e.message, 'err', 8000);

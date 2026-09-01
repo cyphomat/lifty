@@ -118,7 +118,7 @@ Back squat is in both workouts and therefore climbs twice as fast.
 | **Power targets** | From eFTP instead of percentages. |
 | **Jam** | Five formats, 31 movements, loads from your current state. Never two barbell parts. |
 | **Your voice** | Your reason, your own lines and old personal bests, right in the app — no JSON by hand. The reason shows up on hard days, the bests on their anniversaries. |
-| **Places and equipment** | Several gyms (home gym, box, studio …) each with their own kit. In the jam you pick at the top where you are — it only draws from what is there. With no places set up everything stays allowed. |
+| **Places and equipment** | Several gyms (home gym, box, studio …) each with their own kit. A button in the header shows where you are and switches places — on the home screen and in the jam. It only draws from what is there. With no places set up everything stays allowed. |
 | **Scaling** | Every movement names alternatives. “Can't do this” removes it for good. |
 
 ### App

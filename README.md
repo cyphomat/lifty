@@ -118,7 +118,7 @@ Back Squat ist in beiden Workouts dabei und steigt darum doppelt so schnell.
 | **Wattziele** | Aus der eFTP statt Prozentangaben. |
 | **Jam** | Fünf Formate, 31 Übungen, Lasten aus dem aktuellen Stand. Nie zwei Langhantelteile. |
 | **Deine Stimme** | Dein Grund, eigene Sprüche und alte Bestleistungen direkt in der App — kein JSON von Hand. Der Grund erscheint an harten Tagen, die Bestleistungen an ihren Jahrestagen. |
-| **Orte und Geräte** | Mehrere Gyms (Homegym, Box, Studio …) mit eigener Ausstattung. Im Jam wählst du oben aus, wo du gerade bist — gewürfelt wird nur aus dem, was dort steht. Ohne eingerichtete Orte bleibt alles erlaubt. |
+| **Orte und Geräte** | Mehrere Gyms (Homegym, Box, Studio …) mit eigener Ausstattung. Ein Knopf in der Kopfzeile zeigt, wo du bist, und stellt um — auf dem Startbildschirm wie im Jam. Gewürfelt wird nur aus dem, was dort steht. Ohne eingerichtete Orte bleibt alles erlaubt. |
 | **Skalierung** | Jede Übung nennt Alternativen. „Kann ich nicht" nimmt sie dauerhaft raus. |
 
 ### App

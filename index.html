@@ -90,6 +90,7 @@
 <section id="view-home" class="view" hidden>
   <header class="head">
     <h1><span class="glow">Setlist</span></h1>
+    <button id="gym-wahl" class="icon-btn ort" data-i18n-aria="aria.ort" aria-label="Ort wechseln" hidden></button>
     <button id="go-bibliothek" class="icon-btn text" data-i18n-aria="aria.bibliothek" aria-label="Bibliothek">BIB</button>
     <button id="go-history" class="icon-btn" data-i18n-aria="aria.tour" aria-label="Tour">≡</button>
   </header>
@@ -143,10 +144,10 @@
   <header class="head">
     <button id="wod-back" class="icon-btn" data-i18n-aria="aria.zurueck" aria-label="Zurück">‹</button>
     <h1 data-i18n="wod.titel">Jam</h1>
+    <button id="gym-wahl-wod" class="icon-btn ort" data-i18n-aria="aria.ort" aria-label="Ort wechseln" hidden></button>
     <button id="wod-reroll" class="icon-btn" data-i18n-aria="aria.neuWuerfeln" aria-label="Neu würfeln">⟳</button>
   </header>
   <div class="pad" style="padding-bottom:0">
-    <div id="wod-gyms" class="chips"></div>
     <div id="wod-gym-hinweis"></div>
   </div>
   <div class="pad" id="wod-body"></div>
@@ -284,6 +285,11 @@
     Repo — dieselbe Wissensschicht wächst mit dir mit, statt sich bei jedem Neuladen zu wiederholen.</p>
   </div>
 </section>
+
+<dialog id="ort-picker">
+  <p id="ort-picker-title" data-i18n="gym.hier">Hier trainiere ich</p>
+  <div id="ort-picker-opts" class="ort-opts"></div>
+</dialog>
 
 <dialog id="picker">
   <p id="picker-title">Wiederholungen</p>
