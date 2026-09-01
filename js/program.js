@@ -144,15 +144,33 @@ export function mondayOf(d) {
   return m;
 }
 
+// Ein fester Montag als Nullpunkt. Welcher, ist gleichgueltig — er muss nur
+// nie wieder wandern, sonst verschiebt sich die Radrotation rueckwirkend.
+const RAD_EPOCHE = new Date(1970, 0, 5);
+
+/**
+ * Die wievielte Kalenderwoche seit dem Nullpunkt. Ueber den Absolutabstand
+ * gerundet, damit die Sommerzeit-Stunde nicht danebenhaut.
+ */
+function wocheSeitEpoche(monday) {
+  return Math.round((monday - RAD_EPOCHE) / 604800000);
+}
+
 /**
  * Die Woche wird nicht gespeichert, sondern aus config + state erzeugt.
  * Damit kann sie nie mit dem Zustand auseinanderlaufen.
+ *
+ * Welche Radeinheit ansteht, haengt am Kalender, nicht an der Historie:
+ * frueher zaehlte `state.history.length` mit, also verschob jede geloggte
+ * Krafteinheit die Radeinheit desselben Dienstags. Der Plan fuer ein festes
+ * Datum aenderte sich damit rueckwirkend — und weil `fehlendeEvents` beim
+ * Abgleich mit intervals.icu ersatzweise ueber Datum plus Name geht, legte
+ * "Plan in Kalender" danach einen zweiten Eintrag fuer denselben Tag an.
  */
 export function planWeek(state, config, today = new Date()) {
   const monday = mondayOf(today);
   const todayKey = ymd(today);
   let workout = state.next;
-  let rideIndex = (state.history || []).length;
 
   // Eine von Hand geschriebene config.json ist selten vollstaendig. Fehlt
   // die Wochenplanung, ist das kein Grund, den ganzen Startbildschirm
@@ -161,6 +179,12 @@ export function planWeek(state, config, today = new Date()) {
   // uebersprungen statt an einer leeren Liste zu scheitern.
   const slots = (config.week && Array.isArray(config.week.slots)) ? config.week.slots : [];
   const rides = Array.isArray(config.rides) ? config.rides : [];
+
+  // Der Startpunkt der Radrotation kommt aus der Kalenderwoche, nicht aus
+  // der Historie — sonst verschiebt jede geloggte Krafteinheit die
+  // Radeinheit desselben Dienstags.
+  let radIndex = wocheSeitEpoche(monday) *
+    (slots.filter(s => s && s.type === 'ride').length || 1);
 
   return slots.filter(slot => slot && (slot.type !== 'ride' || rides.length)).map(slot => {
     const date = new Date(monday);
@@ -191,7 +215,8 @@ export function planWeek(state, config, today = new Date()) {
       item.workout = workout;
       if (!done) workout = workout === 'A' ? 'B' : 'A';
     } else {
-      const ride = rides[rideIndex++ % rides.length];
+      const n = rides.length;
+      const ride = rides[((radIndex++ % n) + n) % n];
       item.label = ride.label;
       item.detail = ride.detail;
     }

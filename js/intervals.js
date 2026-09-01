@@ -284,16 +284,20 @@ export function alsEvent(slot, config = {}) {
 }
 
 /**
- * Was von den geplanten Eintraegen noch fehlt. Abgleich ueber
- * external_id und ersatzweise ueber Datum plus Name — Letzteres
- * traegt auch dann, wenn die Kennung nicht zurueckkommt.
+ * Was von den geplanten Eintraegen noch fehlt. Abgleich ueber external_id
+ * und ersatzweise ueber Datum plus **Typ** — nicht ueber den Namen: der
+ * darf sich aendern (eine andere Radeinheit rotiert herein, eine Uebung
+ * kommt dazu), ohne dass daraus ein zweiter Eintrag fuer denselben Tag
+ * werden darf. Der Preis ist, dass ein fremder Eintrag gleichen Typs am
+ * selben Tag unseren verhindert. Das ist der bessere Tausch: ein fehlender
+ * Plan faellt auf, ein doppelter verschmutzt den Kalender still.
  */
 export function fehlendeEvents(geplant, vorhanden = []) {
   const kennungen = new Set(vorhanden.map(e => e.external_id).filter(Boolean));
-  const paare = new Set(vorhanden.map(e => `${(e.start_date_local || '').slice(0, 10)}|${e.name || ''}`));
+  const paare = new Set(vorhanden.map(e => `${(e.start_date_local || '').slice(0, 10)}|${e.type || ''}`));
   return geplant.filter(e =>
     !kennungen.has(e.external_id) &&
-    !paare.has(`${e.start_date_local.slice(0, 10)}|${e.name}`));
+    !paare.has(`${e.start_date_local.slice(0, 10)}|${e.type}`));
 }
 
 /** Mehrere Kalendereintraege auf einmal anlegen. */

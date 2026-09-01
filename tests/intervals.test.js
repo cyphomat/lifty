@@ -93,14 +93,20 @@ const geplant = [ev, ev2];
 eq('leerer Kalender: alles fehlt', I.fehlendeEvents(geplant, []).length, 2);
 eq('gleiche Kennung wird uebersprungen',
    I.fehlendeEvents(geplant, [{ external_id:'setlist-plan-2026-09-14-ride' }]).length, 1);
-eq('auch Datum plus Name genuegt',
-   I.fehlendeEvents(geplant, [{ start_date_local:'2026-09-14T00:00:00', name:'Sweet Spot' }]).length, 1);
+eq('auch Datum plus Typ genuegt',
+   I.fehlendeEvents(geplant, [{ start_date_local:'2026-09-14T00:00:00', type:'Ride' }]).length, 1);
 eq('beide vorhanden: nichts zu tun',
    I.fehlendeEvents(geplant, [
-     { start_date_local:'2026-09-14T00:00:00', name:'Sweet Spot' },
-     { start_date_local:'2026-09-15T00:00:00', name:'Kraft — Workout B' }]).length, 0);
-eq('fremde Eintraege stoeren nicht',
-   I.fehlendeEvents(geplant, [{ start_date_local:'2026-09-14T00:00:00', name:'Irgendwas anderes' }]).length, 2);
+     { start_date_local:'2026-09-14T00:00:00', type:'Ride' },
+     { start_date_local:'2026-09-15T00:00:00', type:'WeightTraining' }]).length, 0);
+eq('anderer Typ am selben Tag stoert nicht',
+   I.fehlendeEvents(geplant, [{ start_date_local:'2026-09-14T00:00:00', type:'Swim' }]).length, 2);
+// Der Grund fuer den Wechsel vom Namen auf den Typ: rotierte die Radeinheit
+// zwischen zwei Pushes durch, legte der Abgleich einen zweiten Eintrag an.
+eq('umbenannte Radeinheit bleibt derselbe Eintrag',
+   I.fehlendeEvents(geplant, [
+     { start_date_local:'2026-09-14T00:00:00', type:'Ride', name:'Grundlage Z2' },
+     { start_date_local:'2026-09-15T00:00:00', type:'WeightTraining', name:'Kraft — Workout A' }]).length, 0);
 
 print('\n--- Nachtragen von Einheiten prueft dasselbe ---');
 const akt = I.alsAktivitaet(kraft, config);
