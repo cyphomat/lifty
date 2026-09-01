@@ -103,4 +103,19 @@ ok('zu wenig Geraete liefert trotzdem ein Workout', leer.teile.length > 0);
 const mitAus = generateWod(state, 11, { wod: { aus: ['kbswing'] } }, nurKb);
 ok('ausgeschlossene Uebung bleibt draussen', !mitAus.teile.some(teil => teil.id === 'kbswing'));
 
+print('\n--- Schutz gegen versehentliches Loeschen ---');
+// Der Fehler, den es zu verhindern gilt: ein Entwurf, der entstand, bevor
+// die Konfiguration geladen war, ist leer — und wuerde beim Speichern die
+// echten Orte ueberschreiben. Genau so sind einmal Orte verlorengegangen.
+const zwei = [{ id: 'a' }, { id: 'b' }];
+ok('befuellter Entwurf geht immer durch', G.darfSpeichern(zwei, zwei, false));
+ok('leer gegen leer ist harmlos', G.darfSpeichern([], [], false));
+ok('leer gegen belegt wird ohne Aenderung blockiert', !G.darfSpeichern([], zwei, false));
+ok('leer gegen belegt geht mit Aenderung durch', G.darfSpeichern([], zwei, true));
+ok('ausdrueckliches Loeschen aller Orte bleibt moeglich', G.darfSpeichern([], zwei, true));
+ok('kein Entwurf wird nie gespeichert', !G.darfSpeichern(null, zwei, true));
+ok('Unsinn statt Entwurf ebenfalls nicht', !G.darfSpeichern('nope', zwei, true));
+ok('unbrauchbarer Repo-Stand blockiert nicht', G.darfSpeichern([], null, false));
+
+
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

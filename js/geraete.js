@@ -107,3 +107,23 @@ export function neuerGym(name, vorhandene = []) {
   while (belegt.has(id)) id = `${basis}-${n++}`;
   return { id, name: name || 'Neuer Ort', geraete: [...ALLE_GERAETE] };
 }
+
+/**
+ * Darf dieser Entwurf die Orte im Repo ersetzen?
+ *
+ * Der Fall, den es zu verhindern gilt: der Entwurf ist leer, weil er
+ * entstanden ist, bevor die Konfiguration geladen war — und ueberschreibt
+ * beim Speichern die echten Orte. Genau so sind schon einmal Orte
+ * verlorengegangen.
+ *
+ * Ein ausdrueckliches Loeschen aller Orte muss trotzdem durchgehen. Zu
+ * unterscheiden sind die beiden nur ueber `geaendert`: hat der Mensch etwas
+ * angefasst, ist ein leerer Entwurf sein Wille; hat er nichts angefasst,
+ * ist er ein Fehler.
+ */
+export function darfSpeichern(entwurf, imRepo, geaendert) {
+  if (!Array.isArray(entwurf)) return false;
+  if (entwurf.length) return true;                  // etwas da: immer gut
+  if (!Array.isArray(imRepo) || !imRepo.length) return true;  // nichts zu verlieren
+  return !!geaendert;                               // leer gegen belegt: nur bewusst
+}

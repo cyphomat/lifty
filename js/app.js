@@ -79,6 +79,10 @@ async function load() {
     stateSha = st ? st.sha : null;
     bibliothek = bib ? bib.data : {};
     datenQuelle = 'netz';
+    // Ein Entwurf, der vor dieser Konfiguration entstanden ist, ist veraltet
+    // — im schlimmsten Fall leer, weil er aus gar keiner Konfiguration kam.
+    // Er wird verworfen statt weitergeschleppt.
+    gymEntwurf = null; gymGeaendert = false;
     S.cache({ config, state, stimme, bibliothek });
     S.repoOeffentlich().then(oeff => {
       repoOeffentlich = oeff;
@@ -93,6 +97,7 @@ async function load() {
       config = c.config; state = c.state; stimme = c.stimme || null; stateSha = null;
       bibliothek = c.bibliothek || {};
       datenQuelle = 'cache';
+      gymEntwurf = null; gymGeaendert = false;
       banner(t('msg.offline'), '', 4000);
     } else {
       banner(e.message, 'err', 9000);
@@ -114,8 +119,14 @@ async function load() {
   if (zwischen.eftp) eftp = zwischen.eftp;
 
   await flushQueue();
+  renderOrtKnopf();
   renderHome();
-  show('home');
+  // Wer waehrend des Ladens schon in die Tour getippt hat, sieht dort sonst
+  // dauerhaft den Stand von vorher — inklusive einer leeren Ortsliste. Er
+  // wird dann aufgefrischt, aber nicht herausgerissen: ihn ungefragt auf den
+  // Startbildschirm zu werfen waere schlimmer als ein Moment Warten.
+  if ($('view-history').hidden) show('home');
+  else { renderGymVerwaltung(); renderPersoenlich(); renderConnections(); }
   loadIntervals();
   pruefeUrsprung();
 }
@@ -819,7 +830,7 @@ $('wod-reroll').onclick = () => { starteWod((wodSeed * 7919 + 13) >>> 0); };
 $('wod-finish').onclick = wodAbschliessen;
 $('sw-toggle').onclick = () => swLaeuft ? stopUhr() : startUhr();
 $('go-history').onclick = renderHistory;
-$('hist-back').onclick = () => show('home');
+$('hist-back').onclick = () => { renderOrtKnopf(); show('home'); };
 $('go-bibliothek').onclick = () => zeigeBibliothek();
 $('bib-back').onclick = () => show('home');
 $('bib-suche').oninput = renderBibliothek;
@@ -1861,10 +1872,26 @@ $('pers-speichern').onclick = async () => {
    im Repo waere schlimmer als einer, den man verwirft.                    */
 
 let gymEntwurf = null;
+// Hat der Mensch in diesem Sitzungsabschnitt wirklich etwas an den Orten
+// geaendert? Ohne dieses Wissen laesst sich "alle Orte geloescht" nicht von
+// "Entwurf war nie befuellt" unterscheiden — und nur eins davon darf
+// gespeichert werden.
+let gymGeaendert = false;
 
 function renderGymVerwaltung() {
   const box = $('gym-liste');
   if (!box) return;
+
+  // Ohne geladene Konfiguration entsteht hier KEIN Entwurf. Sonst waere er
+  // leer, wuerde als Modulvariable haengen bleiben und beim naechsten
+  // "Orte speichern" die echten Orte im Repo ueberschreiben. Genau so sind
+  // schon einmal Orte verlorengegangen.
+  if (!config) {
+    box.innerHTML = `<p class="fine">${t('tour.laedt')}</p>`;
+    $('gym-speichern').disabled = true;
+    return;
+  }
+  $('gym-speichern').disabled = false;
   if (!gymEntwurf) gymEntwurf = G.gyms(config);
 
   if (!gymEntwurf.length) {
@@ -1894,7 +1921,7 @@ function renderGymVerwaltung() {
   }).join('');
 
   box.querySelectorAll('.gym-name').forEach(el => {
-    el.oninput = () => { gymEntwurf[+el.dataset.i].name = el.value; };
+    el.oninput = () => { gymEntwurf[+el.dataset.i].name = el.value; gymGeaendert = true; };
   });
   box.querySelectorAll('.gym-geraet').forEach(el => {
     el.onchange = () => {
@@ -1902,11 +1929,13 @@ function renderGymVerwaltung() {
       o.geraete = el.checked
         ? [...new Set([...o.geraete, el.dataset.g])]
         : o.geraete.filter(x => x !== el.dataset.g);
+      gymGeaendert = true;
     };
   });
   box.querySelectorAll('.gym-alle').forEach(el => {
     el.onclick = () => {
       gymEntwurf[+el.dataset.i].geraete = el.dataset.an ? [...G.ALLE_GERAETE] : [];
+      gymGeaendert = true;
       renderGymVerwaltung();
     };
   });
@@ -1915,6 +1944,7 @@ function renderGymVerwaltung() {
       const o = gymEntwurf[+el.dataset.i];
       if (!confirm(t('gym.loeschenFrage', { name: o.name }))) return;
       gymEntwurf.splice(+el.dataset.i, 1);
+      gymGeaendert = true;
       renderGymVerwaltung();
     };
   });
@@ -1922,10 +1952,23 @@ function renderGymVerwaltung() {
 
 /** Vor dem Schreiben frisch lesen — dieselbe Vorsicht wie ueberall sonst. */
 async function speichereGyms() {
+  if (!config || !gymEntwurf) return;
   try {
     banner(t('msg.speichere'), '', 0);
     const datei = await S.readFile('config.json');
     if (!datei) throw new Error(t('msg.configNichtLesbar'));
+
+    // Letzte Sicherung: ein leerer Entwurf, an dem niemand etwas geaendert
+    // hat, gegen eine Datei, in der Orte stehen — das kann nur ein Fehler
+    // sein. Dann lieber vom Stand der Datei neu anzeigen als loeschen.
+    if (!G.darfSpeichern(gymEntwurf, G.gyms(datei.data), gymGeaendert)) {
+      config = datei.data;
+      gymEntwurf = null;
+      renderGymVerwaltung();
+      renderOrtKnopf();
+      return banner(t('gym.nichtsGeaendert'), '', 6000);
+    }
+
     const neu = datei.data;
     neu.gyms = gymEntwurf.map(o => ({ id: o.id, name: o.name, geraete: o.geraete }));
     await S.writeFile('config.json', neu, `Orte und Geräte aktualisiert`, datei.sha);
@@ -1934,6 +1977,7 @@ async function speichereGyms() {
     // Ein geloeschter Ort darf nicht als Auswahl zurueckbleiben.
     if (gymWahl() && !G.gym(config, gymWahl())) localStorage.removeItem(GYM_KEY);
     gymEntwurf = null;
+    gymGeaendert = false;
     renderGymVerwaltung();
     renderOrtKnopf();
     banner(t('gym.gespeichert'), 'ok');
@@ -1945,12 +1989,14 @@ async function speichereGyms() {
 $('gym-neu').onclick = () => {
   if (!gymEntwurf) gymEntwurf = G.gyms(config);
   gymEntwurf.push(G.neuerGym(t('gym.name.ph'), gymEntwurf));
+  gymGeaendert = true;
   renderGymVerwaltung();
 };
 $('gym-vorlagen').onclick = () => {
   if (!gymEntwurf) gymEntwurf = G.gyms(config);
   const belegt = new Set(gymEntwurf.map(o => o.id));
   gymEntwurf.push(...G.vorlagen().filter(o => !belegt.has(o.id)));
+  gymGeaendert = true;
   renderGymVerwaltung();
 };
 $('gym-speichern').onclick = speichereGyms;

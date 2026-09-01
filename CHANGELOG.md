@@ -10,6 +10,35 @@ sonst merkt die installierte App nichts von einer neuen Fassung.
 
 ---
 
+## 2026-09-01.80
+
+### Behoben — Datenverlust
+- **Orte konnten verschwinden (schwerwiegend, von mir eingebaut).** Wer die Tour öffnete,
+  *bevor* die Konfiguration geladen war, bekam einen leeren Orte-Entwurf. Der blieb in
+  einer Modulvariable hängen und wurde auch dann nicht erneuert, wenn die Konfiguration
+  kurz darauf ankam — die Liste zeigte weiter „Noch keine Orte eingerichtet". Ein Klick auf
+  *Orte speichern* schrieb daraufhin `gyms: []` in die `config.json`, mit einem fröhlichen
+  „ORTE GESPEICHERT" dazu. Nachgestellt und Zeile für Zeile belegt.
+
+  Vier Stellen repariert:
+  - Ohne geladene Konfiguration entsteht **kein** Entwurf mehr; es steht „Lädt…" und der
+    Speichern-Knopf ist gesperrt.
+  - Ein Entwurf wird verworfen, sobald eine Konfiguration geladen ist — auch aus dem
+    Zwischenspeicher. Ein veralteter Entwurf kann keine frische Konfiguration überdauern.
+  - Steht die Tour beim Fertigladen schon offen, wird sie aufgefrischt statt stehen zu
+    bleiben (und der Mensch nicht auf den Startbildschirm zurückgerissen).
+  - Letzte Sicherung beim Speichern: ein leerer Entwurf gegen eine Datei, in der Orte
+    stehen, wird nur geschrieben, wenn wirklich etwas geändert wurde. Ausdrückliches
+    Löschen aller Orte bleibt damit möglich, versehentliches Leerschreiben nicht.
+- Der Ort-Knopf in der Kopfzeile blieb nach der Rückkehr aus der Tour auf altem Stand.
+
+### Falls es dich getroffen hat
+`config.json` liegt in einem Git-Repo — jede Änderung ist ein Commit. Unter
+`setlist-data` → `config.json` → **History** steht der Stand von vor dem Überschreiben,
+inklusive `gyms`-Block zum Zurückkopieren.
+
+---
+
 ## 2026-09-01.79
 
 ### Neu
