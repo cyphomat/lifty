@@ -46,24 +46,24 @@
 <section id="view-setup" class="view" hidden>
   <header class="head"><h1><span class="glow">Setlist</span> · setup</h1></header>
   <div class="pad">
-    <h2>1 · GitHub — deine Daten</h2>
-    <p class="lead">Damit liest und schreibt die App dein eigenes privates Datenrepo.</p>
-    <input id="owner" type="text" placeholder="Dein GitHub-Nutzername" autocomplete="off" autocapitalize="off" spellcheck="false">
-    <input id="repo" type="text" placeholder="Name des Datenrepos" value="setlist-data" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <h2 data-i18n="setup.github.h">1 · GitHub — deine Daten</h2>
+    <p class="lead" data-i18n="setup.github.lead">Damit liest und schreibt die App dein eigenes privates Datenrepo.</p>
+    <input id="owner" type="text" data-i18n-ph="setup.owner.ph" placeholder="Dein GitHub-Nutzername" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <input id="repo" type="text" data-i18n-ph="setup.repo.ph" placeholder="Name des Datenrepos" value="setlist-data" autocomplete="off" autocapitalize="off" spellcheck="false">
     <ol class="steps">
-      <li>Leg unter diesem Namen ein <b>privates</b> Repo an — mindestens mit einer <code>config.json</code></li>
-      <li>Klick oben rechts auf dein <b>Profilbild</b> → <b>Settings</b> (deine persönlichen Kontoeinstellungen, nicht die Settings des Repos) → <b>Developer settings → Personal access tokens → Fine-grained tokens</b></li>
-      <li><b>Generate new token</b>, Zugriff auf <b>nur</b> dieses Repo</li>
-      <li>Permissions: <b>Contents → Read and write</b>. Sonst nichts.</li>
+      <li data-i18n-html="setup.schritt1">Leg unter diesem Namen ein <b>privates</b> Repo an — mindestens mit einer <code>config.json</code></li>
+      <li data-i18n-html="setup.schritt2">Klick oben rechts auf dein <b>Profilbild</b> → <b>Settings</b> (deine persönlichen Kontoeinstellungen, nicht die Settings des Repos) → <b>Developer settings → Personal access tokens → Fine-grained tokens</b></li>
+      <li data-i18n-html="setup.schritt3"><b>Generate new token</b>, Zugriff auf <b>nur</b> dieses Repo</li>
+      <li data-i18n-html="setup.schritt4">Permissions: <b>Contents → Read and write</b>. Sonst nichts.</li>
     </ol>
     <input id="token" type="password" placeholder="github_pat_..." autocomplete="off" autocapitalize="off" spellcheck="false">
 
-    <h2>2 · intervals.icu <span class="opt">OPTIONAL</span></h2>
-    <p class="lead">Liefert deine gefahrenen Radeinheiten und — falls dort gepflegt — deinen Gewichtsverlauf.</p>
-    <input id="icukey" type="password" placeholder="intervals.icu API-Key" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <h2><span data-i18n="setup.icu.h">2 · intervals.icu</span> <span class="opt" data-i18n="setup.icu.opt">OPTIONAL</span></h2>
+    <p class="lead" data-i18n="setup.icu.lead">Liefert deine gefahrenen Radeinheiten und — falls dort gepflegt — deinen Gewichtsverlauf.</p>
+    <input id="icukey" type="password" data-i18n-ph="setup.icukey.ph" placeholder="intervals.icu API-Key" autocomplete="off" autocapitalize="off" spellcheck="false">
 
-    <button id="save-token" class="btn">Verbinden</button>
-    <p class="fine">Beide Schlüssel bleiben im Speicher dieses Browsers. Sie werden nie ins Repo geschrieben und tauchen in keinem Commit auf.</p>
+    <button id="save-token" class="btn" data-i18n="setup.verbinden">Verbinden</button>
+    <p class="fine" data-i18n="setup.fine">Beide Schlüssel bleiben im Speicher dieses Browsers. Sie werden nie ins Repo geschrieben und tauchen in keinem Commit auf.</p>
   </div>
 </section>
 
@@ -71,8 +71,8 @@
 <section id="view-home" class="view" hidden>
   <header class="head">
     <h1><span class="glow">Setlist</span></h1>
-    <button id="go-bibliothek" class="icon-btn text" aria-label="Bibliothek">BIB</button>
-    <button id="go-history" class="icon-btn" aria-label="Tour">≡</button>
+    <button id="go-bibliothek" class="icon-btn text" data-i18n-aria="aria.bibliothek" aria-label="Bibliothek">BIB</button>
+    <button id="go-history" class="icon-btn" data-i18n-aria="aria.tour" aria-label="Tour">≡</button>
   </header>
   <div class="pad" style="padding-bottom:0"><div id="motto"></div></div>
   <div class="pad zwei-spalten">
@@ -81,18 +81,18 @@
       <div id="today" class="card today"></div>
       <div class="actions">
         <button id="swap-workout" class="btn ghost small">Workout wechseln</button>
-        <button id="go-wod" class="btn small">Jam</button>
-        <button id="go-mobility" class="btn ghost small">Mobility</button>
-        <button id="go-maxout" class="btn ghost small">Max-Out</button>
+        <button id="go-wod" class="btn small" data-i18n="home.jam">Jam</button>
+        <button id="go-mobility" class="btn ghost small" data-i18n="home.mobility">Mobility</button>
+        <button id="go-maxout" class="btn ghost small" data-i18n="home.maxout">Max-Out</button>
       </div>
     </div>
     <div class="spalte">
-      <h2>Zurück auf Kurs</h2>
+      <h2 data-i18n="home.kurs">Zurück auf Kurs</h2>
       <div id="progress"></div>
-      <h2>Setlist</h2>
+      <h2 data-i18n="home.setlist">Setlist</h2>
       <div id="week" class="week"></div>
       <div id="icu-status"></div>
-      <h2>Arbeitsgewichte</h2>
+      <h2 data-i18n="home.arbeitsgewichte">Arbeitsgewichte</h2>
       <div id="weights" class="weights"></div>
     </div>
   </div>
@@ -101,7 +101,7 @@
 <!-- ============ SESSION ============ -->
 <section id="view-session" class="view" hidden>
   <header class="head">
-    <button id="abort" class="icon-btn" aria-label="Abbrechen">✕</button>
+    <button id="abort" class="icon-btn" data-i18n-aria="aria.abbrechen" aria-label="Abbrechen">✕</button>
     <h1 id="session-title">Workout</h1>
   </header>
   <div class="pad">
@@ -109,130 +109,136 @@
     <div id="warmup"></div>
     <div id="session-body"></div>
     <div id="finisher"></div>
-    <button id="finish" class="btn" disabled>Einheit abschließen</button>
+    <button id="finish" class="btn" disabled data-i18n="ses.finish">Einheit abschließen</button>
   </div>
   <div id="rest" class="rest" hidden>
     <button id="rest-minus" class="tick">−30</button>
-    <span class="mitte"><span class="lbl">UMBAUPAUSE</span><span id="rest-time" class="t">90</span></span>
+    <span class="mitte"><span class="lbl" data-i18n="ses.pause">UMBAUPAUSE</span><span id="rest-time" class="t">90</span></span>
     <button id="rest-plus" class="tick">+30</button>
-    <button id="rest-skip">WEITER</button>
+    <button id="rest-skip" data-i18n="ses.weiter">WEITER</button>
   </div>
 </section>
 
 <!-- ============ WOD ============ -->
 <section id="view-wod" class="view" hidden>
   <header class="head">
-    <button id="wod-back" class="icon-btn" aria-label="Zurück">‹</button>
-    <h1>Jam</h1>
-    <button id="wod-reroll" class="icon-btn" aria-label="Neu würfeln">⟳</button>
+    <button id="wod-back" class="icon-btn" data-i18n-aria="aria.zurueck" aria-label="Zurück">‹</button>
+    <h1 data-i18n="wod.titel">Jam</h1>
+    <button id="wod-reroll" class="icon-btn" data-i18n-aria="aria.neuWuerfeln" aria-label="Neu würfeln">⟳</button>
   </header>
   <div class="pad" id="wod-body"></div>
   <div class="pad">
-    <button id="wod-finish" class="btn" disabled>Abschließen</button>
+    <button id="wod-finish" class="btn" disabled data-i18n="wod.abschliessen">Abschließen</button>
   </div>
   <div id="stopwatch" class="rest" hidden>
-    <span><span class="lbl">LAUFZEIT</span><span id="sw-time" class="t">0:00</span></span>
-    <button id="sw-toggle">STOPP</button>
+    <span><span class="lbl" data-i18n="wod.laufzeit">LAUFZEIT</span><span id="sw-time" class="t">0:00</span></span>
+    <button id="sw-toggle" data-i18n="wod.stopp">STOPP</button>
   </div>
 </section>
 
 <!-- ============ MAX-OUT ============ -->
 <section id="view-maxout" class="view" hidden>
   <header class="head">
-    <button id="mo-back" class="icon-btn" aria-label="Zurück">‹</button>
-    <h1>Max-Out</h1>
+    <button id="mo-back" class="icon-btn" data-i18n-aria="aria.zurueck" aria-label="Zurück">‹</button>
+    <h1 data-i18n="mo.titel">Max-Out</h1>
   </header>
   <div class="pad">
     <div class="directive">
-      <span class="tone hart">KRAFTTEST</span>
-      <p class="txt">Aufwärmen, dann in wenigen Sätzen an ein schweres Einzel oder Dreier herantasten.
+      <span class="tone hart" data-i18n="mo.tone">KRAFTTEST</span>
+      <p class="txt" data-i18n="mo.intro">Aufwärmen, dann in wenigen Sätzen an ein schweres Einzel oder Dreier herantasten.
       Nicht mehr als drei ernsthafte Versuche — danach misst du nur noch deine Ermüdung.</p>
     </div>
-    <h2>Übung</h2>
+    <h2 data-i18n="mo.uebung">Übung</h2>
     <div id="mo-lifts" class="weights"></div>
-    <h2>Ergebnis</h2>
+    <h2 data-i18n="mo.ergebnis">Ergebnis</h2>
     <div class="mo-grid">
-      <label>Gewicht<input id="mo-weight" type="number" inputmode="decimal" step="2.5" placeholder="kg"></label>
-      <label>Wiederholungen<input id="mo-reps" type="number" inputmode="numeric" step="1" min="1" max="12" placeholder="1"></label>
+      <label><span data-i18n="mo.gewicht">Gewicht</span><input id="mo-weight" type="number" inputmode="decimal" step="2.5" placeholder="kg"></label>
+      <label><span data-i18n="mo.reps">Wiederholungen</span><input id="mo-reps" type="number" inputmode="numeric" step="1" min="1" max="12" placeholder="1"></label>
     </div>
     <div id="mo-result"></div>
-    <button id="mo-save" class="btn" disabled>Ergebnis speichern</button>
-    <p class="fine">Ein Max-Out dreht den A/B-Wechsel nicht weiter und verändert deine
+    <button id="mo-save" class="btn" disabled data-i18n="mo.speichern">Ergebnis speichern</button>
+    <p class="fine" data-i18n="mo.fine">Ein Max-Out dreht den A/B-Wechsel nicht weiter und verändert deine
     Arbeitsgewichte nur, wenn du es ausdrücklich übernimmst.</p>
   </div>
 </section>
 
 <!-- ============ DONE ============ -->
 <section id="view-done" class="view" hidden>
-  <header class="head"><h1><span class="glow">geschafft</span></h1></header>
+  <header class="head"><h1><span class="glow" data-i18n="done.titel">geschafft</span></h1></header>
   <div class="pad" id="done-body"></div>
-  <div class="pad"><button id="done-ok" class="btn">Zurück</button></div>
+  <div class="pad"><button id="done-ok" class="btn" data-i18n="done.zurueck">Zurück</button></div>
 </section>
 
 <!-- ============ HISTORY ============ -->
 <section id="view-history" class="view" hidden>
   <header class="head">
-    <button id="hist-back" class="icon-btn" aria-label="Zurück">‹</button>
-    <h1>Tour</h1>
+    <button id="hist-back" class="icon-btn" data-i18n-aria="aria.zurueck" aria-label="Zurück">‹</button>
+    <h1 data-i18n="tour.titel">Tour</h1>
   </header>
   <div class="pad">
     <div id="hist-summary"></div>
-    <h2>Zum Angeben</h2>
+    <h2 data-i18n="tour.angeben">Zum Angeben</h2>
     <div id="hist-angeben"></div>
-    <h2>Regelmäßigkeit · 26 Wochen</h2>
+    <h2 data-i18n="tour.regelmaessigkeit">Regelmäßigkeit · 26 Wochen</h2>
     <div id="hist-kalender"></div>
-    <h2>Wochenlast · Kraft und Rad</h2>
+    <h2 data-i18n="tour.wochenlast">Wochenlast · Kraft und Rad</h2>
     <div id="hist-last"></div>
-    <h2>Volumen · 12 Wochen</h2>
+    <h2 data-i18n="tour.volumen">Volumen · 12 Wochen</h2>
     <div id="hist-tonnage"></div>
-    <h2>Fitness und Ermüdung</h2>
+    <h2 data-i18n="tour.fitness">Fitness und Ermüdung</h2>
     <div id="hist-form"></div>
     <div id="body-trend"></div>
-    <h2>Bestwerte</h2>
+    <h2 data-i18n="tour.bestwerte">Bestwerte</h2>
     <div id="hist-prs"></div>
-    <h2>Ansage gegen Gefühl</h2>
+    <h2 data-i18n="tour.ansage">Ansage gegen Gefühl</h2>
     <div id="hist-ansage"></div>
-    <h2>Verläufe</h2>
+    <h2 data-i18n="tour.verlaeufe">Verläufe</h2>
     <div id="hist-charts"></div>
-    <h2>Rad · 90 Tage</h2>
+    <h2 data-i18n="tour.rad">Rad · 90 Tage</h2>
     <div id="hist-rad"></div>
-    <h2>Einheiten</h2>
+    <h2 data-i18n="tour.einheiten">Einheiten</h2>
     <div id="history-body"></div>
   </div>
   <div class="pad">
-    <h2 class="backstage">Backstage</h2>
-    <h2>Verbindungen</h2>
+    <h2 class="backstage" data-i18n="bs.backstage">Backstage</h2>
+    <h2 data-i18n="bs.verbindungen">Verbindungen</h2>
     <div id="conn-box"></div>
-    <input id="icukey2" type="password" placeholder="intervals.icu API-Key" autocomplete="off" autocapitalize="off" spellcheck="false">
-    <button id="icu-save" class="btn ghost">intervals.icu verbinden</button>
-    <button id="icu-plan" class="btn ghost">Woche in den Kalender eintragen</button>
-    <button id="icu-nachtragen" class="btn ghost">Alte Einheiten nachtragen</button>
-    <h2>Darstellung</h2>
+    <input id="icukey2" type="password" data-i18n-ph="setup.icukey.ph" placeholder="intervals.icu API-Key" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button id="icu-save" class="btn ghost" data-i18n="bs.icuVerbinden">intervals.icu verbinden</button>
+    <button id="icu-plan" class="btn ghost" data-i18n="bs.icuPlan">Woche in den Kalender eintragen</button>
+    <button id="icu-nachtragen" class="btn ghost" data-i18n="bs.icuNachtragen">Alte Einheiten nachtragen</button>
+    <h2 data-i18n="bs.darstellung">Darstellung</h2>
     <div class="themen">
-      <button data-thema="auto">System</button>
-      <button data-thema="hell">Hell</button>
-      <button data-thema="dunkel">Dunkel</button>
+      <button data-thema="auto" data-i18n="bs.thema.auto">System</button>
+      <button data-thema="hell" data-i18n="bs.thema.hell">Hell</button>
+      <button data-thema="dunkel" data-i18n="bs.thema.dunkel">Dunkel</button>
     </div>
-    <h2>App</h2>
+    <h2 data-i18n="bs.sprache">Sprache</h2>
+    <div class="themen sprachen">
+      <button data-sprache="de" data-i18n="bs.sprache.de">Deutsch</button>
+      <button data-sprache="en" data-i18n="bs.sprache.en">English</button>
+    </div>
+    <p class="fine" data-i18n="bs.spracheHinweis">Betrifft die Oberfläche. Trainingsinhalte — Ansage, Übungserklärungen, Jam-Bewegungen — bleiben deutsch.</p>
+    <h2 data-i18n="bs.app">App</h2>
     <div id="version-box"></div>
-    <button id="force-update" class="btn ghost">Nach Update suchen</button>
-    <button id="rebuild" class="btn ghost">state.json neu berechnen</button>
-    <button id="logout" class="btn ghost danger">Zugänge entfernen</button>
+    <button id="force-update" class="btn ghost" data-i18n="bs.update">Nach Update suchen</button>
+    <button id="rebuild" class="btn ghost" data-i18n="bs.rebuild">state.json neu berechnen</button>
+    <button id="logout" class="btn ghost danger" data-i18n="bs.logout">Zugänge entfernen</button>
   </div>
 </section>
 
 <!-- ============ BIBLIOTHEK ============ -->
 <section id="view-bibliothek" class="view" hidden>
   <header class="head">
-    <button id="bib-back" class="icon-btn" aria-label="Zurück">‹</button>
-    <h1>Bibliothek</h1>
+    <button id="bib-back" class="icon-btn" data-i18n-aria="aria.zurueck" aria-label="Zurück">‹</button>
+    <h1 data-i18n="bib.titel">Bibliothek</h1>
   </header>
   <div class="pad">
-    <input id="bib-suche" type="text" placeholder="Übung suchen…" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <input id="bib-suche" type="text" data-i18n-ph="bib.suche.ph" placeholder="Übung suchen…" autocomplete="off" autocapitalize="off" spellcheck="false">
     <div id="bib-kategorien" class="chips"></div>
     <div id="bib-random"></div>
     <div id="bib-liste"></div>
-    <p class="fine">Notizen und eigene Videolinks landen in <code>bibliothek.json</code> in deinem privaten
+    <p class="fine" data-i18n-html="bib.fine">Notizen und eigene Videolinks landen in <code>bibliothek.json</code> in deinem privaten
     Repo — dieselbe Wissensschicht wächst mit dir mit, statt sich bei jedem Neuladen zu wiederholen.</p>
   </div>
 </section>

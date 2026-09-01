@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://cyphomat.github.io/setlist/"><img alt="App öffnen" src="https://img.shields.io/badge/App-öffnen-e8a23d?style=for-the-badge&labelColor=17161b"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/Tests-442%20grün-7fa65c?style=for-the-badge&labelColor=17161b">
+  <img alt="Tests" src="https://img.shields.io/badge/Tests-460%20grün-7fa65c?style=for-the-badge&labelColor=17161b">
   <img alt="Build" src="https://img.shields.io/badge/Build-keiner-6f93ad?style=for-the-badge&labelColor=17161b">
   <img alt="Abhängigkeiten" src="https://img.shields.io/badge/Abhängigkeiten-0-a7a3ab?style=for-the-badge&labelColor=17161b">
 </p>
@@ -17,6 +17,12 @@
 <p align="center">
   <sub>100% vibe coded. Nutzung auf eigene Gefahr. Featurewünsche gerne gesehen.</sub>
 </p>
+
+<p align="center">
+  <b>Deutsch</b> · <a href="README.en.md">English</a> · <a href="CHANGELOG.md">Changelog</a>
+</p>
+
+> **Zur Sprache.** Die Oberfläche der App gibt es auf Deutsch und Englisch — umschaltbar unter **Tour → Backstage → Sprache**. Die *Trainingsinhalte* sind bisher nur deutsch: die Ansage vor der Einheit, Übungserklärungen, Cues, typische Fehler, Jam-Bewegungen und die Rad-Begründungen. Das ist Fachtext, der inhaltlich übersetzt werden muss statt Wort für Wort — deshalb ist er bewusst noch nicht angefasst. Im englischen Modus steht also gemischte Sprache auf dem Bildschirm.
 
 ---
 
@@ -122,6 +128,7 @@ Back Squat ist in beiden Workouts dabei und steigt darum doppelt so schnell.
 | **Sound und Vibration** | Ton bei Pausenende und Einheitsabschluss, zusätzlich zur Vibration — Ton respektiert den Stumm-Schalter, Vibration nicht. |
 | **Hell und dunkel** | Umschalter System / Hell / Dunkel. Zwei echte Fassungen, keine Invertierung. |
 | **Handy und Mac** | Ab 900 px zwei Spalten, in der Tour breitere Raster — dieselbe Reihenfolge, kein Umbau. |
+| **Deutsch und Englisch** | Oberflächensprache unter Backstage umschaltbar. Trainingsinhalte bleiben vorerst deutsch. |
 
 ### Bibliothek
 
@@ -209,6 +216,7 @@ Fertig. Die erste Einheit legt `state.json` automatisch an; alles danach ist Abl
 | `js/stats.js` | Tonnage, Bestwerte, Sparklines, Radstatistik. |
 | `js/content.js` | Wissensschicht: Cues, Soundcheck, Technik, Encore, Stimme. |
 | `js/bibliothek.js` | Bündelt alle Übungen zu einer durchsuchbaren Liste. |
+| `js/i18n.js` | Oberflächentexte auf Deutsch und Englisch. |
 | `js/store.js` | GitHub-API als Speicher, Offline-Puffer. |
 | `js/intervals.js` | Liest Fahrten und Form; schreibt Krafteinheiten zurück. |
 | `js/app.js` | Oberfläche und Ablauf. |
@@ -220,10 +228,10 @@ Fertig. Die erste Einheit legt `state.json` automatisch an; alles danach ist Abl
 
 ```sh
 JSC=/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc
-for t in program coach wod stats intervals bibliothek; do $JSC --module-file=tests/$t.test.js; done
+for t in program coach wod stats intervals bibliothek i18n; do $JSC --module-file=tests/$t.test.js; done
 ```
 
-442 Tests, ausgeführt von der JS-Engine, die in macOS ohnehin steckt. Kein Node, kein Build.
+460 Tests, ausgeführt von der JS-Engine, die in macOS ohnehin steckt. Kein Node, kein Build.
 
 ---
 

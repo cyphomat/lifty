@@ -6,6 +6,7 @@ import { LIFT_INFO, WARMUP, SKILL, MOBILITY, FINISHER, RIDE_INFO } from './conte
 import * as WOD from './wod.js';
 import * as ST from './stats.js';
 import * as B from './bibliothek.js';
+import { t, locale, sprache, setSprache, uebersetzeStatisch } from './i18n.js';
 
 let config = null, state = null, stateSha = null, session = null;
 let ridesByDate = new Map(), letzterLog = null, trend = null;
@@ -35,6 +36,9 @@ let bibliothek = {};            // eigene Notizen/Videos je Uebung, aus biblioth
 let bibZufall = null, bibKategorie = null;
 
 const $ = id => document.getElementById(id);
+// Feste Beschriftungen sofort in der gewaehlten Sprache — vor dem ersten
+// Rendern, damit nichts kurz auf Deutsch aufblitzt.
+uebersetzeStatisch();
 const VERSION_KEY = 'setlist.version';
 let laufendeVersion = localStorage.getItem(VERSION_KEY) || '—';
 const VIEWS = ['setup', 'home', 'session', 'wod', 'maxout', 'done', 'history', 'bibliothek'];
@@ -60,7 +64,7 @@ async function load() {
       S.readFile('config.json'), S.readFile('state.json'), S.readFile('stimme.json'), S.readFile('bibliothek.json')
     ]);
     stimme = sti ? sti.data : null;
-    if (!c) throw new Error('config.json fehlt in setlist-data.');
+    if (!c) throw new Error(t('msg.configFehlt', { repo: S.getRepo() }));
     config = c.data;
     state = st ? st.data : P.initialState(config);
     stateSha = st ? st.sha : null;
@@ -73,7 +77,7 @@ async function load() {
       config = c.config; state = c.state; stimme = c.stimme || null; stateSha = null;
       bibliothek = c.bibliothek || {};
       datenQuelle = 'cache';
-      banner('OFFLINE — LETZTER STAND', '', 4000);
+      banner(t('msg.offline'), '', 4000);
     } else {
       banner(e.message, 'err', 9000);
       return show('setup');
@@ -102,11 +106,11 @@ async function load() {
 /** Nur Beiwerk: Fehler hier duerfen die App nie blockieren — aber sichtbar sein. */
 async function loadIntervals() {
   if (!ICU.isConfigured()) {
-    icu = { stand: 'aus', text: 'Nicht verbunden.' };
+    icu = { stand: 'aus', text: t('conn.icu.aus') };
     renderIcuStatus();
     return;
   }
-  icu = { stand: 'laedt', text: 'Lade…' };
+  icu = { stand: 'laedt', text: t('tour.laedt') };
   renderIcuStatus();
   await verarbeiteIcuQueue();
 
@@ -164,28 +168,27 @@ function renderIcuStatus() {
   if (!el) return;
 
   if (icu.stand === 'aus') {
-    el.innerHTML = `<p class="fine">Radeinheiten werden nicht abgeglichen —
-      intervals.icu ist nicht verbunden. Unter ≡ eintragen.</p>`;
+    el.innerHTML = `<p class="fine">${t('icu.aus')}</p>`;
     return;
   }
-  if (icu.stand === 'laedt') { el.innerHTML = '<p class="fine">Frage intervals.icu ab…</p>'; return; }
+  if (icu.stand === 'laedt') { el.innerHTML = `<p class="fine">${t('icu.laedt')}</p>`; return; }
   if (icu.stand === 'fehler') {
     el.innerHTML = `<p class="fine" style="color:var(--rot)">intervals.icu: ${icu.text}</p>`;
     return;
   }
 
   if (!icu.letzte) {
-    el.innerHTML = `<p class="fine">Keine Radeinheit in den letzten 90 Tagen.
-      Die Anbindung funktioniert — es gibt schlicht nichts abzugleichen.</p>`;
+    el.innerHTML = `<p class="fine">${t('icu.keineFahrten')}</p>`;
     return;
   }
   const tage = C.daysSince(icu.letzte.date, new Date());
   const lange = tage > 21;
+  const wann = tage === 0 ? t('icu.heute') : tage === 1 ? t('icu.einTag') : t('icu.tage', { n: tage });
   el.innerHTML = `<p class="fine">
-    ${tage === 0 ? 'Zuletzt gefahren' : 'Letzte Fahrt vor'} <b class="num" style="color:${lange ? 'var(--rost)' : 'var(--akzent)'}">${tage === 0 ? 'heute' : tage === 1 ? '1 Tag' : `${tage} Tagen`}</b>
+    ${tage === 0 ? t('icu.zuletzt') : t('icu.davor')} <b class="num" style="color:${lange ? 'var(--rost)' : 'var(--akzent)'}">${wann}</b>
     — ${icu.letzte.name} · ${icu.letzte.minutes} Min · ${icu.letzte.km} km.
-    ${icu.anzahl} Fahrt${icu.anzahl === 1 ? '' : 'en'} in 90 Tagen.
-    ${lange ? '<br>Das Rad ruht länger als das Eisen. Eine ruhige Stunde in Zone 2 kostet dich keine Erholung für den Beintag.' : ''}
+    ${t(icu.anzahl === 1 ? 'icu.fahrtenIn90' : 'icu.fahrtenIn90.mehr', { n: icu.anzahl })}
+    ${lange ? `<br>${t('icu.radRuht')}` : ''}
   </p>`;
 }
 
@@ -198,10 +201,10 @@ function renderConnections() {
       <span class="b"><span class="n">${name}</span><span class="s">${text}</span></span>
     </div>`;
   const gh = datenQuelle === 'netz'
-    ? ['ok', 'Verbunden mit setlist-data.']
+    ? ['ok', t('conn.gh.ok', { repo: S.getRepo() })]
     : datenQuelle === 'cache'
-      ? ['aus', 'Zeigt zwischengespeicherte Daten — der letzte Abruf ist fehlgeschlagen.']
-      : ['fehler', 'Keine Verbindung zu deinen Daten.'];
+      ? ['aus', t('conn.gh.cache')]
+      : ['fehler', t('conn.gh.fehler')];
 
   const n = icu.anzahl;
   const push = ICU.pushAktiv();
@@ -209,27 +212,25 @@ function renderConnections() {
     zeile('GitHub', gh[0], gh[1]) +
     zeile('intervals.icu', icu.stand === 'laedt' ? 'aus' : (icu.stand === 'ok' ? 'ok' : icu.stand),
       icu.stand === 'ok'
-        ? `${n} ${n === 1 ? 'Fahrt' : 'Fahrten'} in 90 Tagen${icu.letzte ? `, zuletzt ${icu.letzte.date}` : ''}.`
-        : icu.stand === 'fehler' ? icu.text : 'Nicht verbunden — Key unten eintragen.') +
+        ? `${t(n === 1 ? 'conn.icu.ok' : 'conn.icu.ok.mehr', { n })}${icu.letzte ? t('conn.icu.zuletzt', { datum: icu.letzte.date }) : ''}.`
+        : icu.stand === 'fehler' ? icu.text : t('conn.icu.aus')) +
     `<div class="conn">
        <span class="dot ${push && icu.stand === 'ok' ? 'ok' : 'aus'}"></span>
        <span class="b">
-         <span class="n">Kraft → intervals.icu</span>
+         <span class="n">${t('conn.push.name')}</span>
          <span class="s">${icu.stand === 'ok'
-           ? (push
-             ? 'Neue Krafteinheiten und WODs werden dort als Aktivität eingetragen. Trainingslast geschätzt aus der Dauer.'
-             : 'Aus. Einschalten, damit dein Eisen in derselben Kurve landet wie dein Rad.')
-           : 'Braucht erst eine Verbindung zu intervals.icu.'}</span>
+           ? (push ? t('conn.push.an') : t('conn.push.aus'))
+           : t('conn.push.ohne')}</span>
          <label class="schalter">
            <input type="checkbox" id="icu-push" ${push ? 'checked' : ''} ${icu.stand === 'ok' ? '' : 'disabled'}>
-           <span>Übertragung aktiv</span>
+           <span>${t('conn.push.schalter')}</span>
          </label>
        </span>
      </div>`;
   const cb = $('icu-push');
   if (cb) cb.onchange = () => {
     ICU.setPushAktiv(cb.checked);
-    banner(cb.checked ? 'ÜBERTRAGUNG AN' : 'ÜBERTRAGUNG AUS', 'ok');
+    banner(t(cb.checked ? 'conn.push.an.banner' : 'conn.push.aus.banner'), 'ok');
     renderConnections();
   };
 }
@@ -254,12 +255,12 @@ function renderHome() {
   const plan = P.planWorkout(state, config, gewaehlt);
   $('swap-workout').textContent = `Workout ${gewaehlt === 'A' ? 'B' : 'A'}`;
   $('today').innerHTML = `
-    <div class="kicker">${workoutOverride ? 'Selbst gewählt' : 'Als Nächstes'}</div>
+    <div class="kicker">${t(workoutOverride ? 'home.selbstGewaehlt' : 'home.alsNaechstes')}</div>
     <div class="name neon">WORKOUT ${plan.workout}</div>
     <ul>${plan.lifts.map(l => `
       <li><span>${l.name} <span class="num">${l.sets}×${l.reps}</span></span><span>${P.fmtWeight(l.weight)}</span></li>
     `).join('')}</ul>
-    <button id="start" class="btn">Training starten</button>`;
+    <button id="start" class="btn">${t('home.starten')}</button>`;
   $('start').onclick = startSession;
 
   const motto = config.motto;
@@ -274,12 +275,12 @@ function renderProgress(f, streak) {
   const pct = Math.round(f.gesamt * 100);
   $('progress').innerHTML = `
     <div class="card">
-      <div class="kicker">Zurück zu deinen alten Arbeitsgewichten</div>
+      <div class="kicker">${t('home.fortschritt.kicker')}</div>
       <div class="name">${pct}<span style="font-size:20px">%</span></div>
       <div class="bar gruen"><i style="width:${pct}%"></i></div>
-      <p class="fine">Gemittelt über alle fünf Übungen. ${streak > 0
-        ? `<b style="color:var(--gruen)">${streak} Woche${streak === 1 ? '' : 'n'} am Stück.</b>`
-        : 'Noch keine laufende Serie — die erste Einheit startet sie.'}</p>
+      <p class="fine">${t('home.fortschritt.fine')} ${streak > 0
+        ? `<b style="color:var(--gruen)">${t(streak === 1 ? 'home.fortschritt.serie' : 'home.fortschritt.serien', { n: streak })}</b>`
+        : t('home.fortschritt.keineSerie')}</p>
     </div>`;
 }
 
@@ -290,9 +291,9 @@ function renderWeights(f) {
     return `<div class="w">
       <div class="n">${def.name}</div>
       <div class="v">${P.fmtWeight(s.weight)}</div>
-      ${s.fails ? `<div class="f">${s.fails}× offen</div>` : ''}
+      ${s.fails ? `<div class="f">${t('home.offen', { n: s.fails })}</div>` : ''}
       ${anteil !== null ? `<div class="mini"><i style="width:${anteil}%"></i></div>
-        <div class="f" style="color:var(--dim)">${anteil}% von ${def.reference} kg</div>` : ''}
+        <div class="f" style="color:var(--dim)">${t('home.vonReferenz', { p: anteil, kg: def.reference })}</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -311,9 +312,9 @@ function renderWeek() {
             : s.detail + wattZiel(s.label)}</span>
         </span>
       </div>
-      ${info && !done ? `<details class="info"><summary>Warum diese Einheit</summary>
+      ${info && !done ? `<details class="info"><summary>${t('home.warumEinheit')}</summary>
         <div class="body"><p>${info.warum}</p>
-        <div class="kv"><span class="k">ACHTUNG</span><span class="v">${info.achtung}</span></div></div></details>` : ''}`;
+        <div class="kv"><span class="k">${t('home.achtung')}</span><span class="v">${info.achtung}</span></div></div></details>` : ''}`;
   }).join('');
 }
 
@@ -328,9 +329,9 @@ function renderBodyTrend() {
     : null;
 
   $('body-trend').innerHTML = `
-    <h2>Körpergewicht</h2>
+    <h2>${t('tour.koerpergewicht')}</h2>
     <div class="card">
-      <div class="kicker">Aus intervals.icu · ${trend.n} Messungen</div>
+      <div class="kicker">${t('gew.kicker', { n: trend.n })}</div>
       <div class="name">${trend.aktuell}<span style="font-size:20px"> kg</span></div>
       ${punkte ? `<svg viewBox="0 0 300 56" preserveAspectRatio="none" aria-hidden="true"
             style="display:block;width:100%;height:56px;margin-top:10px;overflow:visible">
@@ -342,9 +343,8 @@ function renderBodyTrend() {
           <span class="kicker">${punkte.min} kg</span><span class="kicker">${punkte.max} kg</span>
         </div>` : ''}
       ${trend.delta !== null ? `<p class="fine" style="color:${runter ? 'var(--gruen)' : 'var(--rost)'}">
-        ${trend.delta > 0 ? '+' : ''}${trend.delta} kg im Zeitraum.
-        ${runter ? 'Richtung stimmt. Solange die Gewichte auf der Stange steigen, verlierst du Fett und keine Muskeln — genau das ist das Ziel.'
-                 : 'Nach oben. Kein Drama, solange die Kraftwerte mitziehen — sonst nachjustieren.'}</p>` : ''}
+        ${t('gew.delta', { d: `${trend.delta > 0 ? '+' : ''}${trend.delta}` })}
+        ${t(runter ? 'gew.runter' : 'gew.hoch')}</p>` : ''}
     </div>`;
 }
 
@@ -369,34 +369,34 @@ function startSession() {
   const skill = C.tagesAuswahl(SKILL, new Date(), 'skill');
   const mobility = C.mobilityDran(state) ? C.tagesAuswahl(MOBILITY, new Date(), 'mob') : null;
   $('warmup').innerHTML = `
-    <details class="info" open><summary>Soundcheck — nicht überspringen</summary>
+    <details class="info" open><summary>${t('ses.soundcheck')}</summary>
       <div class="body">
         ${WARMUP.allgemein.concat(WARMUP[plan.workout]).map((w, i) =>
           `<label class="kv check"><input type="checkbox" data-w="${i}">
             <span class="k">${w.t}</span><span class="v"><b>${w.was}</b> — ${w.detail}</span></label>`).join('')}
       </div>
     </details>
-    <details class="info"><summary>Aufwärmsätze mit Scheiben</summary>
+    <details class="info"><summary>${t('ses.waermsaetze')}</summary>
       <div class="body">
         ${plan.lifts.map(l => `
           <p class="tagline" style="margin:12px 0 4px"><b>${l.name}</b> → ${P.fmtWeight(l.weight)}</p>
           ${P.waermsaetze(l.weight, config).map(w => {
-            const t = P.plattenText(w.weight, config);
+            const pt = P.plattenText(w.weight, config);
             return `<div class="kv">
-              <span class="k">${w.saetze > 1 ? w.saetze + '×' : ''}${w.reps} Wdh</span>
-              <span class="v"><b>${P.fmtWeight(w.weight)}</b>${t ? ` — ${t}` : ''}</span></div>`;
+              <span class="k">${w.saetze > 1 ? w.saetze + '×' : ''}${t('ses.wdh', { n: w.reps })}</span>
+              <span class="v"><b>${P.fmtWeight(w.weight)}</b>${pt ? ` — ${pt}` : ''}</span></div>`;
           }).join('')}`).join('')}
-        <p style="color:var(--dim);margin-top:12px">Scheibenangaben gelten pro Seite, ausgehend von einer ${config.bar}-kg-Stange.</p>
+        <p style="color:var(--dim);margin-top:12px">${t('ses.scheibenHinweis', { kg: config.bar })}</p>
       </div>
     </details>
-    <details class="info"><summary>Technik aus dem Gewichtheben — ${skill.name}</summary>
+    <details class="info"><summary>${t('ses.technik', { name: skill.name })}</summary>
       <div class="body">
         <p class="tagline"><b>${skill.name}</b> · ${skill.dosis}</p>
         <p>${skill.warum}</p>
-        <p style="color:var(--dim)">Leicht bleiben. Das ist Auffrischung, kein zweites Training — es darf die Sätze danach nicht kosten.</p>
+        <p style="color:var(--dim)">${t('ses.technikHinweis')}</p>
       </div>
     </details>
-    ${mobility ? `<details class="info"><summary>Mobility — ${mobility.name}</summary>
+    ${mobility ? `<details class="info"><summary>${t('ses.mobility', { name: mobility.name })}</summary>
       <div class="body">
         <p class="tagline"><b>${mobility.name}</b> · ${mobility.dosis}</p>
         <p>${mobility.warum}</p>
@@ -408,11 +408,11 @@ function startSession() {
 
   const fin = C.tagesAuswahl(FINISHER, new Date(), 'fin');
   $('finisher').innerHTML = `
-    <details class="info"><summary>Encore — ${fin.name}</summary>
+    <details class="info"><summary>${t('ses.encore', { name: fin.name })}</summary>
       <div class="body">
         <p class="tagline"><b>${fin.name}</b> · ${fin.dosis}</p>
         <p>${fin.warum}</p>
-        <p style="color:var(--dim)">Immer nach dem Eisen, nie davor. Sonst frisst die Kondition die Progression.</p>
+        <p style="color:var(--dim)">${t('ses.encoreHinweis')}</p>
       </div>
     </details>`;
 
@@ -426,13 +426,13 @@ function renderSession() {
     return `<div class="lift">
       <div class="bar-head"><span class="ln">${i.tag || l.name}</span>
         <span class="wadj">
-          <button data-w="${li}" data-d="-1" aria-label="leichter">−</button>
+          <button data-w="${li}" data-d="-1" aria-label="${t('ses.leichter')}">−</button>
           <span class="lw">${P.fmtWeight(l.weight)}</span>
-          <button data-w="${li}" data-d="1" aria-label="schwerer">+</button>
+          <button data-w="${li}" data-d="1" aria-label="${t('ses.schwerer')}">+</button>
         </span></div>
       ${plattenZeile(l.weight)}
       ${l.weight !== l.planWeight
-        ? `<p class="cue geaendert">Angepasst von ${P.fmtWeight(l.planWeight)} — so wird es protokolliert, und die Progression rechnet ab hier weiter.</p>`
+        ? `<p class="cue geaendert">${t('ses.angepasst', { kg: P.fmtWeight(l.planWeight) })}</p>`
         : (i.kadenz ? `<p class="cue">${i.kadenz}</p>` : '')}
       <div class="sets">
         ${Array.from({ length: l.sets }, (_, si) => {
@@ -441,16 +441,16 @@ function renderSession() {
           return `<button class="set ${cls}" data-l="${li}" data-s="${si}">${r === undefined ? l.reps : r}</button>`;
         }).join('')}
       </div>
-      <details class="info"><summary>Warum ${l.name}</summary>
+      <details class="info"><summary>${t('ses.warum', { name: l.name })}</summary>
         <div class="body">
           <p>${i.warum || ''}</p>
-          <div class="kv"><span class="k">CUE</span><span class="v">${i.cue || ''}</span></div>
-          <div class="kv"><span class="k">FEHLER</span><span class="v">${i.fehler || ''}</span></div>
+          <div class="kv"><span class="k">${t('ses.cue')}</span><span class="v">${i.cue || ''}</span></div>
+          <div class="kv"><span class="k">${t('ses.fehler')}</span><span class="v">${i.fehler || ''}</span></div>
           ${i.oly ? `<div class="kv"><span class="k">OLY</span><span class="v">${i.oly}</span></div>` : ''}
         </div>
       </details>
     </div>`;
-  }).join('') + `<p class="fine">Tippen = ${session.lifts[0].reps} Wiederholungen geschafft. Lange drücken, wenn es weniger waren.</p>`;
+  }).join('') + `<p class="fine">${t('ses.tippHinweis', { n: session.lifts[0].reps })}</p>`;
 
   $('session-body').querySelectorAll('.set').forEach(bindSet);
   $('session-body').querySelectorAll('.wadj button').forEach(b => {
@@ -496,7 +496,7 @@ function openPicker(li, si) {
   // Wiederholungen ist eine Information, die man nicht wegwerfen sollte —
   // das geschaetzte Maximum lebt davon.
   const max = config.repMax || 12;
-  $('picker-title').textContent = `${l.name} · Satz ${si + 1} · Ziel ${l.reps}`;
+  $('picker-title').textContent = t('ses.picker', { name: l.name, n: si + 1, ziel: l.reps });
   $('picker-opts').innerHTML = Array.from({ length: max + 1 }, (_, n) =>
     `<button data-n="${n}" class="${n === l.reps ? 'ziel' : n > l.reps ? 'mehr' : ''}">${n}</button>`).join('');
   $('picker-opts').querySelectorAll('button').forEach(b => {
@@ -537,7 +537,7 @@ function startRest(seconds) {
   clearInterval(restTimer);
   restTimer = setInterval(() => {
     restLeft--;
-    $('rest-time').textContent = restLeft > 0 ? restLeft : 'LOS';
+    $('rest-time').textContent = restLeft > 0 ? restLeft : t('ses.los');
     if (restLeft <= 0) {
       clearInterval(restTimer);
       if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
@@ -551,7 +551,7 @@ const stopRest = () => { clearInterval(restTimer); $('rest').hidden = true; };
 /** Pause im Lauf verstellen — 90 Sekunden passen nicht zu jedem Satz. */
 function verstellePause(delta) {
   restLeft = Math.max(0, restLeft + delta);
-  $('rest-time').textContent = restLeft > 0 ? restLeft : 'LOS';
+  $('rest-time').textContent = restLeft > 0 ? restLeft : t('ses.los');
 }
 
 async function finishSession() {
@@ -576,9 +576,9 @@ async function finishSession() {
   toene([660, 880]);
   try {
     letzterLogPfad = await commit(log);
-    banner('GESPEICHERT', 'ok');
+    banner(t('msg.gespeichert'), 'ok');
     if (ICU.pushAktiv() && ICU.isConfigured()) ICU.queuePush(log);
-  } catch { S.queue(log); banner('KEIN NETZ — WIRD NACHGETRAGEN', '', 6000); }
+  } catch { S.queue(log); banner(t('msg.keinNetz'), '', 6000); }
   aktiviereGefuehlChips();
   session = null;
   workoutOverride = null;
@@ -598,8 +598,8 @@ async function commit(log) {
 async function flushQueue() {
   const q = S.pending();
   if (!q.length) return;
-  try { for (const log of q) await commit(log); S.clearQueue(); banner(`${q.length} NACHGETRAGEN`, 'ok'); }
-  catch { banner(`${q.length} EINHEIT(EN) WARTEN`, '', 5000); }
+  try { for (const log of q) await commit(log); S.clearQueue(); banner(t('msg.nachgetragen', { n: q.length }), 'ok'); }
+  catch { banner(t('msg.warten', { n: q.length }), '', 5000); }
 }
 
 function renderDone(before, log) {
@@ -616,11 +616,11 @@ function renderDone(before, log) {
       <p class="gross">${kopf.text}</p>
     </div>` : ''}
     ${rest.length ? `<div class="erfolge">${rest.map(w => `<div class="erfolg">${w.text}</div>`).join('')}</div>` : ''}
-    <details class="info"><summary>Was sich geändert hat</summary>
+    <details class="info"><summary>${t('done.geaendert')}</summary>
       <div class="body">
         ${log.lifts.map(e => {
           const b = before.lifts[e.lift].weight, a = state.lifts[e.lift].weight;
-          const txt = a > b ? `${P.fmtWeight(a)} ▲` : a < b ? `${P.fmtWeight(a)} ▼ Deload` : 'bleibt';
+          const txt = a > b ? `${P.fmtWeight(a)} ▲` : a < b ? `${P.fmtWeight(a)} ▼ Deload` : t('done.bleibt');
           return `<div class="kv"><span class="k">${e.success ? '✓' : '✕'}</span>
             <span class="v">${config.lifts[e.lift].name} — ${txt}</span></div>`;
         }).join('')}
@@ -628,16 +628,16 @@ function renderDone(before, log) {
     </details>
     <p class="spruch">${zeileFuerHeute(d)}</p>
     <div class="gefuehl">
-      <p class="tagline">Wie hat sich das angefühlt?</p>
+      <p class="tagline">${t('done.gefuehlFrage')}</p>
       <div class="chips" id="gefuehl-chips">
         ${['leicht', 'normal', 'hart', 'extrem'].map(g =>
-          `<button data-g="${g}" disabled>${GEFUEHL_LABEL[g]}</button>`).join('')}
+          `<button data-g="${g}" disabled>${gefuehlLabel(g)}</button>`).join('')}
       </div>
     </div>
-    <p class="fine">Nächstes Mal: Workout ${state.next}.${d.streak > 0 ? ` Serie: ${d.streak} Woche${d.streak === 1 ? '' : 'n'}.` : ''}</p>`;
+    <p class="fine">${t('done.naechstes', { w: state.next })}${d.streak > 0 ? t(d.streak === 1 ? 'done.serie' : 'done.serien', { n: d.streak }) : ''}</p>`;
 }
 
-const GEFUEHL_LABEL = { leicht: 'Leicht', normal: 'Normal', hart: 'Hart', extrem: 'Extrem schwer' };
+const gefuehlLabel = g => t(`gefuehl.${g}`);
 let letzterLogPfad = null;   // Pfad der zuletzt gespeicherten Einheit, fuer das Gefuehl danach
 
 /** Erst tippbar, wenn die Einheit wirklich gespeichert ist — sonst
@@ -666,7 +666,7 @@ async function waehleGefuehl(wert) {
     await S.writeFile(letzterLogPfad, log, `Gefühl: ${wert}`, cur.sha);
     if (letzterLog) letzterLog.gefuehlt = wert;
   } catch (e) {
-    banner(`GEFÜHL NICHT GESPEICHERT: ${e.message}`, 'err', 5000);
+    banner(t('msg.gefuehlFehler', { msg: e.message }), 'err', 5000);
   }
 }
 
@@ -690,8 +690,7 @@ async function renderHistory() {
     $('hist-form').innerHTML = '';
     $('hist-charts').innerHTML = '';
     $('history-body').innerHTML =
-      `<p class="lead">Noch keine Verbindung zu deinen Daten. Prüfe den GitHub-Token
-       unter „Zugänge entfernen“ und richte ihn neu ein.</p>`;
+      `<p class="lead">${t('tour.keineVerbindung')}</p>`;
     return;
   }
   $('hist-summary').innerHTML = '';
@@ -704,7 +703,7 @@ async function renderHistory() {
   $('hist-form').innerHTML = '';
   $('hist-charts').innerHTML = '';
   $('hist-rad').innerHTML = '';
-  $('history-body').innerHTML = '<p class="lead">Lade…</p>';
+  $('history-body').innerHTML = `<p class="lead">${t('tour.laedt')}</p>`;
   try {
     const logs = await S.readAllLogs();
     alleLogs = logs;
@@ -736,20 +735,20 @@ async function renderHistory() {
       renderCharts(alt.logs);
       renderRad();
       renderListe(alt.logs);
-      banner('OFFLINE — STAND VOM ' + new Date(alt.zeit).toLocaleDateString('de-DE'), '', 5000);
+      banner(t('msg.offlineStand', { datum: new Date(alt.zeit).toLocaleDateString(locale()) }), '', 5000);
     } else {
       $('history-body').innerHTML = `<p class="lead">${e.message}</p>`;
     }
     $('history-body').insertAdjacentHTML('beforeend',
-      '<button id="hist-retry" class="btn ghost">Erneut versuchen</button>');
+      `<button id="hist-retry" class="btn ghost">${t('tour.erneut')}</button>`);
     $('hist-retry').onclick = renderHistory;
   }
 }
 
 async function rebuild() {
-  if (!confirm('state.json vollständig aus allen Log-Dateien neu berechnen?')) return;
+  if (!confirm(t('bs.rebuildFrage'))) return;
   try {
-    banner('BERECHNE NEU…', '', 0);
+    banner(t('msg.berechne'), '', 0);
     const logs = await S.readAllLogs();
     state = P.deriveState(config, logs);
     letzterLog = logs.length ? logs.sort((a, b) => a.date.localeCompare(b.date))[logs.length - 1] : null;
@@ -757,7 +756,7 @@ async function rebuild() {
     await S.writeFile('state.json', state, `Neuberechnung aus ${logs.length} Einheiten`, cur ? cur.sha : null);
     S.cache({ state });
     renderHome();
-    banner(`NEU BERECHNET · ${logs.length} EINHEITEN`, 'ok');
+    banner(t('msg.neuBerechnet', { n: logs.length }), 'ok');
   } catch (e) { banner(e.message, 'err', 8000); }
 }
 
@@ -765,15 +764,15 @@ async function rebuild() {
 
 $('save-token').onclick = async () => {
   const owner = $('owner').value.trim();
-  if (!owner) return banner('GITHUB-NUTZERNAME FEHLT', 'err');
-  const t = $('token').value.trim();
-  if (!t) return banner('GITHUB-TOKEN FEHLT', 'err');
+  if (!owner) return banner(t('msg.ownerFehlt'), 'err');
+  const tok = $('token').value.trim();
+  if (!tok) return banner(t('msg.tokenFehlt'), 'err');
   S.setRepo(owner, $('repo').value.trim());
-  S.setToken(t);
+  S.setToken(tok);
   const k = $('icukey').value.trim();
   if (k) {
     ICU.setCreds('', k);
-    try { const me = await ICU.resolveAthlete(); if (me) banner(`INTERVALS.ICU: ${me.name}`, 'ok'); }
+    try { const me = await ICU.resolveAthlete(); if (me) banner(t('msg.icuName', { name: me.name }), 'ok'); }
     catch (e) { ICU.clearCreds(); banner(e.message, 'err', 6000); }
   }
   load();
@@ -804,11 +803,11 @@ $('bib-back').onclick = () => show('home');
 $('bib-suche').oninput = renderBibliothek;
 $('rebuild').onclick = rebuild;
 $('logout').onclick = () => {
-  if (!confirm('Token und Key aus diesem Browser entfernen?')) return;
+  if (!confirm(t('bs.logoutFrage'))) return;
   S.clearToken(); S.clearRepo(); ICU.clearCreds(); location.reload();
 };
 $('finish').onclick = finishSession;
-$('abort').onclick = () => { if (confirm('Einheit verwerfen?')) { stopRest(); session = null; show('home'); } };
+$('abort').onclick = () => { if (confirm(t('ses.verwerfen'))) { stopRest(); session = null; show('home'); } };
 $('done-ok').onclick = () => { renderHome(); show('home'); };
 $('rest-skip').onclick = stopRest;
 /**
@@ -829,18 +828,18 @@ async function pruefeVersion(manuell = false) {
       // Zuerst merken, dann neu laden — sonst droht eine Endlosschleife.
       localStorage.setItem(VERSION_KEY, version);
       await leereCaches();
-      banner('NEUE VERSION — LADE NEU', 'ok', 0);
+      banner(t('msg.neueVersion'), 'ok', 0);
       setTimeout(() => location.reload(), 800);
       return;
     }
     localStorage.setItem(VERSION_KEY, version);
     if (manuell) {
       await leereCaches();
-      banner(`AKTUELL · ${version}`, 'ok');
+      banner(t('msg.aktuell', { v: version }), 'ok');
       renderVersion();
     }
   } catch {
-    if (manuell) banner('KEIN NETZ — VERSION NICHT PRÜFBAR', 'err', 5000);
+    if (manuell) banner(t('msg.versionUnpruefbar'), 'err', 5000);
   }
 }
 
@@ -858,20 +857,18 @@ async function leereCaches() {
 }
 
 function renderVersion() {
-  $('version-box').innerHTML = `<p class="fine" style="margin:0 0 6px">
-    Version <b class="num" style="color:var(--akzent)">${laufendeVersion}</b> ·
-    Updates kommen beim nächsten Start von allein.</p>`;
+  $('version-box').innerHTML = `<p class="fine" style="margin:0 0 6px">${t('bs.version', { v: laufendeVersion })}</p>`;
 }
 
 $('force-update').onclick = () => pruefeVersion(true);
 $('icu-save').onclick = async () => {
   const k = $('icukey2').value.trim();
-  if (!k) return banner('KEY FEHLT', 'err');
+  if (!k) return banner(t('msg.keyFehlt'), 'err');
   ICU.setCreds('', k);
   try {
     const me = await ICU.resolveAthlete();
     $('icukey2').value = '';
-    banner(`INTERVALS.ICU: ${me ? me.name : 'verbunden'}`, 'ok');
+    banner(t('msg.icuName', { name: me ? me.name : t('msg.icuVerbunden') }), 'ok');
     await loadIntervals();
     renderConnections();
   } catch (e) {
@@ -887,7 +884,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catc
 pruefeVersion();
 if (S.getToken()) {
   show('home');
-  $('today').innerHTML = '<div class="kicker">Verbinde</div><div class="name neon">···</div>';
+  $('today').innerHTML = `<div class="kicker">${t('home.verbinde')}</div><div class="name neon">···</div>`;
   load();
 } else show('setup');
 
@@ -909,29 +906,28 @@ function renderWod() {
   const mobility = C.mobilityDran(state) ? C.tagesAuswahl(MOBILITY, new Date(), 'mob') : null;
   $('wod-body').innerHTML = `
     <div class="card">
-      <div class="kicker">${wod.dauer ? `${wod.dauer} Minuten` : wod.runden > 1 ? `${wod.runden} Runden` : 'Auf Zeit'}</div>
+      <div class="kicker">${wod.dauer ? t('wod.minuten', { n: wod.dauer }) : wod.runden > 1 ? t('wod.runden', { n: wod.runden }) : t('wod.aufZeit')}</div>
       <div class="wod-format">${wod.format.toUpperCase()}</div>
       <p class="txt" style="color:var(--muted);margin:0 0 6px">${wod.beschreibung}</p>
-      ${wod.teile.map(t => `
+      ${wod.teile.map(teil => `
         <div class="wod-teil">
-          <span class="menge">${t.menge ? `${t.menge} ${t.einheit}` : '20/10'}</span>
-          <span class="bez"><b>${t.name}</b>
-            ${t.last ? `<span class="last">${P.fmtWeight(t.last)}</span>` : ''}
-            <span class="c">${t.cue}</span>
-            <details class="skal"><summary>Was das bringt</summary>
-              ${t.erklaerung ? `<p class="erkl">${t.erklaerung}</p>` : ''}
-              ${t.skalierung && t.skalierung.length ? `
-                <div class="skal-titel">Leichter</div>
-                <ul>${t.skalierung.map(x => `<li>${x}</li>`).join('')}</ul>` : ''}
-              <button class="raus" data-raus="${t.id}" data-name="${t.name}">Kann ich nicht</button>
+          <span class="menge">${teil.menge ? `${teil.menge} ${teil.einheit}` : '20/10'}</span>
+          <span class="bez"><b>${teil.name}</b>
+            ${teil.last ? `<span class="last">${P.fmtWeight(teil.last)}</span>` : ''}
+            <span class="c">${teil.cue}</span>
+            <details class="skal"><summary>${t('wod.wasDasBringt')}</summary>
+              ${teil.erklaerung ? `<p class="erkl">${teil.erklaerung}</p>` : ''}
+              ${teil.skalierung && teil.skalierung.length ? `
+                <div class="skal-titel">${t('wod.leichter')}</div>
+                <ul>${teil.skalierung.map(x => `<li>${x}</li>`).join('')}</ul>` : ''}
+              <button class="raus" data-raus="${teil.id}" data-name="${teil.name}">${t('wod.kannIchNicht')}</button>
             </details>
           </span>
         </div>`).join('')}
     </div>
-    <button id="sw-start" class="btn">${swLaeuft ? 'Läuft…' : 'Uhr starten'}</button>
-    <p class="fine">Nicht zufrieden? Oben rechts neu würfeln. Das WOD zählt nicht in die 5x5-Progression —
-    es taucht in der Historie auf, verschiebt aber weder deine Gewichte noch den A/B-Wechsel.</p>
-    ${mobility ? `<details class="info"><summary>Mobility — ${mobility.name}</summary>
+    <button id="sw-start" class="btn">${t(swLaeuft ? 'wod.laeuft' : 'wod.uhrStarten')}</button>
+    <p class="fine">${t('wod.fine')}</p>
+    ${mobility ? `<details class="info"><summary>${t('ses.mobility', { name: mobility.name })}</summary>
       <div class="body">
         <p class="tagline"><b>${mobility.name}</b> · ${mobility.dosis}</p>
         <p>${mobility.warum}</p>
@@ -947,7 +943,7 @@ function startUhr() {
   if (swLaeuft) return;
   swLaeuft = true;
   $('stopwatch').hidden = false;
-  $('sw-toggle').textContent = 'STOPP';
+  $('sw-toggle').textContent = t('wod.stopp');
   $('wod-finish').disabled = false;
   clearInterval(swTimer);
   swTimer = setInterval(() => {
@@ -960,7 +956,7 @@ function startUhr() {
 function stopUhr() {
   swLaeuft = false;
   clearInterval(swTimer);
-  $('sw-toggle').textContent = 'WEITER';
+  $('sw-toggle').textContent = t('wod.weiter');
   if (swSek === 0) $('stopwatch').hidden = true;
 }
 
@@ -982,16 +978,16 @@ async function wodAbschliessen() {
     <div class="card">
       <div class="kicker">${log.date} · WOD</div>
       <div class="name">${Math.floor(swSek / 60)}:${String(swSek % 60).padStart(2, '0')}</div>
-      <ul>${wod.teile.map(t => `<li><span>${t.name}</span><span>${t.menge ? `${t.menge} ${t.einheit}` : '20/10'}</span></li>`).join('')}</ul>
+      <ul>${wod.teile.map(teil => `<li><span>${teil.name}</span><span>${teil.menge ? `${teil.menge} ${teil.einheit}` : '20/10'}</span></li>`).join('')}</ul>
     </div>
-    <p class="spruch">Kondition kostet nichts, solange sie am Ende steht. Deine Gewichte sind unberührt.</p>`;
+    <p class="spruch">${t('wod.spruch')}</p>`;
   show('done');
   toene([660, 880]);
   try {
     await commitWod(log);
-    banner('GESPEICHERT', 'ok');
+    banner(t('msg.gespeichert'), 'ok');
     if (ICU.pushAktiv() && ICU.isConfigured()) ICU.queuePush(log);
-  } catch { S.queue(log); banner('KEIN NETZ — WIRD NACHGETRAGEN', '', 6000); }
+  } catch { S.queue(log); banner(t('msg.keinNetz'), '', 6000); }
   wod = null;
 }
 
@@ -1027,14 +1023,14 @@ function bibDetailHtml(u) {
   return `
     <div class="bib-detail" data-id="${u.id}">
       ${u.dosis ? `<p class="tagline"><b>${u.dosis}</b></p>` : ''}
-      ${u.aktuell ? `<div class="kv"><span class="k">Aktuell</span><span class="v">${u.aktuell}</span></div>` : ''}
+      ${u.aktuell ? `<div class="kv"><span class="k">${t('bib.aktuell')}</span><span class="v">${u.aktuell}</span></div>` : ''}
       ${u.info ? `<p>${u.info}</p>` : ''}
-      ${u.cue ? `<div class="kv"><span class="k">Cue</span><span class="v">${u.cue}</span></div>` : ''}
-      ${u.fehler ? `<div class="kv"><span class="k">Fehler</span><span class="v">${u.fehler}</span></div>` : ''}
-      <a class="bib-video" href="${video}" target="_blank" rel="noopener">Video ansehen ↗</a>
-      <textarea class="bib-notiz" rows="3" placeholder="Eigene Notiz…">${escHtml(eintrag.notiz)}</textarea>
-      <input class="bib-eigenesvideo" type="text" placeholder="Eigener YouTube-Link (optional)" value="${escHtml(eintrag.video)}">
-      <button class="btn ghost small bib-speichern">Notiz speichern</button>
+      ${u.cue ? `<div class="kv"><span class="k">${t('bib.cue')}</span><span class="v">${u.cue}</span></div>` : ''}
+      ${u.fehler ? `<div class="kv"><span class="k">${t('bib.fehler')}</span><span class="v">${u.fehler}</span></div>` : ''}
+      <a class="bib-video" href="${video}" target="_blank" rel="noopener">${t('bib.video')}</a>
+      <textarea class="bib-notiz" rows="3" placeholder="${t('bib.notiz.ph')}">${escHtml(eintrag.notiz)}</textarea>
+      <input class="bib-eigenesvideo" type="text" placeholder="${t('bib.eigenesVideo.ph')}" value="${escHtml(eintrag.video)}">
+      <button class="btn ghost small bib-speichern">${t('bib.speichern')}</button>
     </div>`;
 }
 
@@ -1044,7 +1040,7 @@ function renderBibliothek() {
 
   $('bib-kategorien').innerHTML = ['Alle', ...B.KATEGORIEN].map(k => {
     const aktiv = k === 'Alle' ? !bibKategorie : k === bibKategorie;
-    return `<button class="${aktiv ? 'an' : ''}" data-k="${k}">${k}</button>`;
+    return `<button class="${aktiv ? 'an' : ''}" data-k="${k}">${k === 'Alle' ? t('bib.alle') : k}</button>`;
   }).join('');
   $('bib-kategorien').querySelectorAll('button').forEach(b => {
     b.onclick = () => { bibKategorie = b.dataset.k === 'Alle' ? null : b.dataset.k; renderBibliothek(); };
@@ -1053,7 +1049,7 @@ function renderBibliothek() {
   if (!bibZufall) bibZufall = B.zufaellig(alle);
   $('bib-random').innerHTML = bibZufall ? `
     <div class="card">
-      <div class="kicker">Zufällig aus der Bibliothek · ${bibZufall.kategorie}</div>
+      <div class="kicker">${t('bib.zufaellig', { kat: bibZufall.kategorie })}</div>
       <div class="name">${bibZufall.name}</div>
       ${bibDetailHtml(bibZufall)}
     </div>` : '';
@@ -1063,7 +1059,7 @@ function renderBibliothek() {
       <details class="info"><summary>${u.name}<span class="bib-kat">${u.kategorie}</span></summary>
         <div class="body">${bibDetailHtml(u)}</div>
       </details>`).join('')
-    : '<p class="fine">Keine Übung gefunden.</p>';
+    : `<p class="fine">${t('bib.keine')}</p>`;
 
   document.querySelectorAll('.bib-detail .bib-speichern').forEach(btn => {
     btn.onclick = () => {
@@ -1086,9 +1082,9 @@ async function speichereBibNotiz(id, notiz, video) {
     await S.writeFile('bibliothek.json', aktuell, `Notiz: ${id}`, cur ? cur.sha : null);
     bibliothek = aktuell;
     S.cache({ bibliothek });
-    banner('NOTIZ GESPEICHERT', 'ok');
+    banner(t('bib.gespeichert'), 'ok');
   } catch (e) {
-    banner(`SPEICHERN FEHLGESCHLAGEN: ${e.message}`, 'err', 6000);
+    banner(t('bib.fehlgeschlagen', { msg: e.message }), 'err', 6000);
   }
 }
 
@@ -1096,18 +1092,18 @@ async function speichereBibNotiz(id, notiz, video) {
 
 function renderStats(logs) {
   const s = ST.summary(logs);
-  const t = s.tonnage >= 1000 ? `${(s.tonnage / 1000).toFixed(1)} t` : `${s.tonnage} kg`;
+  const tonn = s.tonnage >= 1000 ? `${(s.tonnage / 1000).toFixed(1)} t` : `${s.tonnage} kg`;
   $('hist-summary').innerHTML = `
     <div class="stats">
-      <div class="stat"><div class="n">Einheiten</div><div class="v">${s.einheiten}</div>
-        <div class="s">${s.kraft} Kraft · ${s.wods} WOD</div></div>
-      <div class="stat"><div class="n">Bewegt</div><div class="v">${t}</div>
-        <div class="s">Last × Wiederholungen</div></div>
-      <div class="stat"><div class="n">Pro Woche</div><div class="v">${s.proWoche ?? '—'}</div>
-        <div class="s">${s.von ? `seit ${s.von}` : 'noch keine Daten'}</div></div>
-      <div class="stat"><div class="n">Bestwert ${(config.lifts.squat || {}).name || "Squat"}</div>
+      <div class="stat"><div class="n">${t('stat.einheiten')}</div><div class="v">${s.einheiten}</div>
+        <div class="s">${t('stat.kraftWod', { k: s.kraft, w: s.wods })}</div></div>
+      <div class="stat"><div class="n">${t('stat.bewegt')}</div><div class="v">${tonn}</div>
+        <div class="s">${t('stat.lastMalReps')}</div></div>
+      <div class="stat"><div class="n">${t('stat.proWoche')}</div><div class="v">${s.proWoche ?? '—'}</div>
+        <div class="s">${s.von ? t('stat.seit', { datum: s.von }) : t('stat.keineDaten')}</div></div>
+      <div class="stat"><div class="n">${t('stat.bestwert', { name: (config.lifts.squat || {}).name || 'Squat' })}</div>
         <div class="v">${s.best.squat ? P.fmtWeight(s.best.squat.weight) : '—'}</div>
-        <div class="s">${s.best.squat ? s.best.squat.date : 'noch keiner'}</div></div>
+        <div class="s">${s.best.squat ? s.best.squat.date : t('stat.nochKeiner')}</div></div>
     </div>`;
 }
 
@@ -1124,18 +1120,18 @@ function renderAngeben(logs) {
   const stacks = Math.round(s.tonnage / MARSHALL_KG);
   box.innerHTML = `
     <div class="stats">
-      <div class="stat"><div class="n">Bewegtes Gewicht</div>
-        <div class="v">${stacks.toLocaleString('de-DE')}</div>
-        <div class="s">Marshall-Halfstacks, ${MARSHALL_KG} kg das Stück</div></div>
-      <div class="stat"><div class="n">Wiederholungen</div>
-        <div class="v">${reps.toLocaleString('de-DE')}</div>
-        <div class="s">seit dem ersten Log</div></div>
-      <div class="stat"><div class="n">Lieblingstag</div>
+      <div class="stat"><div class="n">${t('stat.bewegtesGewicht')}</div>
+        <div class="v">${stacks.toLocaleString(locale())}</div>
+        <div class="s">${t('stat.halfstacks', { kg: MARSHALL_KG })}</div></div>
+      <div class="stat"><div class="n">${t('stat.wiederholungen')}</div>
+        <div class="v">${reps.toLocaleString(locale())}</div>
+        <div class="s">${t('stat.seitErstem')}</div></div>
+      <div class="stat"><div class="n">${t('stat.lieblingstag')}</div>
         <div class="v">${tag ? tag.tag : '—'}</div>
-        <div class="s">${tag ? `${tag.anzahl}× am häufigsten` : 'noch kein Muster'}</div></div>
-      <div class="stat"><div class="n">Längste Serie</div>
+        <div class="s">${tag ? t('stat.amHaeufigsten', { n: tag.anzahl }) : t('stat.keinMuster')}</div></div>
+      <div class="stat"><div class="n">${t('stat.laengsteSerie')}</div>
         <div class="v">${serie}</div>
-        <div class="s">${serie === 1 ? 'Woche am Stück, Rekord' : 'Wochen am Stück, Rekord'}</div></div>
+        <div class="s">${t(serie === 1 ? 'stat.wocheRekord' : 'stat.wochenRekord')}</div></div>
     </div>`;
 }
 
@@ -1175,12 +1171,12 @@ function renderCharts(logs) {
       <div class="h" style="margin:6px 0 0">
         <span class="t">${sp.min} kg</span><span class="t">${sp.max} kg</span></div>
       ${linieUnten ? `<div class="h" style="margin:3px 0 0">
-        <span class="t" style="color:var(--stahl)">┄ mind. ≈ ${Math.max(...untere.map(k => k.weight))} kg</span>
-        ${tests.length ? `<span class="t" style="color:var(--stahl)">● Max-Out ${
-          Math.max(...tests.map(k => k.weight))} kg</span>` : ''}</div>` : ''}
+        <span class="t" style="color:var(--stahl)">${t('pr.mind', { kg: Math.max(...untere.map(k => k.weight)) })}</span>
+        ${tests.length ? `<span class="t" style="color:var(--stahl)">${
+          t('pr.maxOutPunkt', { kg: Math.max(...tests.map(k => k.weight)) })}</span>` : ''}</div>` : ''}
     </div>`;
   }).join('');
-  $('hist-charts').innerHTML = teile || '<p class="fine">Verläufe erscheinen ab der zweiten Einheit je Übung.</p>';
+  $('hist-charts').innerHTML = teile || `<p class="fine">${t('chart.leer')}</p>`;
 }
 
 function renderListe(logs) {
@@ -1188,13 +1184,13 @@ function renderListe(logs) {
   $('history-body').innerHTML = sortiert.length ? sortiert.map(l => {
     if (l.type === 'maxout') {
       const name = (config.lifts[l.lift] || {}).name || l.lift;
-      return `<div class="hist maxout"><div class="d">${l.date} · MAX-OUT · ${name.toUpperCase()}</div>
-        <div class="l">${l.weight} kg × ${l.reps}${l.e1rm ? ` — geschätztes Maximum ${l.e1rm} kg` : ''}</div></div>`;
+      return `<div class="hist maxout"><div class="d">${l.date} · ${t('hist.maxout')} · ${name.toUpperCase()}</div>
+        <div class="l">${l.weight} kg × ${l.reps}${l.e1rm ? t('hist.geschaetztesMax', { kg: l.e1rm }) : ''}</div></div>`;
     }
     if (l.type === 'anpassung') {
       const g = Object.entries(l.gewichte || {})
         .map(([id, w]) => `${(config.lifts[id] || {}).name || id} ${P.fmtWeight(w)}`).join(' · ');
-      return `<div class="hist anpassung"><div class="d">${l.date} · ARBEITSGEWICHTE ANGEPASST</div>
+      return `<div class="hist anpassung"><div class="d">${l.date} · ${t('hist.angepasst')}</div>
         <div class="l">${g}${l.grund ? `<br><span style="color:var(--dim)">${l.grund}</span>` : ''}</div></div>`;
     }
     if (l.type && l.type !== 'strength') {
@@ -1206,7 +1202,7 @@ function renderListe(logs) {
       <div class="l">${(l.lifts || []).map(e =>
         `${(config.lifts[e.lift] || {}).name || e.lift} ${P.fmtWeight(e.weight)} (${(e.reps || []).join('/')})`).join(' · ')}</div>
     </div>`;
-  }).join('') : '<p class="lead">Noch keine Einheit protokolliert.</p>';
+  }).join('') : `<p class="lead">${t('tour.keineEinheit')}</p>`;
 }
 
 
@@ -1244,7 +1240,7 @@ function renderMaxoutLifts() {
     <div class="w waehlbar ${id === mo.lift ? 'gewaehlt' : ''}" data-lift="${id}">
       <div class="n">${def.name}</div>
       <div class="v">${P.fmtWeight(state.lifts[id].weight)}</div>
-      <div class="f" style="color:var(--dim)">aktuelles Arbeitsgewicht</div>
+      <div class="f" style="color:var(--dim)">${t('mo.aktuellesGewicht')}</div>
     </div>`).join('');
   $('mo-lifts').querySelectorAll('[data-lift]').forEach(el => {
     el.onclick = () => { mo.lift = el.dataset.lift; renderMaxoutLifts(); renderMaxoutErgebnis(); };
@@ -1258,8 +1254,7 @@ function renderMaxoutErgebnis() {
   const box = $('mo-result');
 
   if (!max) {
-    box.innerHTML = `<p class="fine">Gewicht und Wiederholungen eintragen (1 bis 12).
-      Über 12 Wiederholungen ist jede Schätzung Kaffeesatz — dann gibt es bewusst keine.</p>`;
+    box.innerHTML = `<p class="fine">${t('mo.eingeben')}</p>`;
     $('mo-save').disabled = true;
     return;
   }
@@ -1272,19 +1267,18 @@ function renderMaxoutErgebnis() {
 
   box.innerHTML = `
     <div class="card">
-      <div class="kicker">Geschätztes Einer-Maximum · ${formel}</div>
+      <div class="kicker">${t('mo.geschaetzt', { formel })}</div>
       <div class="name neon">${max}<span style="font-size:20px"> kg</span></div>
       ${bisher ? `<p class="fine">${max > bisher
-        ? `<b style="color:var(--gruen)">Neuer Bestwert.</b> Bisher ${bisher} kg.`
-        : `Bisheriger Bestwert: ${bisher} kg.`}</p>` : ''}
+        ? `<b style="color:var(--gruen)">${t('mo.neuerBestwert')}</b> ${t('mo.bisherKg', { kg: bisher })}`
+        : t('mo.bisherigerBestwert', { kg: bisher })}</p>` : ''}
       <ul>
-        <li><span>Arbeitsgewicht für 5×5 (80 %)</span><span>${P.fmtWeight(vorschlag)}</span></li>
-        <li><span>Aktuell eingestellt</span><span>${P.fmtWeight(jetzt)}</span></li>
+        <li><span>${t('mo.arbeitsgewichtFuer')}</span><span>${P.fmtWeight(vorschlag)}</span></li>
+        <li><span>${t('mo.aktuellEingestellt')}</span><span>${P.fmtWeight(jetzt)}</span></li>
       </ul>
       <label style="display:flex;gap:10px;align-items:flex-start;margin-top:12px;font-size:14px;color:var(--muted)">
         <input type="checkbox" id="mo-apply" style="width:auto;margin:3px 0 0">
-        <span>Arbeitsgewicht auf <b style="color:var(--akzent)">${P.fmtWeight(vorschlag)}</b> setzen.
-        Ohne Haken bleibt alles, wie es ist — der Test wird nur protokolliert.</span>
+        <span>${t('mo.uebernehmen', { kg: P.fmtWeight(vorschlag) })}</span>
       </label>
     </div>`;
   $('mo-save').disabled = false;
@@ -1318,17 +1312,17 @@ async function speichereMaxout() {
       <div class="kicker">${log.date} · Max-Out · ${config.lifts[mo.lift].name}</div>
       <div class="name neon">${w} × ${r}</div>
       <ul>
-        <li><span>Geschätztes Maximum (${log.formel})</span><span>${max} kg</span></li>
-        <li><span>Arbeitsgewicht</span><span>${uebernehmen
+        <li><span>${t('mo.geschaetztesMax', { formel: log.formel })}</span><span>${max} kg</span></li>
+        <li><span>${t('mo.arbeitsgewicht')}</span><span>${uebernehmen
           ? `${P.fmtWeight(vorher)} → ${P.fmtWeight(state.lifts[mo.lift].weight)}`
-          : `bleibt ${P.fmtWeight(vorher)}`}</span></li>
+          : t('mo.bleibt', { kg: P.fmtWeight(vorher) })}</span></li>
       </ul>
     </div>
-    <p class="spruch">Ein Maximum ist eine Momentaufnahme, kein Charakterzeugnis. Morgen zählt wieder der saubere Satz.</p>`;
+    <p class="spruch">${t('mo.spruch')}</p>`;
   show('done');
 
-  try { await commitMaxout(log); banner('GESPEICHERT', 'ok'); }
-  catch { S.queue(log); banner('KEIN NETZ — WIRD NACHGETRAGEN', '', 6000); }
+  try { await commitMaxout(log); banner(t('msg.gespeichert'), 'ok'); }
+  catch { S.queue(log); banner(t('msg.keinNetz'), '', 6000); }
 }
 
 async function commitMaxout(log) {
@@ -1351,32 +1345,29 @@ function renderPRs(logs) {
     // Auch ohne eigene Einheit gehoert die alte Bestleistung sichtbar —
     // gerade dann ist sie die einzige Zahl, die etwas ueber dich sagt.
     if (!e) return `<div class="pr"><div class="k">${def.name}</div>
-      <div class="reihe"><span class="l">Noch keine Einheit protokolliert</span><span class="v">—</span></div>
-      ${def.reference ? z('Vor der Pause', P.fmtWeight(def.reference)) : ''}
+      <div class="reihe"><span class="l">${t('pr.keineEinheit')}</span><span class="v">—</span></div>
+      ${def.reference ? z(t('pr.vorDerPause'), P.fmtWeight(def.reference)) : ''}
       ${rekordZeile(id)}</div>`;
 
     return `<div class="pr">
       <div class="k">${def.name}</div>
-      ${e.arbeit ? z('Schwerster sauberer Satz', P.fmtWeight(e.arbeit.weight), e.arbeit.date) : z('Schwerster sauberer Satz', '—')}
-      ${e.gemessen ? z('Gemessenes Einzel', P.fmtWeight(e.gemessen.weight), e.gemessen.date) : ''}
-      ${e.maximum ? z('Maximum (Max-Out)', `${e.maximum.wert} kg`,
+      ${e.arbeit ? z(t('pr.schwersterSatz'), P.fmtWeight(e.arbeit.weight), e.arbeit.date) : z(t('pr.schwersterSatz'), '—')}
+      ${e.gemessen ? z(t('pr.gemessen'), P.fmtWeight(e.gemessen.weight), e.gemessen.date) : ''}
+      ${e.maximum ? z(t('pr.maximum'), `${e.maximum.wert} kg`,
           `${e.maximum.weight}×${e.maximum.reps} · ${e.maximum.formel}`) : ''}
-      ${e.untergrenze ? z('Mindestens', `${e.untergrenze.wert} kg`,
-          `aus ${e.untergrenze.weight}×${e.untergrenze.reps}`) : ''}
-      ${def.reference ? z('Vor der Pause', P.fmtWeight(def.reference)) : ''}
+      ${e.untergrenze ? z(t('pr.mindestens'), `${e.untergrenze.wert} kg`,
+          t('pr.aus', { w: e.untergrenze.weight, r: e.untergrenze.reps })) : ''}
+      ${def.reference ? z(t('pr.vorDerPause'), P.fmtWeight(def.reference)) : ''}
       ${rekordZeile(id)}
     </div>`;
   }).join('');
-  $('hist-prs').innerHTML = zeilen + weitereRekorde() + `<p class="fine">
-    „Mindestens“ stammt aus Arbeitssätzen. Die sind bewusst submaximal, deshalb
-    unterschätzt jede Formel dort — der Wert ist eine Untergrenze, kein Maximum.
-    Ein belastbares Maximum liefert nur ein Max-Out.</p>`;
+  $('hist-prs').innerHTML = zeilen + weitereRekorde() + `<p class="fine">${t('pr.fine')}</p>`;
 }
 
 // Ansage-Stufe, Farbe und Text je Urteil — auf einen Blick statt einer Zahl,
 // die man erst deuten muesste.
 const ANSAGE_TONE = { TECHNIK: 'technik', SOLIDE: 'normal', HART: 'hart', SCHWER: 'hart' };
-const URTEIL_TEXT = { treffer: 'Treffer', schwerer: 'Schwerer als angesagt', leichter: 'Leichter als angesagt' };
+const urteilText = u => t(`ans.${u}`);
 const URTEIL_FARBE = { treffer: 'var(--gruen)', schwerer: 'var(--rost)', leichter: 'var(--stahl)' };
 
 /**
@@ -1387,38 +1378,37 @@ const URTEIL_FARBE = { treffer: 'var(--gruen)', schwerer: 'var(--rost)', leichte
 function renderAnsageAbgleich(logs) {
   const a = ST.ansageAbgleich(logs);
   if (!a.gesamt) {
-    $('hist-ansage').innerHTML = `<p class="fine">Noch keine Einheit mit Ansage und Gefühl zusammen —
-      taucht auf, sobald du die Frage auf dem Geschafft-Screen ein paar Mal beantwortet hast.</p>`;
+    $('hist-ansage').innerHTML = `<p class="fine">${t('ans.leer')}</p>`;
     return;
   }
 
   const zeilen = a.eintraege.map(e => `
     <div class="pr" style="border-left:2px solid ${URTEIL_FARBE[e.urteil]}">
       <div class="k">${e.date.slice(8)}.${e.date.slice(5, 7)}. · Workout ${e.workout}</div>
-      <div class="reihe"><span class="l">Angesagt</span>
+      <div class="reihe"><span class="l">${t('ans.angesagt')}</span>
         <span class="v"><span class="tone ${ANSAGE_TONE[e.angesagt]}" style="font-size:9.5px;padding:2px 7px">${e.angesagt}</span></span></div>
-      <div class="reihe"><span class="l">Gefühlt</span><span class="v">${GEFUEHL_LABEL[e.gefuehlt]}</span></div>
-      <div class="reihe"><span class="l">Urteil</span><span class="v" style="color:${URTEIL_FARBE[e.urteil]}">${URTEIL_TEXT[e.urteil]}</span></div>
+      <div class="reihe"><span class="l">${t('ans.gefuehlt')}</span><span class="v">${gefuehlLabel(e.gefuehlt)}</span></div>
+      <div class="reihe"><span class="l">${t('ans.urteil')}</span><span class="v" style="color:${URTEIL_FARBE[e.urteil]}">${urteilText(e.urteil)}</span></div>
     </div>`).join('');
 
   $('hist-ansage').innerHTML = `
     <div class="pr" style="border-left:2px solid var(--akzent)">
-      <div class="k">${a.treffer} von ${a.gesamt} Einheiten trafen die Ansage</div>
-      <div class="reihe"><span class="l">Schwerer als angesagt</span><span class="v">${a.schwerer}</span></div>
-      <div class="reihe"><span class="l">Leichter als angesagt</span><span class="v">${a.leichter}</span></div>
+      <div class="k">${t('ans.kopf', { treffer: a.treffer, gesamt: a.gesamt })}</div>
+      <div class="reihe"><span class="l">${t('ans.schwerer')}</span><span class="v">${a.schwerer}</span></div>
+      <div class="reihe"><span class="l">${t('ans.leichter')}</span><span class="v">${a.leichter}</span></div>
     </div>
     ${zeilen}
-    <p class="fine">Nur Einheiten, bei denen du die Frage nach dem Gefühl beantwortet hast.</p>`;
+    <p class="fine">${t('ans.fine')}</p>`;
 }
 
 /* ================= Scheiben und Form ================= */
 
 /** Was pro Seite auf die Stange gehört — spart Rechnen zwischen den Sätzen. */
 function plattenZeile(gewicht) {
-  const t = P.plattenText(gewicht, config);
-  if (!t) return `<p class="platten nicht">Mit deinen Scheiben nicht exakt ladbar.</p>`;
-  if (t === 'leere Stange') return `<p class="platten">Leere Stange</p>`;
-  return `<p class="platten">Pro Seite: <b>${t}</b></p>`;
+  const pt = P.plattenText(gewicht, config);
+  if (!pt) return `<p class="platten nicht">${t('ses.plattenNicht')}</p>`;
+  if (pt === 'leere Stange') return `<p class="platten">${t('ses.plattenLeer')}</p>`;
+  return `<p class="platten">${t('ses.platten')} <b>${pt}</b></p>`;
 }
 
 /** Form aus intervals.icu — ein Hinweis, keine Anweisung. */
@@ -1426,9 +1416,9 @@ function formZeile() {
   if (!form) return '';
   const farbe = { frisch: 'var(--gruen)', neutral: 'var(--muted)', muede: 'var(--rost)', platt: 'var(--rot)' }[form.stufe];
   return `<p class="formzeile" style="border-top-color:${farbe}">
-    <span class="fw" style="color:${farbe}">Form ${form.form > 0 ? '+' : ''}${form.form}</span>
+    <span class="fw" style="color:${farbe}">${t('form.zeile', { v: `${form.form > 0 ? '+' : ''}${form.form}` })}</span>
     <span class="ft">${form.text}</span>
-    <span class="fd">Fitness ${form.fitness} · Ermüdung ${form.ermuedung} · aus intervals.icu</span>
+    <span class="fd">${t('form.detail', { f: form.fitness, e: form.ermuedung })}</span>
   </p>`;
 }
 
@@ -1436,14 +1426,16 @@ function formZeile() {
 function erholungsZeile() {
   if (!erholung) return '';
   const farbe = { ok: 'var(--gruen)', kurz: 'var(--rost)', belastet: 'var(--rot)' }[erholung.stufe];
-  const label = { ok: 'unauffällig', kurz: 'knapp', belastet: 'belastet' }[erholung.stufe];
+  const label = t(`erh.${erholung.stufe}`);
   const teile = [];
-  if (erholung.hrv != null) teile.push(`HRV ${erholung.hrv} ms${erholung.basis != null ? ` (Schnitt ${erholung.basis})` : ''}`);
-  if (erholung.schlafStunden != null) teile.push(`Schlaf ${erholung.schlafStunden} h`);
+  if (erholung.hrv != null) teile.push(erholung.basis != null
+    ? t('erh.hrvBasis', { v: erholung.hrv, b: erholung.basis })
+    : t('erh.hrv', { v: erholung.hrv }));
+  if (erholung.schlafStunden != null) teile.push(t('erh.schlaf', { h: erholung.schlafStunden }));
   return `<p class="formzeile" style="border-top-color:${farbe}">
-    <span class="fw" style="color:${farbe}">Erholung ${label}</span>
-    <span class="ft">${teile.join(' · ') || 'Keine Werte für heute.'}</span>
-    <span class="fd">aus intervals.icu${erholung.stufe !== 'ok' ? ' · fließt in die Ansage ein' : ''}</span>
+    <span class="fw" style="color:${farbe}">${t('erh.zeile', { label })}</span>
+    <span class="ft">${teile.join(' · ') || t('erh.keineWerte')}</span>
+    <span class="fd">${t(erholung.stufe !== 'ok' ? 'erh.fliesst' : 'erh.quelle')}</span>
   </p>`;
 }
 
@@ -1469,14 +1461,14 @@ async function uebertrageNachIcu(log) {
     const tag = aktivitaet.start_date_local.slice(0, 10);
     const vorhanden = await ICU.alleAktivitaeten(tag, tag);
     if (ICU.schonErfasst(log, vorhanden)) {
-      banner(`INTERVALS.ICU · ${log.date} SCHON VON DER UHR ERFASST`, 'ok', 5000);
+      banner(t('msg.schonErfasst', { datum: log.date }), 'ok', 5000);
       return true;
     }
     await ICU.pushAktivitaet(aktivitaet);
-    banner(`${log.date} AN INTERVALS.ICU · LAST ${aktivitaet.icu_training_load}`, 'ok', 4000);
+    banner(t('msg.anIcu', { datum: log.date, last: aktivitaet.icu_training_load }), 'ok', 4000);
     return true;
   } catch (e) {
-    banner(`INTERVALS.ICU: ${e.message}`, 'err', 7000);
+    banner(t('msg.icuFehler', { msg: e.message }), 'err', 7000);
     return false;
   }
 }
@@ -1510,11 +1502,11 @@ function renderRad() {
   }
 
   if (!ICU.isConfigured()) {
-    box.innerHTML = '<p class="fine">intervals.icu ist nicht verbunden — trag den Key oben unter „Verbindungen" ein.</p>';
+    box.innerHTML = `<p class="fine">${t('rad.nichtVerbunden')}</p>`;
     return;
   }
   if (!fahrten.length) {
-    box.innerHTML = '<p class="fine">Keine Radeinheit in den letzten 90 Tagen.</p>';
+    box.innerHTML = `<p class="fine">${t('rad.keine')}</p>`;
     return;
   }
 
@@ -1535,17 +1527,17 @@ function renderRad() {
 
   box.innerHTML = `
     <div class="stats">
-      <div class="stat"><div class="n">Fahrten</div><div class="v">${st.anzahl}</div>
-        <div class="s">${st.proWoche ?? '—'} pro Woche</div></div>
-      <div class="stat"><div class="n">Zeit im Sattel</div><div class="v">${st.stunden}<span style="font-size:14px"> h</span></div>
+      <div class="stat"><div class="n">${t('rad.fahrten')}</div><div class="v">${st.anzahl}</div>
+        <div class="s">${t('rad.proWoche', { n: st.proWoche ?? '—' })}</div></div>
+      <div class="stat"><div class="n">${t('rad.imSattel')}</div><div class="v">${st.stunden}<span style="font-size:14px"> h</span></div>
         <div class="s">${st.km} km</div></div>
     </div>
     <div class="radbar">
-      <div class="h"><span class="t">Wochenlast · 12 Wochen</span><span class="r">${st.last} gesamt</span></div>
+      <div class="h"><span class="t">${t('rad.wochenlast')}</span><span class="r">${t('rad.gesamt', { n: st.last })}</span></div>
       <svg viewBox="0 0 ${breite} ${hoehe}" preserveAspectRatio="none" aria-hidden="true">${balken}</svg>
       <div class="h" style="margin:7px 0 0">
         <span class="t">${wochen[0].woche.slice(5)}</span>
-        <span class="t">diese Woche</span></div>
+        <span class="t">${t('rad.dieseWoche')}</span></div>
     </div>
     ${sortiert.slice(0, 20).map(r => `
       <div class="fahrt">
@@ -1553,7 +1545,7 @@ function renderRad() {
         <div class="n">${r.name}</div>
         <div class="m">${r.minutes} Min · ${r.km} km</div>
       </div>`).join('')}
-    ${sortiert.length > 20 ? `<p class="fine">${sortiert.length - 20} weitere nicht gezeigt.</p>` : ''}`;
+    ${sortiert.length > 20 ? `<p class="fine">${t('rad.weitere', { n: sortiert.length - 20 })}</p>` : ''}`;
 }
 
 /* ================= Darstellung ================= */
@@ -1576,17 +1568,40 @@ function themaAnwenden() {
 
 function renderThemenSchalter() {
   const wahl = themaWahl();
-  document.querySelectorAll('.themen button').forEach(b =>
+  document.querySelectorAll('.themen button[data-thema]').forEach(b =>
     b.classList.toggle('an', b.dataset.thema === wahl));
 }
 
-document.querySelectorAll('.themen button').forEach(b => {
+document.querySelectorAll('.themen button[data-thema]').forEach(b => {
   b.onclick = () => {
     localStorage.setItem(THEMA_KEY, b.dataset.thema);
     themaAnwenden();
-    banner(`DARSTELLUNG: ${b.textContent.toUpperCase()}`, 'ok', 2000);
+    banner(t('bs.darstellungBanner', { was: b.textContent.toUpperCase() }), 'ok', 2000);
   };
 });
+
+/* ================= Sprache ================= */
+
+/**
+ * Sprachwechsel laedt neu statt jede Ansicht einzeln nachzuziehen. Alles,
+ * was auf dem Bildschirm steht, liegt entweder im Repo oder im localStorage —
+ * ein Neuladen kostet nichts und laesst keine halb uebersetzte Ansicht zurueck.
+ */
+function renderSprachSchalter() {
+  const s = sprache();
+  document.querySelectorAll('.sprachen button').forEach(b =>
+    b.classList.toggle('an', b.dataset.sprache === s));
+}
+
+document.querySelectorAll('.sprachen button').forEach(b => {
+  b.onclick = () => {
+    if (b.dataset.sprache === sprache()) return;
+    setSprache(b.dataset.sprache);
+    location.reload();
+  };
+});
+
+renderSprachSchalter();
 
 // Systemwechsel mitbekommen, solange 'System' gewählt ist.
 window.matchMedia('(prefers-color-scheme: light)')
@@ -1601,7 +1616,7 @@ function stoerungsZeile() {
   if (!stoerung) return '';
   const farbe = { stark: 'var(--rost)', leicht: 'var(--akzent)', gering: 'var(--dim)' }[stoerung.stufe];
   return `<p class="formzeile" style="border-top-color:${farbe}">
-    <span class="fw" style="color:${farbe}">Rad vor ${Math.round(stoerung.stunden)} h</span>
+    <span class="fw" style="color:${farbe}">${t('stoer.zeile', { h: Math.round(stoerung.stunden) })}</span>
     <span class="ft">${stoerung.text}</span>
     <span class="fd">${stoerung.fahrt.name} · ${stoerung.fahrt.minutes} Min${stoerung.fahrt.load ? ` · Load ${stoerung.fahrt.load}` : ''}</span>
   </p>`;
@@ -1617,9 +1632,9 @@ function wattZiel(label) {
 
 /** Geplante Woche als Kalendereinträge — nur was dort noch fehlt. */
 async function planInKalender() {
-  if (!ICU.isConfigured()) return banner('INTERVALS.ICU NICHT VERBUNDEN', 'err');
+  if (!ICU.isConfigured()) return banner(t('msg.icuNichtVerbunden'), 'err');
   try {
-    banner('PRÜFE KALENDER…', '', 0);
+    banner(t('msg.pruefeKalender'), '', 0);
     const woche = P.planWeek(state, config);
     const geplant = woche.map(s => ICU.alsEvent({
       ...s,
@@ -1630,11 +1645,11 @@ async function planInKalender() {
     const vorhanden = await ICU.events(von, bis);
     const fehlt = ICU.fehlendeEvents(geplant, vorhanden);
 
-    if (!fehlt.length) return banner('KALENDER IST BEREITS AKTUELL', 'ok');
+    if (!fehlt.length) return banner(t('msg.kalenderAktuell'), 'ok');
     await ICU.pushEvents(fehlt);
-    banner(`${fehlt.length} EINTRAG(E) ANGELEGT`, 'ok', 5000);
+    banner(t('msg.kalenderAngelegt', { n: fehlt.length }), 'ok', 5000);
   } catch (e) {
-    banner(`INTERVALS.ICU: ${e.message}`, 'err', 8000);
+    banner(t('msg.icuFehler', { msg: e.message }), 'err', 8000);
   }
 }
 
@@ -1644,24 +1659,24 @@ async function planInKalender() {
  * Aktivitäten im eigenen Konto sind ärgerlicher als fehlende.
  */
 async function einheitenNachtragen() {
-  if (!ICU.isConfigured()) return banner('INTERVALS.ICU NICHT VERBUNDEN', 'err');
+  if (!ICU.isConfigured()) return banner(t('msg.icuNichtVerbunden'), 'err');
   try {
-    banner('LESE EINHEITEN…', '', 0);
+    banner(t('msg.leseEinheiten'), '', 0);
     const logs = alleLogs.length ? alleLogs : await S.readAllLogs();
     const kandidaten = logs.map(l => ICU.alsAktivitaet(l, config)).filter(Boolean);
-    if (!kandidaten.length) return banner('NICHTS ZU ÜBERTRAGEN', 'ok');
+    if (!kandidaten.length) return banner(t('msg.nichtsZuUebertragen'), 'ok');
 
     const daten = kandidaten.map(a => a.start_date_local.slice(0, 10)).sort();
     const vorhanden = await ICU.alleAktivitaeten(daten[0], daten[daten.length - 1]);
     const fehlt = ICU.fehlendeAktivitaeten(kandidaten, vorhanden);
 
-    if (!fehlt.length) return banner('ALLES SCHON ÜBERTRAGEN', 'ok');
-    banner(`ÜBERTRAGE ${fehlt.length}…`, '', 0);
+    if (!fehlt.length) return banner(t('msg.allesUebertragen'), 'ok');
+    banner(t('msg.uebertrage', { n: fehlt.length }), '', 0);
     let n = 0;
     for (const a of fehlt) { await ICU.pushAktivitaet(a); n++; }
-    banner(`${n} EINHEIT(EN) NACHGETRAGEN`, 'ok', 5000);
+    banner(t('msg.nachgetragenIcu', { n }), 'ok', 5000);
   } catch (e) {
-    banner(`INTERVALS.ICU: ${e.message}`, 'err', 8000);
+    banner(t('msg.icuFehler', { msg: e.message }), 'err', 8000);
   }
 }
 
@@ -1674,11 +1689,11 @@ $('icu-nachtragen').onclick = einheitenNachtragen;
  * Einstellung im Browserspeicher wäre auf dem nächsten Gerät wieder weg.
  */
 async function uebungAusschliessen(id, name) {
-  if (!confirm(`„${name}“ dauerhaft aus den Zufalls-Workouts nehmen?`)) return;
+  if (!confirm(t('wod.ausschliessen', { name }))) return;
   try {
-    banner('SPEICHERE…', '', 0);
+    banner(t('msg.speichere'), '', 0);
     const datei = await S.readFile('config.json');
-    if (!datei) throw new Error('config.json nicht lesbar.');
+    if (!datei) throw new Error(t('msg.configNichtLesbar'));
 
     const neu = datei.data;
     neu.wod = neu.wod || {};
@@ -1688,7 +1703,7 @@ async function uebungAusschliessen(id, name) {
     config = neu;
     S.cache({ config });
     starteWod((wodSeed * 7919 + 13) >>> 0);      // neu würfeln, ohne die Übung
-    banner(`${name.toUpperCase()} KOMMT NICHT MEHR VOR`, 'ok', 5000);
+    banner(t('wod.ausgeschlossen', { name: name.toUpperCase() }), 'ok', 5000);
   } catch (e) {
     banner(e.message, 'err', 8000);
   }
@@ -1707,10 +1722,10 @@ function rekordZeile(id) {
   if (!r) return '';
   const jahr = (r.datum || '').slice(0, 4);
   const teile = [];
-  if (r.bestesEinzel) teile.push(`${P.fmtWeight(r.bestesEinzel)} einzeln`);
-  if (r.bestes5er) teile.push(`${P.fmtWeight(r.bestes5er)} im 5er`);
+  if (r.bestesEinzel) teile.push(t('pr.einzeln', { kg: P.fmtWeight(r.bestesEinzel) }));
+  if (r.bestes5er) teile.push(t('pr.imFuenfer', { kg: P.fmtWeight(r.bestes5er) }));
   if (!teile.length) return '';
-  return `<div class="reihe"><span class="l">Bestleistung</span>
+  return `<div class="reihe"><span class="l">${t('pr.bestleistung')}</span>
     <span class="v" style="color:var(--stahl)">${teile.join(' · ')}<small>${jahr}</small></span></div>`;
 }
 
@@ -1719,13 +1734,12 @@ function weitereRekorde() {
   const w = config.records && config.records.weitere;
   if (!w || !w.length) return '';
   return `<div class="pr" style="border-left:2px solid var(--stahl)">
-    <div class="k">Weitere Bestleistungen</div>
+    <div class="k">${t('pr.weitere')}</div>
     ${w.map(r => `<div class="reihe">
       <span class="l">${r.name}${r.zusatz ? ` <small style="color:var(--dim)">${r.zusatz}</small>` : ''}</span>
       <span class="v" style="color:var(--stahl)">${P.fmtWeight(r.wert)}<small>${(r.datum || '').slice(0, 4)}</small></span>
     </div>`).join('')}
-    <p class="fine" style="margin-top:10px">Aus ${config.records.quelle}. Nicht Teil des Programms —
-    sie stehen hier, weil sie zeigen, was in dir steckt.</p>
+    <p class="fine" style="margin-top:10px">${t('pr.quelle', { quelle: config.records.quelle })}</p>
   </div>`;
 }
 
@@ -1770,20 +1784,20 @@ function renderKalender(logs) {
   const fahrten = alleFahrten.length ? alleFahrten : (S.cached().fahrten || []);
   const k = ST.kalender(logs, fahrten, 26, new Date());
 
-  const zellen = k.tage.map(t => {
+  const zellen = k.tage.map(tag => {
     const was = [];
-    if (t.kraft) was.push('Kraft');
-    if (t.wod) was.push('WOD');
-    if (t.rad) was.push('Rad');
+    if (tag.kraft) was.push(t('kal.kraft'));
+    if (tag.wod) was.push(t('kal.wod'));
+    if (tag.rad) was.push(t('kal.rad'));
     const klasse = [
       'zelle',
-      t.zukunft ? 'zukunft' : '',
-      t.heute ? 'heute' : '',
-      t.kraft ? 'kraft' : '',
-      t.wod ? 'wod' : '',
-      t.rad ? 'rad' : ''
+      tag.zukunft ? 'zukunft' : '',
+      tag.heute ? 'heute' : '',
+      tag.kraft ? 'kraft' : '',
+      tag.wod ? 'wod' : '',
+      tag.rad ? 'rad' : ''
     ].filter(Boolean).join(' ');
-    return `<span class="${klasse}" title="${t.date}${was.length ? ' — ' + was.join(' + ') : ''}"></span>`;
+    return `<span class="${klasse}" title="${tag.date}${was.length ? ' — ' + was.join(' + ') : ''}"></span>`;
   }).join('');
 
   // Nur ab dem ersten aktiven Tag zaehlen. Gegen ein halbes Jahr gerechnet
@@ -1797,12 +1811,12 @@ function renderKalender(logs) {
     <div class="kalender">
       <div class="raster">${zellen}</div>
       <div class="legende">
-        <span><i class="kraft"></i> Kraft</span>
-        <span><i class="wod"></i> WOD</span>
-        <span><i class="rad"></i> Rad</span>
+        <span><i class="kraft"></i> ${t('kal.kraft')}</span>
+        <span><i class="wod"></i> ${t('kal.wod')}</span>
+        <span><i class="rad"></i> ${t('kal.rad')}</span>
         <span class="rechts">${tage.length
-          ? `${aktiv} aktive von ${tage.length} Tagen · ${Math.round(aktiv / tage.length * 100)} %`
-          : 'noch nichts protokolliert'}</span>
+          ? t('kal.quote', { a: aktiv, n: tage.length, p: Math.round(aktiv / tage.length * 100) })
+          : t('kal.nichts')}</span>
       </div>
     </div>`;
 }
@@ -1833,13 +1847,13 @@ function renderLast(logs) {
   const summeR = wochen.reduce((s, w) => s + w.rad, 0);
   box.innerHTML = `
     <div class="radbar">
-      <div class="h"><span class="t">Kraft und Rad, gestapelt</span>
-        <span class="r" style="color:var(--fg)">${summeK + summeR} gesamt</span></div>
+      <div class="h"><span class="t">${t('last.titel')}</span>
+        <span class="r" style="color:var(--fg)">${t('last.gesamt', { n: summeK + summeR })}</span></div>
       <svg viewBox="0 0 ${breite} ${hoehe}" preserveAspectRatio="none" aria-hidden="true">${balken}</svg>
       <div class="h" style="margin:7px 0 0">
-        <span class="t" style="color:var(--akzent)">■ Kraft ${summeK}</span>
-        <span class="t" style="color:var(--stahl)">■ Rad ${summeR}</span>
-        <span class="t">diese Woche →</span></div>
+        <span class="t" style="color:var(--akzent)">${t('last.kraft', { n: summeK })}</span>
+        <span class="t" style="color:var(--stahl)">${t('last.rad', { n: summeR })}</span>
+        <span class="t">${t('last.dieseWoche')}</span></div>
     </div>`;
 }
 
@@ -1864,12 +1878,12 @@ function renderTonnage(logs) {
   const beste = wochen.reduce((a, w) => w.tonnage > a.tonnage ? w : a, wochen[0]);
   box.innerHTML = `
     <div class="radbar">
-      <div class="h"><span class="t">Bewegtes Gewicht je Woche</span>
-        <span class="r" style="color:var(--akzent)">${(gesamt/1000).toFixed(1)} t gesamt</span></div>
+      <div class="h"><span class="t">${t('ton.titel')}</span>
+        <span class="r" style="color:var(--akzent)">${t('ton.gesamt', { t: (gesamt/1000).toFixed(1) })}</span></div>
       <svg viewBox="0 0 ${breite} ${hoehe}" preserveAspectRatio="none" aria-hidden="true">${balken}</svg>
       <div class="h" style="margin:7px 0 0">
-        <span class="t">beste Woche ${(beste.tonnage/1000).toFixed(1)} t</span>
-        <span class="t">diese Woche →</span></div>
+        <span class="t">${t('ton.beste', { t: (beste.tonnage/1000).toFixed(1) })}</span>
+        <span class="t">${t('last.dieseWoche')}</span></div>
     </div>`;
 }
 
@@ -1882,8 +1896,7 @@ function renderFormVerlauf() {
   const box = $('hist-form');
   if (!box) return;
   if (formPunkte.length < 2) {
-    box.innerHTML = `<p class="fine">Fitness und Ermüdung kommen aus intervals.icu —
-      sobald dort Daten liegen, steht hier eine Kurve.</p>`;
+    box.innerHTML = `<p class="fine">${t('form.leer')}</p>`;
     return;
   }
   const breite = 300, hoehe = 74, rand = 4;
@@ -1904,16 +1917,16 @@ function renderFormVerlauf() {
               : jetzt.form >= -20 ? 'var(--rost)' : 'var(--rot)';
   box.innerHTML = `
     <div class="radbar">
-      <div class="h"><span class="t">Fitness gegen Ermüdung</span>
-        <span class="r" style="color:${farbe}">Form ${jetzt.form > 0 ? '+' : ''}${jetzt.form}</span></div>
+      <div class="h"><span class="t">${t('form.titel')}</span>
+        <span class="r" style="color:${farbe}">${t('form.wert', { v: `${jetzt.form > 0 ? '+' : ''}${jetzt.form}` })}</span></div>
       <svg viewBox="0 0 ${breite} ${hoehe}" preserveAspectRatio="none" aria-hidden="true">
         <path d="${band}" fill="var(--tint-stahl)"/>
         <path d="${pfad('atl')}" fill="none" stroke="var(--stahl)" stroke-width="1.6" stroke-linejoin="round"/>
         <path d="${pfad('ctl')}" fill="none" stroke="var(--akzent)" stroke-width="2" stroke-linejoin="round"/>
       </svg>
       <div class="h" style="margin:7px 0 0">
-        <span class="t" style="color:var(--akzent)">— Fitness ${Math.round(jetzt.ctl)}</span>
-        <span class="t" style="color:var(--stahl)">— Ermüdung ${Math.round(jetzt.atl)}</span>
-        <span class="t">Fläche dazwischen = Form</span></div>
+        <span class="t" style="color:var(--akzent)">${t('form.fitness', { n: Math.round(jetzt.ctl) })}</span>
+        <span class="t" style="color:var(--stahl)">${t('form.ermuedung', { n: Math.round(jetzt.atl) })}</span>
+        <span class="t">${t('form.flaeche')}</span></div>
     </div>`;
 }
