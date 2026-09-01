@@ -183,7 +183,7 @@ Im Fork unter **Settings → Pages**: Source auf den `main`-Branch stellen. Nach
 
 **4 · GitHub-Token erzeugen**
 
-**Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token.** Zugriff nur auf dein Datenrepo, Permission **Contents → Read and write**, sonst nichts.
+Klick oben rechts auf dein **Profilbild → Settings** — deine persönlichen Kontoeinstellungen, **nicht** die Settings des Repos — dann **Developer settings → Personal access tokens → Fine-grained tokens → Generate new token.** Zugriff nur auf dein Datenrepo, Permission **Contents → Read and write**, sonst nichts.
 
 Beim ersten Öffnen landest du automatisch auf dem Setup-Screen. Dort trägst du deinen **GitHub-Nutzernamen**, den **Namen deines Datenrepos** (steht schon auf `setlist-data` vor) und den Token ein — kein Code-Editieren nötig, das Repo-Ziel ist direkt in der App einstellbar. Alle drei bleiben ausschließlich im `localStorage` deines Browsers.
 
