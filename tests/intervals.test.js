@@ -135,4 +135,44 @@ eq('eigener Push zaehlt nicht als fremd',
 eq('ohne Start-/Endzeit nicht pruefbar',
    I.schonErfasst({ date: '2026-09-05', type: 'wod', dauerSekunden: 720 }, [{ start_date_local: mitten }]), false);
 
+print('\n--- Doppelte Fahrten aus zwei Sync-Wegen ---');
+// Der echte Fall vom 01.09.2026: Zwift ueber Strava und daneben ein nackter
+// Health-Eintrag derselben Fahrt. 16 km, nicht 32.
+const zwift = { id:'i1', zeit:'2026-09-01T19:12:00', date:'2026-09-01',
+  name:'Zwift - Group Ride: Bikealicious', minutes:45, km:16, load:63 };
+const health = { id:'i2', zeit:'2026-09-01T19:11:00', date:'2026-09-01',
+  name:'Rad indoor', minutes:46, km:16, load:null };
+
+const eine = I.entdoppeln([zwift, health]);
+eq('aus zwei mach eine', eine.length, 1);
+eq('die reichere Fassung bleibt', eine[0].name, 'Zwift - Group Ride: Bikealicious');
+eq('Last bleibt erhalten', eine[0].load, 63);
+eq('Kilometer werden nicht summiert', eine[0].km, 16);
+eq('die verworfene Kennung ist vermerkt', eine[0].doppel.join(), 'i2');
+ok('Reihenfolge der Eingabe ist egal',
+   I.entdoppeln([health, zwift])[0].load === 63);
+
+print('\n--- Zwei echte Fahrten am selben Tag bleiben zwei ---');
+const frueh = { id:'a', zeit:'2026-09-01T07:00:00', date:'2026-09-01', minutes:45, km:16, load:40 };
+const spaet = { id:'b', zeit:'2026-09-01T19:00:00', date:'2026-09-01', minutes:45, km:16, load:60 };
+eq('kein Zusammenfassen ueber den Tag', I.entdoppeln([frueh, spaet]).length, 2);
+eq('chronologisch sortiert', I.entdoppeln([spaet, frueh])[0].id, 'a');
+eq('direkt hintereinander bleibt getrennt',
+   I.entdoppeln([frueh, { ...spaet, zeit:'2026-09-01T07:45:00' }]).length, 2);
+
+print('\n--- Ohne Uhrzeit wird nicht geraten ---');
+ok('keine Zeit, kein Treffer', !I.selbeFahrt({ minutes:45 }, { minutes:45 }));
+eq('beide bleiben stehen',
+   I.entdoppeln([{ id:'x', date:'2026-09-01', minutes:45 },
+                 { id:'y', date:'2026-09-01', minutes:45 }]).length, 2);
+
+print('\n--- Ueberlappung entscheidet, nicht die exakte Startzeit ---');
+ok('eine Minute Versatz ist dieselbe Fahrt',
+   I.selbeFahrt(zwift, health));
+ok('halb so lange Fahrt im selben Fenster zaehlt als dieselbe',
+   I.selbeFahrt(zwift, { zeit:'2026-09-01T19:20:00', minutes:22 }));
+ok('nur ein Zipfel Ueberlappung reicht nicht',
+   !I.selbeFahrt(zwift, { zeit:'2026-09-01T19:50:00', minutes:45 }));
+eq('leere Liste bleibt leer', I.entdoppeln([]).length, 0);
+
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

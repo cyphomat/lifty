@@ -42,13 +42,70 @@ export async function resolveAthlete() {
   return null;
 }
 
+/**
+ * Dieselbe Fahrt kann zweimal in intervals.icu landen, wenn zwei Wege
+ * dorthin fuehren — Zwift -> Strava und daneben Apple Health -> HealthFit.
+ * Die Kopien tragen verschiedene Kennungen und leicht verschiedene Zeiten,
+ * sind aber dieselbe Stunde auf dem Rad. Ungefiltert verdoppeln sie
+ * Kilometer, Stunden und Wochenlast: jeder Graph waere dann Fiktion.
+ */
+
+/** Zeitfenster einer Fahrt in Millisekunden, oder null ohne Uhrzeit. */
+function fenster(f) {
+  const start = f.zeit ? new Date(f.zeit).getTime() : NaN;
+  if (isNaN(start)) return null;
+  return [start, start + Math.max(f.minutes || 0, 1) * 60000];
+}
+
+/**
+ * Zwei Fahrten sind dieselbe, wenn sich ihre Zeitfenster zur Haelfte der
+ * kuerzeren ueberlappen. Ueber die Uhrzeit statt ueber den Tag, weil zwei
+ * echte Fahrten an einem Tag erhalten bleiben muessen — und ueber die
+ * Ueberlappung statt ueber die exakte Startzeit, weil die Quellen um
+ * Minuten auseinanderliegen (45 Min bei Zwift, 46 in Apple Health).
+ */
+export function selbeFahrt(a, b) {
+  const fa = fenster(a), fb = fenster(b);
+  if (!fa || !fb) return false;   // ohne Uhrzeit wird nicht geraten
+  const ueberlappung = Math.min(fa[1], fb[1]) - Math.max(fa[0], fb[0]);
+  if (ueberlappung <= 0) return false;
+  return ueberlappung >= Math.min(fa[1] - fa[0], fb[1] - fb[0]) / 2;
+}
+
+/**
+ * Wie viel eine Fahrt hergibt. Die reichere Kopie gewinnt: die Zwift-Fassung
+ * mit Watt und Trainingslast, nicht der nackte Health-Eintrag ohne beides.
+ * Ohne Last stuft `coach.interferenz` eine harte Fahrt als locker ein.
+ */
+function reichtum(f) {
+  return (f.load ? 4 : 0) + (f.km ? 2 : 0) + (f.minutes ? 1 : 0);
+}
+
+/**
+ * Doppelte Fahrten zusammenfassen. Die verworfenen Kennungen bleiben unter
+ * `doppel` stehen — verschwiegen wird nichts, die App sagt es im Status.
+ */
+export function entdoppeln(fahrten = []) {
+  const behalten = [];
+  const nachReichtum = [...fahrten].sort(
+    (a, b) => reichtum(b) - reichtum(a) || (b.minutes || 0) - (a.minutes || 0));
+
+  for (const f of nachReichtum) {
+    const treffer = behalten.find(g => selbeFahrt(f, g));
+    if (treffer) (treffer.doppel = treffer.doppel || []).push(f.id);
+    else behalten.push({ ...f });
+  }
+  return behalten.sort(
+    (a, b) => String(a.zeit || a.date).localeCompare(String(b.zeit || b.date)));
+}
+
 /** Radaktivitaeten in einem Zeitraum, auf das Noetige reduziert. */
 export async function rides(from, to) {
   const id = localStorage.getItem(KEY_ID);
   if (!id) return [];
   const list = await get(`/athlete/${id}/activities?oldest=${from}&newest=${to}`);
   if (!Array.isArray(list)) return [];
-  return list
+  return entdoppeln(list
     .filter(a => RIDE_TYPES.includes(a.type))
     .map(a => ({
       id: a.id,
@@ -61,7 +118,7 @@ export async function rides(from, to) {
       minutes: Math.round((a.moving_time || 0) / 60),
       km: Math.round((a.distance || 0) / 100) / 10,
       load: a.icu_training_load || null
-    }));
+    })));
 }
 
 /** Wellness-Daten: Gewicht, Fitness (ctl), Ermuedung (atl), HRV und Schlaf. */

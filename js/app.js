@@ -109,8 +109,10 @@ async function load() {
   // aber ein leerer Bildschirm im Funkloch waere die schlechtere Antwort.
   const zwischen = S.cached();
   if (zwischen.fahrten && zwischen.fahrten.length) {
-    alleFahrten = zwischen.fahrten;
-    stoerung = C.interferenz(zwischen.fahrten);
+    // Auch hier entdoppeln: der Zwischenspeicher kann noch aus einer
+    // Fassung stammen, die Doppel nicht kannte.
+    alleFahrten = ICU.entdoppeln(zwischen.fahrten);
+    stoerung = C.interferenz(alleFahrten);
   }
   if (zwischen.form) form = zwischen.form;
   if (zwischen.erholung) erholung = zwischen.erholung;
@@ -162,7 +164,11 @@ async function loadIntervals() {
       stand: 'ok',
       text: '',
       letzte: sortiert[0] || null,
-      anzahl: alle.length
+      anzahl: alle.length,
+      // Zusammengefasste Doppel werden benannt, nicht verschwiegen: sonst
+      // ist "eine Fahrt weniger als erwartet" von einem Fehler nicht zu
+      // unterscheiden — und in intervals.icu selbst zaehlen sie weiter.
+      doppel: alle.reduce((n, r) => n + (r.doppel ? r.doppel.length : 0), 0)
     };
     renderWeek();
   } catch (e) {
@@ -217,7 +223,9 @@ function renderIcuStatus() {
     — ${escHtml(icu.letzte.name)} · ${escHtml(icu.letzte.minutes)} Min · ${escHtml(icu.letzte.km)} km.
     ${t(icu.anzahl === 1 ? 'icu.fahrtenIn90' : 'icu.fahrtenIn90.mehr', { n: icu.anzahl })}
     ${lange ? `<br>${t('icu.radRuht')}` : ''}
-  </p>`;
+  </p>
+  ${icu.doppel ? `<p class="fine" style="color:var(--rost)">${
+    t(icu.doppel === 1 ? 'icu.doppel' : 'icu.doppel.mehr', { n: icu.doppel })}</p>` : ''}`;
 }
 
 /** Verbindungsuebersicht unter ≡. */
@@ -1359,7 +1367,7 @@ const MARSHALL_KG = 55; // Halfstack, Kopf + 4x12-Box, grob gerundet
 function renderAngeben(logs) {
   const box = $('hist-angeben');
   if (!box) return;
-  const fahrten = alleFahrten.length ? alleFahrten : (S.cached().fahrten || []);
+  const fahrten = fahrtenListe();
   const s = ST.summary(logs);
   const reps = ST.wiederholungenGesamt(logs);
   const tag = ST.lieblingstag(logs, fahrten);
@@ -1734,6 +1742,15 @@ async function verarbeiteIcuQueue() {
 /* ================= Radfahrten ================= */
 
 /**
+ * Die Fahrten dieser Sitzung, ersatzweise aus dem Zwischenspeicher.
+ * An einer Stelle, damit das Entdoppeln nicht an einem der Aufrufer
+ * vorbeigeht — sonst zeigen Verlauf und Startbildschirm verschiedene Zahlen.
+ */
+function fahrtenListe() {
+  return alleFahrten.length ? alleFahrten : ICU.entdoppeln(S.cached().fahrten || []);
+}
+
+/**
  * Die Fahrten kommen fertig aus intervals.icu — hier werden sie nur
  * sichtbar gemacht. Ohne diese Ansicht hat man zwei Trainingsleben
  * und sieht immer nur eines davon.
@@ -1742,11 +1759,7 @@ function renderRad() {
   const box = $('hist-rad');
   if (!box) return;
 
-  let fahrten = alleFahrten;
-  if (!fahrten.length) {
-    const c = S.cached();
-    if (c.fahrten && c.fahrten.length) fahrten = c.fahrten;
-  }
+  let fahrten = fahrtenListe();
 
   if (!ICU.isConfigured()) {
     box.innerHTML = `<p class="fine">${t('rad.nichtVerbunden')}</p>`;
@@ -2234,7 +2247,7 @@ function meilensteinKarte() {
 function renderKalender(logs) {
   const box = $('hist-kalender');
   if (!box) return;
-  const fahrten = alleFahrten.length ? alleFahrten : (S.cached().fahrten || []);
+  const fahrten = fahrtenListe();
   const k = ST.kalender(logs, fahrten, 26, new Date());
 
   const zellen = k.tage.map(tag => {
@@ -2278,7 +2291,7 @@ function renderKalender(logs) {
 function renderLast(logs) {
   const box = $('hist-last');
   if (!box) return;
-  const fahrten = alleFahrten.length ? alleFahrten : (S.cached().fahrten || []);
+  const fahrten = fahrtenListe();
   const faktor = (config.intervals && config.intervals.loadProMinute) || { strength: 0.8, wod: 1.4 };
   const wochen = ST.wochenLast(logs, fahrten, 12, new Date(), faktor);
   const max = Math.max(1, ...wochen.map(w => w.gesamt));

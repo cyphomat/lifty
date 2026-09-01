@@ -102,6 +102,8 @@ export const TEXTE = {
     'icu.fahrtenIn90': '{n} Fahrt in 90 Tagen.',
     'icu.fahrtenIn90.mehr': '{n} Fahrten in 90 Tagen.',
     'icu.radRuht': 'Das Rad ruht länger als das Eisen. Eine ruhige Stunde in Zone 2 kostet dich keine Erholung für den Beintag.',
+    'icu.doppel': '{n} doppelte Aktivität zusammengefasst — dieselbe Fahrt kam über zwei Wege herein. In intervals.icu steht sie weiter doppelt und zählt dort in die Formkurve.',
+    'icu.doppel.mehr': '{n} doppelte Aktivitäten zusammengefasst — dieselbe Fahrt kam über zwei Wege herein. In intervals.icu stehen sie weiter doppelt und zählen dort in die Formkurve.',
 
     /* ---- Verbindungen ---- */
     'conn.gh.ok': 'Verbunden mit {repo}.',
@@ -529,6 +531,8 @@ export const TEXTE = {
     'icu.fahrtenIn90': '{n} ride in 90 days.',
     'icu.fahrtenIn90.mehr': '{n} rides in 90 days.',
     'icu.radRuht': 'The bike has been resting longer than the iron. A calm hour in zone 2 costs you no recovery for leg day.',
+    'icu.doppel': 'Merged {n} duplicate activity — the same ride came in by two routes. In intervals.icu it is still there twice and still counts towards your form curve.',
+    'icu.doppel.mehr': 'Merged {n} duplicate activities — the same rides came in by two routes. In intervals.icu they are still there twice and still count towards your form curve.',
 
     /* ---- Connections ---- */
     'conn.gh.ok': 'Connected to {repo}.',
