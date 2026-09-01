@@ -10,6 +10,24 @@ sonst merkt die installierte App nichts von einer neuen Fassung.
 
 ---
 
+## 2026-09-01.81
+
+### Dokumentation
+- **README beider Sprachen mit Screenshots der neuen Bildschirme**: Ersteinrichtung,
+  „Deine Stimme", Orte und Geräte, die Ortswahl aus der Kopfzeile und der Fork-Hinweis.
+  Echte Bildschirme mit Beispieldaten, keine Mockups.
+- Neue Tabelle **Einrichten und anpassen** in den Funktionen. „Deine Stimme" und „Orte und
+  Geräte" standen bis jetzt unter *Rad und Kondition* — dort gehörten sie nie hin.
+- `tools/shots.mjs` ergänzt `tools/screens.sh`: ein paar Bildschirme hängen daran, was die
+  API *antwortet* (fehlende `config.json`, neuere Version im Original) und lassen sich
+  nicht aus dem Zwischenspeicher stellen. Playwright statt Chrome-unter-macOS, damit es
+  überall läuft.
+
+### Nebenbei
+- Ankreuzfelder tragen jetzt die Bernsteinfarbe der App statt des Browser-Blaus.
+
+---
+
 ## 2026-09-01.80
 
 ### Behoben — Datenverlust

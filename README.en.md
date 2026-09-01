@@ -45,7 +45,22 @@
 
 <img src="assets/screens/tour-desktop.png" alt="Tour on the Mac, wide layout">
 
-<sub>Real screens with sample data, captured via <code>tools/shot.html</code>. Not mockups.</sub>
+**And this is how you set it up** — the app asks, instead of making you write a JSON file:
+
+<table>
+<tr>
+<td width="33%"><img src="assets/screens/einrichten-dunkel.png" alt="Guided first-time setup"></td>
+<td width="33%"><img src="assets/screens/stimme-dunkel.png" alt="Your voice in the backstage"></td>
+<td width="33%"><img src="assets/screens/orte-dunkel.png" alt="Places and equipment"></td>
+</tr>
+<tr>
+<td align="center"><b>First-time setup</b><br><sub>Bar, lifts, training days</sub></td>
+<td align="center"><b>Your voice</b><br><sub>Reason, own lines, old bests</sub></td>
+<td align="center"><b>Places and equipment</b><br><sub>What is where</sub></td>
+</tr>
+</table>
+
+<sub>Real screens with sample data, captured via <code>tools/shot.html</code> and <code>tools/shots.mjs</code>. Not mockups.</sub>
 
 ---
 
@@ -117,8 +132,6 @@ Back squat is in both workouts and therefore climbs twice as fast.
 | **Recovery (HRV/sleep)** | From intervals.icu, usually via HealthFit out of Apple Health. HRV is judged only relative to your own baseline of recent days, never absolutely. Feeds into the call. |
 | **Power targets** | From eFTP instead of percentages. |
 | **Jam** | Five formats, 31 movements, loads from your current state. Never two barbell parts. |
-| **Your voice** | Your reason, your own lines and old personal bests, right in the app — no JSON by hand. The reason shows up on hard days, the bests on their anniversaries. |
-| **Places and equipment** | Several gyms (home gym, box, studio …) each with their own kit. A button in the header shows where you are and switches places — on the home screen and in the jam. It only draws from what is there. With no places set up everything stays allowed. |
 | **Scaling** | Every movement names alternatives. “Can't do this” removes it for good. |
 
 ### App
@@ -143,6 +156,23 @@ Back squat is in both workouts and therefore climbs twice as fast.
 
 ---
 
+### Setting up and adjusting
+
+| | |
+|---|---|
+| **First-time setup** | No programme in the repo? Then the app asks: bar, the five lifts with a starting weight, strength days, optionally bike days — and writes a valid `config.json` from that. No JSON by hand. |
+| **Your voice** | Your reason, your own lines and old personal bests, right in the app. The reason shows up on hard days, the bests on their anniversaries. |
+| **Places and equipment** | Several gyms (home gym, box, studio …) each with their own kit. The jam only draws from what is there. With no places set up everything stays allowed. |
+| **Place picker in the header** | A button shows where you are and switches places — on the home screen and in the jam. The picker lists how many jam movements are possible at each place. |
+| **Update hint for forks** | A fork stays where it branched off. The app compares its version against the original's and says so once, with the way to update. |
+| **Language** | Interface in German or English, switchable in the backstage. |
+
+<p align="center">
+  <img src="assets/screens/ortwahl-dunkel.png" alt="Place picker from the header" width="300">
+</p>
+
+<p align="center"><sub>The place picker from the header — with the number of jam movements possible there.</sub></p>
+
 ## Two decisions that carry the whole thing
 
 **`state.json` is derived, not maintained.** It is a projection from `config.json` and every file in `einheiten/`. A mistyped entry never becomes a problem: fix the file, hit “rebuild state.json”, done. Working weights are never set directly — that is what the `anpassung` log type is for.
@@ -166,6 +196,10 @@ first open the app notices there is no programme yet and walks you through it: b
 the five lifts with a starting weight (or one click on “start with the empty bar”),
 strength days, optionally bike days. From that it writes a valid `config.json` into your
 repo.
+
+<p align="center">
+  <img src="assets/screens/einrichten-dunkel.png" alt="The setup screen" width="330">
+</p>
 
 If you would rather write it yourself, you still can — the file looks like this:
 
@@ -223,6 +257,10 @@ Your fork stays where you branched off — the original keeps moving, but your f
 finds out on its own. So the app tells you: if your fork is on an older version, a hint
 appears once at start, and under *Backstage → App* you see which version is upstream and
 which one you are running.
+
+<p align="center">
+  <img src="assets/screens/fork-dunkel.png" alt="Hint about a newer version upstream" width="330">
+</p>
 
 Updating then takes two clicks on GitHub:
 
@@ -317,12 +355,19 @@ git add -A && git commit -m "…" && git push
 
 Sets `version.json` and the cache name in `sw.js` together — both have to change or the app notices nothing new.
 
-Re-capture screenshots:
+Re-capture the screenshots — two tools, because there are two kinds of screen:
 
 ```sh
 python3 -m http.server 8765 &
-sh tools/screens.sh
+
+sh tools/screens.sh        # training: home, session, tour, jam, max-out
+node tools/shots.mjs       # setup, voice, places, fork hint
 ```
+
+`screens.sh` drives `tools/shot.html` with Chrome — the app runs off the cache there. That
+is not enough for screens that depend on what the API *answers*: the setup screen only
+appears on a missing `config.json`, the fork hint only with a newer version upstream. So
+`shots.mjs` answers itself (Playwright, cross-platform, `npx playwright install chromium`).
 
 ---
 

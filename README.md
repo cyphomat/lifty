@@ -45,7 +45,22 @@
 
 <img src="assets/screens/tour-desktop.png" alt="Tour auf dem Mac, breite Ansicht">
 
-<sub>Echte Bildschirme mit Beispieldaten, aufgenommen über <code>tools/shot.html</code>. Keine Mockups.</sub>
+**Und so richtest du es ein** — die App fragt, statt dich eine JSON-Datei schreiben zu lassen:
+
+<table>
+<tr>
+<td width="33%"><img src="assets/screens/einrichten-dunkel.png" alt="Geführte Ersteinrichtung"></td>
+<td width="33%"><img src="assets/screens/stimme-dunkel.png" alt="Deine Stimme im Backstage"></td>
+<td width="33%"><img src="assets/screens/orte-dunkel.png" alt="Orte und Geräte"></td>
+</tr>
+<tr>
+<td align="center"><b>Ersteinrichtung</b><br><sub>Stange, Übungen, Trainingstage</sub></td>
+<td align="center"><b>Deine Stimme</b><br><sub>Grund, eigene Zeilen, alte Bestwerte</sub></td>
+<td align="center"><b>Orte und Geräte</b><br><sub>Was steht wo</sub></td>
+</tr>
+</table>
+
+<sub>Echte Bildschirme mit Beispieldaten, aufgenommen über <code>tools/shot.html</code> und <code>tools/shots.mjs</code>. Keine Mockups.</sub>
 
 ---
 
@@ -117,8 +132,6 @@ Back Squat ist in beiden Workouts dabei und steigt darum doppelt so schnell.
 | **Erholung (HRV/Schlaf)** | Aus intervals.icu, meist via HealthFit aus Apple Health. HRV nur relativ zur eigenen Basis der letzten Tage bewertet, nicht absolut. Fließt in die Ansage ein. |
 | **Wattziele** | Aus der eFTP statt Prozentangaben. |
 | **Jam** | Fünf Formate, 31 Übungen, Lasten aus dem aktuellen Stand. Nie zwei Langhantelteile. |
-| **Deine Stimme** | Dein Grund, eigene Sprüche und alte Bestleistungen direkt in der App — kein JSON von Hand. Der Grund erscheint an harten Tagen, die Bestleistungen an ihren Jahrestagen. |
-| **Orte und Geräte** | Mehrere Gyms (Homegym, Box, Studio …) mit eigener Ausstattung. Ein Knopf in der Kopfzeile zeigt, wo du bist, und stellt um — auf dem Startbildschirm wie im Jam. Gewürfelt wird nur aus dem, was dort steht. Ohne eingerichtete Orte bleibt alles erlaubt. |
 | **Skalierung** | Jede Übung nennt Alternativen. „Kann ich nicht" nimmt sie dauerhaft raus. |
 
 ### App
@@ -143,6 +156,23 @@ Back Squat ist in beiden Workouts dabei und steigt darum doppelt so schnell.
 
 ---
 
+### Einrichten und anpassen
+
+| | |
+|---|---|
+| **Ersteinrichtung** | Kein Programm im Repo? Dann fragt die App: Stange, die fünf Übungen mit Startgewicht, Krafttage, optional Radtage — und schreibt daraus eine gültige `config.json`. Kein JSON von Hand. |
+| **Deine Stimme** | Dein Grund, eigene Sprüche und alte Bestleistungen direkt in der App. Der Grund erscheint an harten Tagen, die Bestleistungen an ihren Jahrestagen. |
+| **Orte und Geräte** | Mehrere Gyms (Homegym, Box, Studio …) mit eigener Ausstattung. Der Jam würfelt nur aus dem, was dort steht. Ohne eingerichtete Orte bleibt alles erlaubt. |
+| **Ortswahl in der Kopfzeile** | Ein Knopf zeigt, wo du gerade bist, und stellt um — auf dem Startbildschirm wie im Jam. In der Auswahl steht je Ort, wie viele Jam-Bewegungen dort möglich sind. |
+| **Update-Hinweis für Forks** | Ein Fork bleibt stehen, wo er abgezweigt ist. Die App vergleicht ihre Version mit der des Originals und sagt einmalig Bescheid, samt Weg zum Aktualisieren. |
+| **Sprache** | Oberfläche auf Deutsch oder Englisch, umschaltbar im Backstage. |
+
+<p align="center">
+  <img src="assets/screens/ortwahl-dunkel.png" alt="Ortswahl aus der Kopfzeile" width="300">
+</p>
+
+<p align="center"><sub>Die Ortswahl aus der Kopfzeile — mit der Zahl der hier möglichen Jam-Bewegungen.</sub></p>
+
 ## Zwei Entscheidungen, die tragen
 
 **`state.json` ist abgeleitet, nicht gepflegt.** Eine Projektion aus `config.json` und allen Dateien in `einheiten/`. Ein vertippter Eintrag wird nie zum Problem: Datei korrigieren, „state.json neu berechnen", fertig. Arbeitsgewichte werden nie direkt gesetzt — dafür gibt es den Log-Typ `anpassung`.
@@ -166,6 +196,10 @@ von Hand**. Beim ersten Öffnen merkt die App, dass noch kein Programm da ist, u
 dich durch: Stangengewicht, die fünf Übungen mit Startgewicht (oder ein Klick auf „mit der
 leeren Stange anfangen"), Krafttage, optional Radtage. Daraus schreibt sie eine gültige
 `config.json` in dein Repo.
+
+<p align="center">
+  <img src="assets/screens/einrichten-dunkel.png" alt="Der Einrichte-Bildschirm" width="330">
+</p>
 
 Wer lieber selbst schreibt, kann das weiterhin — die Datei sieht dann so aus:
 
@@ -223,6 +257,10 @@ Dein Fork bleibt stehen, wo du ihn abgezweigt hast — am Original wird weiterge
 aber davon bekommt er von sich aus nichts mit. Die App sagt dir deshalb Bescheid: läuft
 dein Fork auf einem älteren Stand, erscheint beim Start einmalig ein Hinweis, und unter
 *Backstage → App* steht, welche Version oben liegt und welche bei dir.
+
+<p align="center">
+  <img src="assets/screens/fork-dunkel.png" alt="Hinweis auf eine neuere Version im Original" width="330">
+</p>
 
 Aktualisieren geht dann in zwei Klicks auf GitHub:
 
@@ -321,12 +359,20 @@ git add -A && git commit -m "…" && git push
 
 Setzt `version.json` und den Cache-Namen in `sw.js` gemeinsam — beides muss sich ändern, sonst merkt die App nichts Neues.
 
-Screenshots neu aufnehmen:
+Screenshots neu aufnehmen — zwei Werkzeuge, weil zwei Sorten Bildschirm:
 
 ```sh
 python3 -m http.server 8765 &
-sh tools/screens.sh
+
+sh tools/screens.sh        # Training: Start, Einheit, Tour, Jam, Max-Out
+node tools/shots.mjs       # Einrichten, Stimme, Orte, Fork-Hinweis
 ```
+
+`screens.sh` treibt `tools/shot.html` mit Chrome — die App läuft dort aus dem
+Zwischenspeicher. Das reicht nicht für Bildschirme, die davon abhängen, was die API
+*antwortet*: der Einrichte-Bildschirm erscheint nur bei einer fehlenden `config.json`, der
+Fork-Hinweis nur bei einer neueren Version im Original. `shots.mjs` antwortet deshalb
+selbst (Playwright, plattformunabhängig, `npx playwright install chromium`).
 
 ---
 

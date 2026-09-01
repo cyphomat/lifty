@@ -684,3 +684,6 @@ h2.backstage::before{
 .ort-opts .n{font-family:var(--display);font-size:16px;letter-spacing:.03em;text-transform:uppercase}
 .ort-opts button.an .n{color:var(--akzent)}
 .ort-opts .z{font-family:var(--mono);font-size:11px;color:var(--dim);white-space:nowrap}
+
+/* Ankreuzfelder in der Palette statt im Browser-Blau. */
+input[type=checkbox]{accent-color:var(--akzent);width:16px;height:16px}
