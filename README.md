@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://cyphomat.github.io/setlist/"><img alt="App öffnen" src="https://img.shields.io/badge/App-öffnen-e8a23d?style=for-the-badge&labelColor=17161b"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/Tests-500%20grün-7fa65c?style=for-the-badge&labelColor=17161b">
+  <img alt="Tests" src="https://img.shields.io/badge/Tests-617%20grün-7fa65c?style=for-the-badge&labelColor=17161b">
   <img alt="Build" src="https://img.shields.io/badge/Build-keiner-6f93ad?style=for-the-badge&labelColor=17161b">
   <img alt="Abhängigkeiten" src="https://img.shields.io/badge/Abhängigkeiten-0-a7a3ab?style=for-the-badge&labelColor=17161b">
 </p>
@@ -207,6 +207,38 @@ Fertig. Die erste Einheit legt `state.json` automatisch an; alles danach ist Abl
 
 ---
 
+## Sicherheit und Datenschutz
+
+Die App ist für eine Person gebaut und soll auch nur für diese Person sichtbar sein.
+Was das konkret heißt:
+
+**Deine Daten liegen in deinem privaten Repo.** Die App liest und schreibt ausschließlich
+in `setlist-data` — Einheiten, Körpergewicht, Notizen. Der App-Code selbst (dieses Repo)
+ist öffentlich, enthält aber keine Daten. Beim Start prüft die App die Sichtbarkeit deines
+Datenrepos und **warnt unübersehbar, wenn es öffentlich steht** — sonst würde man es nie
+merken, weil die App genauso funktioniert.
+
+**Zugangsdaten verlassen den Browser nur zu ihrem eigenen Dienst.** GitHub-Token und
+intervals.icu-Key liegen im `localStorage` und werden ausschließlich als
+`Authorization`-Header mitgeschickt — nie in einer Adresse, nie in einem Commit, nie in
+einer Fehlermeldung.
+
+**Drei externe Ziele, sonst keine.** `api.github.com` für deine Daten, `intervals.icu` für
+Rad und Form, ein YouTube-*Suchlink* in der Bibliothek (ohne Referrer). Keine Analytics,
+kein CDN, keine Schriften von fremden Servern.
+
+**Fremdtext wird maskiert.** Aktivitätsnamen aus intervals.icu setzt nicht du, sondern
+Strava, Zwift oder eine Gruppenfahrt. Solcher Text wird vor der Anzeige maskiert
+(`js/sicher.js`), und eine strikte Content-Security-Policy (`script-src 'self'`) fängt ab,
+was durchrutschen sollte. Selbst eingetragene Videolinks werden auf `http`/`https`
+begrenzt.
+
+**Was bewusst nach draußen geht:** Ist die Übertragung nach intervals.icu aktiv, landen
+dort Datum, Dauer, geschätzte Trainingslast und eine Zeile pro Übung mit Gewicht und
+Wiederholungen. Abschaltbar unter *Backstage → Verbindungen*.
+
+---
+
 ## Aufbau
 
 | Datei | Rolle |
@@ -219,6 +251,8 @@ Fertig. Die erste Einheit legt `state.json` automatisch an; alles danach ist Abl
 | `js/bibliothek.js` | Bündelt alle Übungen zu einer durchsuchbaren Liste. |
 | `js/i18n.js` | Oberflächentexte auf Deutsch und Englisch. |
 | `js/geraete.js` | Orte, Ausstattung, Machbarkeit einer Bewegung. |
+| `js/sicher.js` | Maskiert Fremdtext, prüft Adressen. |
+| `js/boot.js` | Thema und Speicherumzug vor dem ersten Bild. |
 | `js/store.js` | GitHub-API als Speicher, Offline-Puffer. |
 | `js/intervals.js` | Liest Fahrten und Form; schreibt Krafteinheiten zurück. |
 | `js/app.js` | Oberfläche und Ablauf. |
@@ -230,10 +264,10 @@ Fertig. Die erste Einheit legt `state.json` automatisch an; alles danach ist Abl
 
 ```sh
 JSC=/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc
-for t in program coach wod stats intervals bibliothek i18n geraete; do $JSC --module-file=tests/$t.test.js; done
+for t in program coach wod stats intervals bibliothek i18n geraete sicher store grundlagen icu-queue; do $JSC --module-file=tests/$t.test.js; done
 ```
 
-500 Tests, ausgeführt von der JS-Engine, die in macOS ohnehin steckt. Kein Node, kein Build.
+617 Tests, ausgeführt von der JS-Engine, die in macOS ohnehin steckt. Kein Node, kein Build.
 
 ---
 

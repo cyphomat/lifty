@@ -104,6 +104,22 @@ const formVerlauf = Array.from({ length: 30 }, (_, i) => {
   return { date: tage(29 - i), ctl, atl, form: Math.round((ctl - atl) * 10) / 10 };
 });
 
+/* Diese Datei liegt im oeffentlichen App-Repo und wird von GitHub Pages
+   mit ausgeliefert — sie ist unter der echten App-Adresse erreichbar. Sie
+   raeumt aber den localStorage der App leer, um ihre Beispieldaten zu
+   setzen. Wer sie versehentlich auf der eigenen Installation oeffnet,
+   verliert damit Token, intervals-Key und vor allem die Warteschlange mit
+   noch nicht uebertragenen Einheiten.
+
+   Deshalb laeuft sie nur lokal. Screenshots werden ohnehin gegen
+   `python3 -m http.server` aufgenommen, siehe tools/screens.sh. */
+const lokal = ['localhost', '127.0.0.1', '::1', ''].includes(location.hostname);
+if (!lokal) {
+  document.body.innerHTML = '<p style="color:#e8a23d;font:16px system-ui;padding:24px">' +
+    'Aufnahme-Werkzeug. Läuft absichtlich nur lokal, weil es den Speicher der App leert.</p>';
+  throw new Error('shot.html nur lokal');
+}
+
 localStorage.clear();
 localStorage.setItem('setlist.token', 'demo');
 localStorage.setItem('setlist.cache', JSON.stringify({

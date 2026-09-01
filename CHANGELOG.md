@@ -10,6 +10,53 @@ sonst merkt die installierte App nichts von einer neuen Fassung.
 
 ---
 
+## 2026-09-01.75
+
+Ergebnis eines Sicherheits- und Datenschutz-Durchgangs.
+
+### Behoben — Sicherheit
+- **Fremdtext wurde ungeprüft ins DOM geschrieben (schwerwiegend).** Aktivitätsnamen aus
+  intervals.icu setzt nicht der Nutzer, sondern Strava, Zwift oder eine Gruppenfahrt. Ein
+  Name mit HTML darin führte Code aus — nachgestellt und reproduziert: drei Ausführungen
+  auf Start- und Tour-Ansicht. Aus diesem Kontext sind GitHub-Token und intervals.icu-Key
+  im `localStorage` lesbar, das Risiko war also der vollständige Verlust beider Zugänge.
+  Sämtlicher Fremdtext wird jetzt maskiert (`js/sicher.js`): intervals.icu-Daten,
+  Fehlermeldungen der GitHub-API, Namen und Freitexte aus `config.json`, `stimme.json`,
+  `bibliothek.json` und den Log-Dateien.
+- **Strikte Content-Security-Policy** als zweite Verteidigungslinie. `script-src 'self'`
+  macht eingeschleuste `onerror`-Handler wirkungslos, `connect-src` begrenzt ausgehende
+  Verbindungen auf GitHub und intervals.icu. Dafür ist das Inline-Skript nach `js/boot.js`
+  gewandert — die Seite kommt damit ohne `unsafe-inline` aus.
+- **Selbst eingetragene Videolinks** werden auf `http`/`https` begrenzt. Ein Link der Form
+  `javascript:…` hätte sonst beim Antippen Code ausgeführt.
+- **`tools/shot.html` läuft nur noch lokal.** Die Datei liegt im öffentlichen App-Repo und
+  wird von GitHub Pages mit ausgeliefert — sie ruft aber `localStorage.clear()` auf. Wer
+  sie versehentlich auf der eigenen Installation öffnete, verlor Token, Key und vor allem
+  die Warteschlange mit noch nicht übertragenen Einheiten.
+- Der YouTube-Link schickt keinen Referrer mehr — er verriet die Adresse der eigenen
+  Installation und damit den GitHub-Nutzernamen.
+
+### Neu — Datenschutz
+- **Warnung, wenn das Datenrepo öffentlich steht.** Die App fragt die Sichtbarkeit beim
+  Start ab und sagt es deutlich an. Vorher wäre das nie aufgefallen: ein öffentliches Repo
+  funktioniert genauso gut wie ein privates, nur liest es die ganze Welt mit.
+- README beider Sprachen bekommen einen Abschnitt, der belegbar aufführt, was wohin geht.
+
+### Testabdeckung
+Von 500 auf **617 Tests**. Vier neue Dateien für Bereiche, die vorher gar nicht oder nur
+indirekt abgedeckt waren:
+- `sicher.test.js` — Maskierung und Adressprüfung, inklusive des konkreten Angriffsstrings.
+- `store.test.js` — die Speicherschicht hatte bisher **keine** Testdatei. Jetzt: Repo-Ziel
+  samt Rückfallwerten, Token, Offline-Puffer und Lesecache, jeweils auch mit kaputten
+  Daten.
+- `grundlagen.test.js` — `isoWeek`, `mondayOf`, `ymd`, `isSuccess`, `fmtWeight`,
+  `planWorkout`. Datumsrechnung inklusive der Stellen, an denen sie üblicherweise bricht:
+  Sonntag, Jahreswechsel, Schalttag.
+- `icu-queue.test.js` — die Warteschlange nach intervals.icu, besonders der Fall, dass eine
+  Übertragung scheitert und die andere klappt.
+
+---
+
 ## 2026-09-01.74
 
 ### Neu

@@ -78,6 +78,25 @@ async function api(path, options = {}, versuch = 1) {
   return res.json();
 }
 
+/**
+ * Sichtbarkeit des Datenrepos. Die App schreibt jede Einheit, jedes
+ * Koerpergewicht und jede Notiz dorthin — steht das Repo auf oeffentlich,
+ * liest das die ganze Welt mit, und niemand merkt es, weil die App sonst
+ * genauso funktioniert. Deshalb wird gefragt statt angenommen.
+ *
+ * Gibt null zurueck, wenn es sich nicht feststellen laesst (kein Netz, kein
+ * Leserecht auf die Metadaten). Unbekannt ist nicht dasselbe wie oeffentlich.
+ */
+export async function repoOeffentlich() {
+  try {
+    const j = await api(`/repos/${getOwner()}/${getRepo()}`);
+    if (!j || typeof j.private !== 'boolean') return null;
+    return !j.private;
+  } catch {
+    return null;
+  }
+}
+
 /** Datei lesen. Gibt { data, sha } oder null zurueck. */
 export async function readFile(path) {
   const j = await api(`/repos/${getOwner()}/${getRepo()}/contents/${path}?ref=main`);

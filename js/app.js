@@ -8,6 +8,7 @@ import * as ST from './stats.js';
 import * as B from './bibliothek.js';
 import { t, locale, sprache, setSprache, uebersetzeStatisch } from './i18n.js';
 import * as G from './geraete.js';
+import { escHtml, sicherLink } from './sicher.js';
 
 let config = null, state = null, stateSha = null, session = null;
 let ridesByDate = new Map(), letzterLog = null, trend = null;
@@ -18,6 +19,9 @@ let icu = { stand: 'aus', text: '', letzte: null, anzahl: 0 };
 // Woher die angezeigten Daten wirklich stammen. Eine gruene Kachel, die nur
 // den Zwischenspeicher meint, waere eine Luege.
 let datenQuelle = 'keine';
+// null = noch nicht geprueft oder nicht feststellbar. Nur ein echtes true
+// loest die Warnung aus — eine geratene Warnung waere schlimmer als keine.
+let repoOeffentlich = null;
 let restTimer = null, restLeft = 0;
 // Manuell gewaehltes Workout. Nur fuer diese eine Einheit — der Automat
 // bleibt die Wahrheit darueber, was eigentlich dran waere.
@@ -72,6 +76,13 @@ async function load() {
     bibliothek = bib ? bib.data : {};
     datenQuelle = 'netz';
     S.cache({ config, state, stimme, bibliothek });
+    S.repoOeffentlich().then(oeff => {
+      repoOeffentlich = oeff;
+      // Kurz im Banner — die ganze Erklaerung samt Weg zur Einstellung
+      // steht unter Verbindungen, wo man sie in Ruhe lesen kann.
+      if (oeff) banner(t('conn.gh.oeffentlichKurz', { repo: S.getRepo() }), 'err', 12000);
+      renderConnections();
+    });
   } catch (e) {
     const c = S.cached();
     if (c.config) {
@@ -174,7 +185,7 @@ function renderIcuStatus() {
   }
   if (icu.stand === 'laedt') { el.innerHTML = `<p class="fine">${t('icu.laedt')}</p>`; return; }
   if (icu.stand === 'fehler') {
-    el.innerHTML = `<p class="fine" style="color:var(--rot)">intervals.icu: ${icu.text}</p>`;
+    el.innerHTML = `<p class="fine" style="color:var(--rot)">intervals.icu: ${escHtml(icu.text)}</p>`;
     return;
   }
 
@@ -187,7 +198,7 @@ function renderIcuStatus() {
   const wann = tage === 0 ? t('icu.heute') : tage === 1 ? t('icu.einTag') : t('icu.tage', { n: tage });
   el.innerHTML = `<p class="fine">
     ${tage === 0 ? t('icu.zuletzt') : t('icu.davor')} <b class="num" style="color:${lange ? 'var(--rost)' : 'var(--akzent)'}">${wann}</b>
-    — ${icu.letzte.name} · ${icu.letzte.minutes} Min · ${icu.letzte.km} km.
+    — ${escHtml(icu.letzte.name)} · ${escHtml(icu.letzte.minutes)} Min · ${escHtml(icu.letzte.km)} km.
     ${t(icu.anzahl === 1 ? 'icu.fahrtenIn90' : 'icu.fahrtenIn90.mehr', { n: icu.anzahl })}
     ${lange ? `<br>${t('icu.radRuht')}` : ''}
   </p>`;
@@ -199,9 +210,11 @@ function renderConnections() {
   if (!box) return;
   const zeile = (name, stand, text) => `<div class="conn">
       <span class="dot ${stand}"></span>
-      <span class="b"><span class="n">${name}</span><span class="s">${text}</span></span>
+      <span class="b"><span class="n">${escHtml(name)}</span><span class="s">${escHtml(text)}</span></span>
     </div>`;
-  const gh = datenQuelle === 'netz'
+  const gh = repoOeffentlich === true
+    ? ['fehler', t('conn.gh.oeffentlich', { repo: S.getRepo() })]
+    : datenQuelle === 'netz'
     ? ['ok', t('conn.gh.ok', { repo: S.getRepo() })]
     : datenQuelle === 'cache'
       ? ['aus', t('conn.gh.cache')]
@@ -259,13 +272,13 @@ function renderHome() {
     <div class="kicker">${t(workoutOverride ? 'home.selbstGewaehlt' : 'home.alsNaechstes')}</div>
     <div class="name neon">WORKOUT ${plan.workout}</div>
     <ul>${plan.lifts.map(l => `
-      <li><span>${l.name} <span class="num">${l.sets}×${l.reps}</span></span><span>${P.fmtWeight(l.weight)}</span></li>
+      <li><span>${escHtml(l.name)} <span class="num">${l.sets}×${l.reps}</span></span><span>${P.fmtWeight(l.weight)}</span></li>
     `).join('')}</ul>
     <button id="start" class="btn">${t('home.starten')}</button>`;
   $('start').onclick = startSession;
 
   const motto = config.motto;
-  $('motto').innerHTML = motto ? `<p class="motto">${motto}</p>` : '';
+  $('motto').innerHTML = motto ? `<p class="motto">${escHtml(motto)}</p>` : '';
   renderProgress(d.fortschritt, d.streak);
   renderWeek();
   renderIcuStatus();
@@ -290,7 +303,7 @@ function renderWeights(f) {
     const s = state.lifts[id];
     const anteil = f.perLift[id] ? Math.round(f.perLift[id].anteil * 100) : null;
     return `<div class="w">
-      <div class="n">${def.name}</div>
+      <div class="n">${escHtml(def.name)}</div>
       <div class="v">${P.fmtWeight(s.weight)}</div>
       ${s.fails ? `<div class="f">${t('home.offen', { n: s.fails })}</div>` : ''}
       ${anteil !== null ? `<div class="mini"><i style="width:${anteil}%"></i></div>
@@ -306,11 +319,11 @@ function renderWeek() {
     const done = s.done || !!ride;
     const info = s.type === 'ride' ? RIDE_INFO[s.label] : null;
     return `<div class="slot ${s.isToday ? 'today-slot' : ''} ${done ? 'done' : ''}">
-        <span class="day">${s.day}</span>
-        <span class="what">${done ? '✓ ' : ''}${s.label}
+        <span class="day">${escHtml(s.day)}</span>
+        <span class="what">${done ? '✓ ' : ''}${escHtml(s.label)}
           <span class="detail">${ride
-            ? `<span class="ride-done">${ride.minutes} MIN · ${ride.km} KM${ride.load ? ` · LOAD ${ride.load}` : ''}</span>`
-            : s.detail + wattZiel(s.label)}</span>
+            ? `<span class="ride-done">${escHtml(ride.minutes)} MIN · ${escHtml(ride.km)} KM${ride.load ? ` · LOAD ${escHtml(ride.load)}` : ''}</span>`
+            : escHtml(s.detail) + wattZiel(s.label)}</span>
         </span>
       </div>
       ${info && !done ? `<details class="info"><summary>${t('home.warumEinheit')}</summary>
@@ -380,7 +393,7 @@ function startSession() {
     <details class="info"><summary>${t('ses.waermsaetze')}</summary>
       <div class="body">
         ${plan.lifts.map(l => `
-          <p class="tagline" style="margin:12px 0 4px"><b>${l.name}</b> → ${P.fmtWeight(l.weight)}</p>
+          <p class="tagline" style="margin:12px 0 4px"><b>${escHtml(l.name)}</b> → ${P.fmtWeight(l.weight)}</p>
           ${P.waermsaetze(l.weight, config).map(w => {
             const pt = P.plattenText(w.weight, config);
             return `<div class="kv">
@@ -425,7 +438,7 @@ function renderSession() {
   $('session-body').innerHTML = session.lifts.map((l, li) => {
     const i = LIFT_INFO[l.lift] || {};
     return `<div class="lift">
-      <div class="bar-head"><span class="ln">${i.tag || l.name}</span>
+      <div class="bar-head"><span class="ln">${escHtml(i.tag || l.name)}</span>
         <span class="wadj">
           <button data-w="${li}" data-d="-1" aria-label="${t('ses.leichter')}">−</button>
           <span class="lw">${P.fmtWeight(l.weight)}</span>
@@ -614,16 +627,16 @@ function renderDone(before, log) {
   $('done-body').innerHTML = `
     ${kopf ? `<div class="erfolg-kopf">
       <span class="kicker">Workout ${log.workout} · ${log.date.slice(8)}.${log.date.slice(5,7)}.</span>
-      <p class="gross">${kopf.text}</p>
+      <p class="gross">${escHtml(kopf.text)}</p>
     </div>` : ''}
-    ${rest.length ? `<div class="erfolge">${rest.map(w => `<div class="erfolg">${w.text}</div>`).join('')}</div>` : ''}
+    ${rest.length ? `<div class="erfolge">${rest.map(w => `<div class="erfolg">${escHtml(w.text)}</div>`).join('')}</div>` : ''}
     <details class="info"><summary>${t('done.geaendert')}</summary>
       <div class="body">
         ${log.lifts.map(e => {
           const b = before.lifts[e.lift].weight, a = state.lifts[e.lift].weight;
           const txt = a > b ? `${P.fmtWeight(a)} ▲` : a < b ? `${P.fmtWeight(a)} ▼ Deload` : t('done.bleibt');
           return `<div class="kv"><span class="k">${e.success ? '✓' : '✕'}</span>
-            <span class="v">${config.lifts[e.lift].name} — ${txt}</span></div>`;
+            <span class="v">${escHtml(config.lifts[e.lift].name)} — ${txt}</span></div>`;
         }).join('')}
       </div>
     </details>
@@ -739,7 +752,7 @@ async function renderHistory() {
       renderListe(alt.logs);
       banner(t('msg.offlineStand', { datum: new Date(alt.zeit).toLocaleDateString(locale()) }), '', 5000);
     } else {
-      $('history-body').innerHTML = `<p class="lead">${e.message}</p>`;
+      $('history-body').innerHTML = `<p class="lead">${escHtml(e.message)}</p>`;
     }
     $('history-body').insertAdjacentHTML('beforeend',
       `<button id="hist-retry" class="btn ghost">${t('tour.erneut')}</button>`);
@@ -1058,8 +1071,6 @@ async function commitWod(log) {
    eigene Videolinks landen in bibliothek.json, damit sie mitwachsen
    statt bei jedem Neuladen wieder bei null anzufangen.                  */
 
-const escHtml = s => String(s ?? '').replace(/[&<>"']/g, c =>
-  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 function zeigeBibliothek(kategorie = null) {
   bibZufall = null;               // bei jedem Aufruf neu ziehen
@@ -1071,15 +1082,16 @@ function zeigeBibliothek(kategorie = null) {
 
 function bibDetailHtml(u) {
   const eintrag = bibliothek[u.id] || {};
-  const video = eintrag.video ? escHtml(eintrag.video) : B.youtubeSuche(u.name);
+  const video = sicherLink(eintrag.video) || B.youtubeSuche(u.name);
   return `
-    <div class="bib-detail" data-id="${u.id}">
-      ${u.dosis ? `<p class="tagline"><b>${u.dosis}</b></p>` : ''}
-      ${u.aktuell ? `<div class="kv"><span class="k">${t('bib.aktuell')}</span><span class="v">${u.aktuell}</span></div>` : ''}
-      ${u.info ? `<p>${u.info}</p>` : ''}
-      ${u.cue ? `<div class="kv"><span class="k">${t('bib.cue')}</span><span class="v">${u.cue}</span></div>` : ''}
-      ${u.fehler ? `<div class="kv"><span class="k">${t('bib.fehler')}</span><span class="v">${u.fehler}</span></div>` : ''}
-      <a class="bib-video" href="${video}" target="_blank" rel="noopener">${t('bib.video')}</a>
+    <div class="bib-detail" data-id="${escHtml(u.id)}">
+      ${u.dosis ? `<p class="tagline"><b>${escHtml(u.dosis)}</b></p>` : ''}
+      ${u.aktuell ? `<div class="kv"><span class="k">${t('bib.aktuell')}</span><span class="v">${escHtml(u.aktuell)}</span></div>` : ''}
+      ${u.info ? `<p>${escHtml(u.info)}</p>` : ''}
+      ${u.cue ? `<div class="kv"><span class="k">${t('bib.cue')}</span><span class="v">${escHtml(u.cue)}</span></div>` : ''}
+      ${u.fehler ? `<div class="kv"><span class="k">${t('bib.fehler')}</span><span class="v">${escHtml(u.fehler)}</span></div>` : ''}
+      <a class="bib-video" href="${video}" target="_blank" rel="noopener noreferrer"
+         referrerpolicy="no-referrer">${t('bib.video')}</a>
       <textarea class="bib-notiz" rows="3" placeholder="${t('bib.notiz.ph')}">${escHtml(eintrag.notiz)}</textarea>
       <input class="bib-eigenesvideo" type="text" placeholder="${t('bib.eigenesVideo.ph')}" value="${escHtml(eintrag.video)}">
       <button class="btn ghost small bib-speichern">${t('bib.speichern')}</button>
@@ -1101,14 +1113,14 @@ function renderBibliothek() {
   if (!bibZufall) bibZufall = B.zufaellig(alle);
   $('bib-random').innerHTML = bibZufall ? `
     <div class="card">
-      <div class="kicker">${t('bib.zufaellig', { kat: bibZufall.kategorie })}</div>
-      <div class="name">${bibZufall.name}</div>
+      <div class="kicker">${escHtml(t('bib.zufaellig', { kat: bibZufall.kategorie }))}</div>
+      <div class="name">${escHtml(bibZufall.name)}</div>
       ${bibDetailHtml(bibZufall)}
     </div>` : '';
 
   $('bib-liste').innerHTML = treffer.length
     ? treffer.map(u => `
-      <details class="info"><summary>${u.name}<span class="bib-kat">${u.kategorie}</span></summary>
+      <details class="info"><summary>${escHtml(u.name)}<span class="bib-kat">${escHtml(u.kategorie)}</span></summary>
         <div class="body">${bibDetailHtml(u)}</div>
       </details>`).join('')
     : `<p class="fine">${t('bib.keine')}</p>`;
@@ -1153,7 +1165,7 @@ function renderStats(logs) {
         <div class="s">${t('stat.lastMalReps')}</div></div>
       <div class="stat"><div class="n">${t('stat.proWoche')}</div><div class="v">${s.proWoche ?? '—'}</div>
         <div class="s">${s.von ? t('stat.seit', { datum: s.von }) : t('stat.keineDaten')}</div></div>
-      <div class="stat"><div class="n">${t('stat.bestwert', { name: (config.lifts.squat || {}).name || 'Squat' })}</div>
+      <div class="stat"><div class="n">${escHtml(t('stat.bestwert', { name: (config.lifts.squat || {}).name || 'Squat' }))}</div>
         <div class="v">${s.best.squat ? P.fmtWeight(s.best.squat.weight) : '—'}</div>
         <div class="s">${s.best.squat ? s.best.squat.date : t('stat.nochKeiner')}</div></div>
     </div>`;
@@ -1207,7 +1219,7 @@ function renderCharts(logs) {
     const linieUnten = untere.length > 1
       ? untere.map((k, i) => `${i ? 'L' : 'M'}${k.x.toFixed(1)},${k.y.toFixed(1)}`).join(' ') : null;
     return `<div class="chart">
-      <div class="h"><span class="t">${config.lifts[id].name}</span>
+      <div class="h"><span class="t">${escHtml(config.lifts[id].name)}</span>
         <span class="r">${P.fmtWeight(letzter.weight)} ${delta > 0 ? `▲ +${delta}` : delta < 0 ? `▼ ${delta}` : ''}</span></div>
       <svg viewBox="0 0 300 60" preserveAspectRatio="none" aria-hidden="true">
         <path d="${sp.flaeche}" fill="var(--tint-akzent)"/>
@@ -1236,23 +1248,23 @@ function renderListe(logs) {
   $('history-body').innerHTML = sortiert.length ? sortiert.map(l => {
     if (l.type === 'maxout') {
       const name = (config.lifts[l.lift] || {}).name || l.lift;
-      return `<div class="hist maxout"><div class="d">${l.date} · ${t('hist.maxout')} · ${name.toUpperCase()}</div>
-        <div class="l">${l.weight} kg × ${l.reps}${l.e1rm ? t('hist.geschaetztesMax', { kg: l.e1rm }) : ''}</div></div>`;
+      return `<div class="hist maxout"><div class="d">${escHtml(l.date)} · ${t('hist.maxout')} · ${escHtml(name.toUpperCase())}</div>
+        <div class="l">${escHtml(l.weight)} kg × ${escHtml(l.reps)}${l.e1rm ? escHtml(t('hist.geschaetztesMax', { kg: l.e1rm })) : ''}</div></div>`;
     }
     if (l.type === 'anpassung') {
       const g = Object.entries(l.gewichte || {})
-        .map(([id, w]) => `${(config.lifts[id] || {}).name || id} ${P.fmtWeight(w)}`).join(' · ');
-      return `<div class="hist anpassung"><div class="d">${l.date} · ${t('hist.angepasst')}</div>
-        <div class="l">${g}${l.grund ? `<br><span style="color:var(--dim)">${l.grund}</span>` : ''}</div></div>`;
+        .map(([id, w]) => `${escHtml((config.lifts[id] || {}).name || id)} ${P.fmtWeight(w)}`).join(' · ');
+      return `<div class="hist anpassung"><div class="d">${escHtml(l.date)} · ${t('hist.angepasst')}</div>
+        <div class="l">${g}${l.grund ? `<br><span style="color:var(--dim)">${escHtml(l.grund)}</span>` : ''}</div></div>`;
     }
     if (l.type && l.type !== 'strength') {
       const m = l.dauerSekunden ? `${Math.floor(l.dauerSekunden / 60)}:${String(l.dauerSekunden % 60).padStart(2, '0')}` : '—';
-      return `<div class="hist wod"><div class="d">${l.date} · WOD · ${m}</div>
-        <div class="l">${l.label || ''}</div></div>`;
+      return `<div class="hist wod"><div class="d">${escHtml(l.date)} · WOD · ${m}</div>
+        <div class="l">${escHtml(l.label || '')}</div></div>`;
     }
-    return `<div class="hist"><div class="d">${l.date} · WORKOUT ${l.workout}</div>
+    return `<div class="hist"><div class="d">${escHtml(l.date)} · WORKOUT ${escHtml(l.workout)}</div>
       <div class="l">${(l.lifts || []).map(e =>
-        `${(config.lifts[e.lift] || {}).name || e.lift} ${P.fmtWeight(e.weight)} (${(e.reps || []).join('/')})`).join(' · ')}</div>
+        `${escHtml((config.lifts[e.lift] || {}).name || e.lift)} ${P.fmtWeight(e.weight)} (${escHtml((e.reps || []).join('/'))})`).join(' · ')}</div>
     </div>`;
   }).join('') : `<p class="lead">${t('tour.keineEinheit')}</p>`;
 }
@@ -1290,7 +1302,7 @@ function starteMaxout() {
 function renderMaxoutLifts() {
   $('mo-lifts').innerHTML = Object.entries(config.lifts).map(([id, def]) => `
     <div class="w waehlbar ${id === mo.lift ? 'gewaehlt' : ''}" data-lift="${id}">
-      <div class="n">${def.name}</div>
+      <div class="n">${escHtml(def.name)}</div>
       <div class="v">${P.fmtWeight(state.lifts[id].weight)}</div>
       <div class="f" style="color:var(--dim)">${t('mo.aktuellesGewicht')}</div>
     </div>`).join('');
@@ -1361,7 +1373,7 @@ async function speichereMaxout() {
 
   $('done-body').innerHTML = `
     <div class="card">
-      <div class="kicker">${log.date} · Max-Out · ${config.lifts[mo.lift].name}</div>
+      <div class="kicker">${escHtml(log.date)} · Max-Out · ${escHtml(config.lifts[mo.lift].name)}</div>
       <div class="name neon">${w} × ${r}</div>
       <ul>
         <li><span>${t('mo.geschaetztesMax', { formel: log.formel })}</span><span>${max} kg</span></li>
@@ -1396,13 +1408,13 @@ function renderPRs(logs) {
       `<div class="reihe"><span class="l">${label}</span><span class="v">${wert}${zusatz ? `<small>${zusatz}</small>` : ''}</span></div>`;
     // Auch ohne eigene Einheit gehoert die alte Bestleistung sichtbar —
     // gerade dann ist sie die einzige Zahl, die etwas ueber dich sagt.
-    if (!e) return `<div class="pr"><div class="k">${def.name}</div>
+    if (!e) return `<div class="pr"><div class="k">${escHtml(def.name)}</div>
       <div class="reihe"><span class="l">${t('pr.keineEinheit')}</span><span class="v">—</span></div>
       ${def.reference ? z(t('pr.vorDerPause'), P.fmtWeight(def.reference)) : ''}
       ${rekordZeile(id)}</div>`;
 
     return `<div class="pr">
-      <div class="k">${def.name}</div>
+      <div class="k">${escHtml(def.name)}</div>
       ${e.arbeit ? z(t('pr.schwersterSatz'), P.fmtWeight(e.arbeit.weight), e.arbeit.date) : z(t('pr.schwersterSatz'), '—')}
       ${e.gemessen ? z(t('pr.gemessen'), P.fmtWeight(e.gemessen.weight), e.gemessen.date) : ''}
       ${e.maximum ? z(t('pr.maximum'), `${e.maximum.wert} kg`,
@@ -1593,9 +1605,9 @@ function renderRad() {
     </div>
     ${sortiert.slice(0, 20).map(r => `
       <div class="fahrt">
-        <div class="d">${r.date}${r.load ? ` · LOAD ${r.load}` : ''}</div>
-        <div class="n">${r.name}</div>
-        <div class="m">${r.minutes} Min · ${r.km} km</div>
+        <div class="d">${escHtml(r.date)}${r.load ? ` · LOAD ${escHtml(r.load)}` : ''}</div>
+        <div class="n">${escHtml(r.name)}</div>
+        <div class="m">${escHtml(r.minutes)} Min · ${escHtml(r.km)} km</div>
       </div>`).join('')}
     ${sortiert.length > 20 ? `<p class="fine">${t('rad.weitere', { n: sortiert.length - 20 })}</p>` : ''}`;
 }
@@ -1768,8 +1780,8 @@ function stoerungsZeile() {
   const farbe = { stark: 'var(--rost)', leicht: 'var(--akzent)', gering: 'var(--dim)' }[stoerung.stufe];
   return `<p class="formzeile" style="border-top-color:${farbe}">
     <span class="fw" style="color:${farbe}">${t('stoer.zeile', { h: Math.round(stoerung.stunden) })}</span>
-    <span class="ft">${stoerung.text}</span>
-    <span class="fd">${stoerung.fahrt.name} · ${stoerung.fahrt.minutes} Min${stoerung.fahrt.load ? ` · Load ${stoerung.fahrt.load}` : ''}</span>
+    <span class="ft">${escHtml(stoerung.text)}</span>
+    <span class="fd">${escHtml(stoerung.fahrt.name)} · ${escHtml(stoerung.fahrt.minutes)} Min${stoerung.fahrt.load ? ` · Load ${escHtml(stoerung.fahrt.load)}` : ''}</span>
   </p>`;
 }
 
@@ -1877,7 +1889,7 @@ function rekordZeile(id) {
   if (r.bestes5er) teile.push(t('pr.imFuenfer', { kg: P.fmtWeight(r.bestes5er) }));
   if (!teile.length) return '';
   return `<div class="reihe"><span class="l">${t('pr.bestleistung')}</span>
-    <span class="v" style="color:var(--stahl)">${teile.join(' · ')}<small>${jahr}</small></span></div>`;
+    <span class="v" style="color:var(--stahl)">${teile.join(' · ')}<small>${escHtml(jahr)}</small></span></div>`;
 }
 
 /** Was du außerhalb des Programms mal konntest — Kontext, kein Ziel. */
@@ -1887,8 +1899,8 @@ function weitereRekorde() {
   return `<div class="pr" style="border-left:2px solid var(--stahl)">
     <div class="k">${t('pr.weitere')}</div>
     ${w.map(r => `<div class="reihe">
-      <span class="l">${r.name}${r.zusatz ? ` <small style="color:var(--dim)">${r.zusatz}</small>` : ''}</span>
-      <span class="v" style="color:var(--stahl)">${P.fmtWeight(r.wert)}<small>${(r.datum || '').slice(0, 4)}</small></span>
+      <span class="l">${escHtml(r.name)}${r.zusatz ? ` <small style="color:var(--dim)">${escHtml(r.zusatz)}</small>` : ''}</span>
+      <span class="v" style="color:var(--stahl)">${P.fmtWeight(r.wert)}<small>${escHtml((r.datum || '').slice(0, 4))}</small></span>
     </div>`).join('')}
     <p class="fine" style="margin-top:10px">${t('pr.quelle', { quelle: config.records.quelle })}</p>
   </div>`;
@@ -1907,9 +1919,9 @@ function zeileFuerHeute(d) {
   const warum = config.ziele && config.ziele.warum;
   if (schwer && warum) {
     return `<span style="font-style:normal;color:var(--muted);font-size:12px;
-      font-family:var(--mono);letter-spacing:.1em;display:block;margin-bottom:6px">DEIN GRUND</span>${warum}`;
+      font-family:var(--mono);letter-spacing:.1em;display:block;margin-bottom:6px">DEIN GRUND</span>${escHtml(warum)}`;
   }
-  return d.spruch;
+  return escHtml(d.spruch);
 }
 
 /** Was nur deine App sagen kann — Jahrestage, alte Bestwerte, Wendepunkte. */
@@ -1918,7 +1930,7 @@ function meilensteinKarte() {
   if (!m.length) return '';
   return `<div class="meilenstein">
     <span class="kicker">${m[0].art === 'jahrestag' ? 'Aus deiner Geschichte' : 'Wendepunkt'}</span>
-    <p>${m[0].text}</p>
+    <p>${escHtml(m[0].text)}</p>
   </div>`;
 }
 

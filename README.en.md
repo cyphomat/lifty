@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://cyphomat.github.io/setlist/"><img alt="Open app" src="https://img.shields.io/badge/App-open-e8a23d?style=for-the-badge&labelColor=17161b"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/Tests-500%20green-7fa65c?style=for-the-badge&labelColor=17161b">
+  <img alt="Tests" src="https://img.shields.io/badge/Tests-617%20green-7fa65c?style=for-the-badge&labelColor=17161b">
   <img alt="Build" src="https://img.shields.io/badge/Build-none-6f93ad?style=for-the-badge&labelColor=17161b">
   <img alt="Dependencies" src="https://img.shields.io/badge/Dependencies-0-a7a3ab?style=for-the-badge&labelColor=17161b">
 </p>
@@ -207,6 +207,34 @@ Done. The first session creates `state.json` automatically; everything after tha
 
 ---
 
+## Security and privacy
+
+The app is built for one person and should only be visible to that person. Concretely:
+
+**Your data lives in your private repo.** The app only ever reads and writes
+`setlist-data` — sessions, body weight, notes. The app code itself (this repo) is public
+but holds no data. On start the app checks your data repo's visibility and **warns loudly
+if it is public** — otherwise you would never notice, because the app works just the same.
+
+**Credentials leave the browser only for their own service.** The GitHub token and the
+intervals.icu key live in `localStorage` and are only ever sent as an `Authorization`
+header — never in a URL, never in a commit, never in an error message.
+
+**Three external destinations, no others.** `api.github.com` for your data,
+`intervals.icu` for bike and form, a YouTube *search link* in the library (no referrer).
+No analytics, no CDN, no fonts from third-party servers.
+
+**Foreign text is escaped.** Activity names from intervals.icu are not written by you but
+by Strava, Zwift or a group ride. That text is escaped before display (`js/sicher.js`),
+and a strict Content Security Policy (`script-src 'self'`) catches anything that might
+slip through. Video links you enter yourself are restricted to `http`/`https`.
+
+**What deliberately goes out:** with the intervals.icu sync on, it receives the date,
+duration, estimated training load and one line per lift with weight and reps. Switch it
+off under *Backstage → Connections*.
+
+---
+
 ## Layout
 
 | File | Role |
@@ -219,6 +247,8 @@ Done. The first session creates `state.json` automatically; everything after tha
 | `js/bibliothek.js` | Bundles all exercises into one searchable list. |
 | `js/i18n.js` | Interface texts in German and English. |
 | `js/geraete.js` | Places, equipment, whether a movement is doable. |
+| `js/sicher.js` | Escapes foreign text, validates URLs. |
+| `js/boot.js` | Theme and storage migration before first paint. |
 | `js/store.js` | GitHub API as storage, offline buffer. |
 | `js/intervals.js` | Reads rides and form; writes strength sessions back. |
 | `js/app.js` | Interface and flow. |
@@ -230,10 +260,10 @@ Done. The first session creates `state.json` automatically; everything after tha
 
 ```sh
 JSC=/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc
-for t in program coach wod stats intervals bibliothek i18n geraete; do $JSC --module-file=tests/$t.test.js; done
+for t in program coach wod stats intervals bibliothek i18n geraete sicher store grundlagen icu-queue; do $JSC --module-file=tests/$t.test.js; done
 ```
 
-500 tests, run by the JS engine that ships with macOS anyway. No Node, no build.
+617 tests, run by the JS engine that ships with macOS anyway. No Node, no build.
 
 ---
 
