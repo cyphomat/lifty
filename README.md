@@ -14,6 +14,10 @@
   Zweimal Kraft, zweimal Rad pro Woche. Die Woche ist eine Setlist.
 </p>
 
+<p align="center">
+  <sub>100% vibe coded. Nutzung auf eigene Gefahr. Featurewünsche gerne gesehen.</sub>
+</p>
+
 ---
 
 ## So sieht es aus
