@@ -643,3 +643,23 @@ h2.backstage::before{
 }
 #ein-leer{margin-top:2px}
 #ein-fehler{margin-top:14px}
+
+/* ── Persoenliche Schicht ─────────────────────────────────── */
+.feld{display:block;margin-top:12px}
+.feld>span{
+  display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:6px;
+}
+.pers-rekord{border:1px solid var(--line);background:var(--panel);padding:12px 14px;margin-bottom:8px;border-radius:2px}
+.pers-rekord .n{font-family:var(--display);text-transform:uppercase;letter-spacing:.05em;font-size:15px;margin-bottom:8px}
+/* Drei Felder nebeneinander, solange Platz ist — auf dem Handy untereinander,
+   sonst wird das Datumsfeld unlesbar schmal. */
+.pers-rekord .felder{display:grid;grid-template-columns:1fr;gap:8px}
+@media (min-width:420px){.pers-rekord .felder{grid-template-columns:1.3fr 1fr 1fr}}
+.pers-rekord label{display:block}
+.pers-rekord label>span{
+  display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--dim);margin-bottom:3px;
+}
+.pers-rekord input{margin:0}
+#pers-speichern{margin-top:14px}

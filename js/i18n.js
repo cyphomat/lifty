@@ -182,6 +182,22 @@ export const TEXTE = {
     'wod.ausschliessen': '„{name}“ dauerhaft aus den Zufalls-Workouts nehmen?',
     'wod.ausgeschlossen': '{name} KOMMT NICHT MEHR VOR',
 
+    /* ---- Persoenliche Schicht ---- */
+    'pers.titel': 'Deine Stimme',
+    'pers.hinweis': 'An schweren Tagen zählt dein eigener Grund mehr als jeder Spruch aus der App. Deshalb wird er genau dann gezeigt — und sonst nicht, damit er sich nicht abnutzt.',
+    'pers.grund': 'Dein Grund',
+    'pers.grund.ph': 'Warum du das machst. Ein Satz reicht.',
+    'pers.zeilen': 'Eigene Zeilen',
+    'pers.zeilen.ph': 'Eine Zeile pro Spruch.',
+    'pers.zeilenHinweis': 'Eine Zeile pro Spruch. Sie werden mit den mitgelieferten gemischt, etwa halbe halbe — zwei eigene gehen so nicht zwischen fünfzig fremden unter.',
+    'pers.rekorde': 'Bestleistungen von früher',
+    'pers.rekordeHinweis': 'Woher du kommst. Mit Datum erinnert dich die App an Jahrestagen daran — das sind die Sätze, auf die kein Programm von der Stange kommt.',
+    'pers.datum': 'Datum',
+    'pers.einzel': 'Bestes Einzel',
+    'pers.fuenfer': 'Bester 5er',
+    'pers.speichern': 'Persönliches speichern',
+    'pers.gespeichert': 'PERSÖNLICHES GESPEICHERT',
+
     /* ---- Gyms und Geraete ---- */
     'gym.titel': 'Orte und Geräte',
     'gym.ueberall': 'Überall',
@@ -590,6 +606,22 @@ export const TEXTE = {
     'wod.spruch': 'Conditioning costs nothing as long as it comes last. Your weights are untouched.',
     'wod.ausschliessen': 'Remove “{name}” from random workouts for good?',
     'wod.ausgeschlossen': '{name} WILL NOT COME UP AGAIN',
+
+    /* ---- Personal layer ---- */
+    'pers.titel': 'Your voice',
+    'pers.hinweis': 'On hard days your own reason counts more than any line from the app. That is why it only shows up then — so it does not wear out.',
+    'pers.grund': 'Your reason',
+    'pers.grund.ph': 'Why you do this. One sentence is enough.',
+    'pers.zeilen': 'Your own lines',
+    'pers.zeilen.ph': 'One line per saying.',
+    'pers.zeilenHinweis': 'One line per saying. They get mixed in with the built-in ones, roughly half and half — so two of your own do not drown among fifty others.',
+    'pers.rekorde': 'Personal bests from before',
+    'pers.rekordeHinweis': 'Where you came from. With a date the app reminds you on the anniversary — those are the lines no off-the-shelf programme comes up with.',
+    'pers.datum': 'Date',
+    'pers.einzel': 'Best single',
+    'pers.fuenfer': 'Best set of 5',
+    'pers.speichern': 'Save personal',
+    'pers.gespeichert': 'PERSONAL DETAILS SAVED',
 
     /* ---- Gyms and equipment ---- */
     'gym.titel': 'Places and equipment',

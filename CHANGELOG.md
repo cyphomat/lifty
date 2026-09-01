@@ -10,6 +10,42 @@ sonst merkt die installierte App nichts von einer neuen Fassung.
 
 ---
 
+## 2026-09-01.78
+
+Die Schicht, die aus einem Programm *deine* App macht — bisher lag sie nur in
+handgeschriebenem JSON und war damit faktisch für genau eine Person erreichbar.
+
+### Neu
+- **Tour → Backstage → Deine Stimme.** Drei Dinge sind jetzt in der App eintragbar:
+  - **Dein Grund** — erscheint an den harten Tagen, und nur dann, damit er sich nicht
+    abnutzt.
+  - **Eigene Zeilen** — eine pro Zeile, gemischt mit den 52 mitgelieferten.
+  - **Bestleistungen von früher** — je Übung Datum, bestes Einzel, bester 5er. Mit Datum
+    erinnert die App an Jahrestagen daran:
+
+    > **Aus deiner Geschichte** — Heute vor 5 Jahren: 140 kg Back Squat. Heute stehst du
+    > bei 40 kg — nicht weil du weniger kannst, sondern weil du wieder anfängst.
+
+### Bewusst so
+- **Was von Hand gepflegt wurde, überlebt.** Nach Situation getrennte Sprüche
+  (`comeback`, `leicht`, …) bleiben erhalten, auch wenn das Textfeld geleert wird — die
+  Oberfläche schreibt nur unter `alle`. Ebenso bleiben `records.quelle` und
+  `records.weitere` unangetastet.
+- **Ein Datum allein ist keine Bestleistung.** Ohne Gewicht fällt der Eintrag weg, sonst
+  stünde ein Jahrestag im Kalender, zu dem es nichts zu sagen gibt. Umgekehrt geht ein
+  Gewicht ohne Datum durch — es zählt dann bei den Bestwerten, nur ohne Jahrestag.
+- **Leere Felder räumen auf** statt leere Hüllen stehen zu lassen: kein Grund heißt kein
+  `ziele`-Block, keine Rekorde heißt kein `records.programm`.
+- **Zwei Dateien, beide vorher frisch gelesen** — `config.json` und `stimme.json`.
+  `stimme.json` wird nur angefasst, wenn sich dort auch wirklich etwas ändert.
+
+### Testabdeckung
+Von 696 auf **745**. `persoenlich.test.js` prüft vor allem die Fälle, in denen etwas
+verloren gehen könnte: handgepflegte Situationszeilen, `quelle` und `weitere` neben den
+ersetzten Rekorden, halbe Daten, unsinnige Gewichte.
+
+---
+
 ## 2026-09-01.77
 
 Der erste Schritt weg von „das ist Daniels App" hin zu „das kann jemand anderes auch

@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://cyphomat.github.io/setlist/"><img alt="App öffnen" src="https://img.shields.io/badge/App-öffnen-e8a23d?style=for-the-badge&labelColor=17161b"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/Tests-696%20grün-7fa65c?style=for-the-badge&labelColor=17161b">
+  <img alt="Tests" src="https://img.shields.io/badge/Tests-745%20grün-7fa65c?style=for-the-badge&labelColor=17161b">
   <img alt="Build" src="https://img.shields.io/badge/Build-keiner-6f93ad?style=for-the-badge&labelColor=17161b">
   <img alt="Abhängigkeiten" src="https://img.shields.io/badge/Abhängigkeiten-0-a7a3ab?style=for-the-badge&labelColor=17161b">
 </p>
@@ -61,7 +61,7 @@ Der Unterschied zu einem Logbuch: sie hat eine Meinung zum heutigen Tag — aus 
   > **Aus deiner Geschichte** — Gestern vor 5 Jahren: 140 kg Back Squat. Heute stehst du bei 65 kg — nicht weil du weniger kannst, sondern weil du wieder anfängst.
 
 - **Minierfolge** stehen nach jeder Einheit ganz oben. Nicht der Bericht, sondern das Geschaffte.
-- **Die Stimme** mischt eigene Zeilen aus `stimme.json` mit 52 mitgelieferten, etwa halbe halbe.
+- **Die Stimme** mischt eigene Zeilen mit 52 mitgelieferten, etwa halbe halbe. Eintragbar unter **Tour → Backstage → Deine Stimme** — dort steht auch *dein Grund*, der nur an den harten Tagen erscheint.
 
 ## Wie es zusammenhängt
 
@@ -117,6 +117,7 @@ Back Squat ist in beiden Workouts dabei und steigt darum doppelt so schnell.
 | **Erholung (HRV/Schlaf)** | Aus intervals.icu, meist via HealthFit aus Apple Health. HRV nur relativ zur eigenen Basis der letzten Tage bewertet, nicht absolut. Fließt in die Ansage ein. |
 | **Wattziele** | Aus der eFTP statt Prozentangaben. |
 | **Jam** | Fünf Formate, 31 Übungen, Lasten aus dem aktuellen Stand. Nie zwei Langhantelteile. |
+| **Deine Stimme** | Dein Grund, eigene Sprüche und alte Bestleistungen direkt in der App — kein JSON von Hand. Der Grund erscheint an harten Tagen, die Bestleistungen an ihren Jahrestagen. |
 | **Orte und Geräte** | Mehrere Gyms (Homegym, Box, Studio …) mit eigener Ausstattung. Im Jam wählst du oben aus, wo du gerade bist — gewürfelt wird nur aus dem, was dort steht. Ohne eingerichtete Orte bleibt alles erlaubt. |
 | **Skalierung** | Jede Übung nennt Alternativen. „Kann ich nicht" nimmt sie dauerhaft raus. |
 
@@ -291,6 +292,7 @@ Wiederholungen. Abschaltbar unter *Backstage → Verbindungen*.
 | `js/sicher.js` | Maskiert Fremdtext, prüft Adressen. |
 | `js/aktualisierung.js` | Vergleicht die eigene Version mit der des Originals. |
 | `js/einrichten.js` | Baut aus ein paar Antworten eine gültige `config.json`. |
+| `js/persoenlich.js` | Grund, eigene Zeilen und alte Bestleistungen. |
 | `js/boot.js` | Thema und Speicherumzug vor dem ersten Bild. |
 | `js/store.js` | GitHub-API als Speicher, Offline-Puffer. |
 | `js/intervals.js` | Liest Fahrten und Form; schreibt Krafteinheiten zurück. |
@@ -303,10 +305,10 @@ Wiederholungen. Abschaltbar unter *Backstage → Verbindungen*.
 
 ```sh
 JSC=/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc
-for t in program coach wod stats intervals bibliothek i18n geraete sicher store grundlagen icu-queue aktualisierung einrichten; do $JSC --module-file=tests/$t.test.js; done
+for t in program coach wod stats intervals bibliothek i18n geraete sicher store grundlagen icu-queue aktualisierung einrichten persoenlich; do $JSC --module-file=tests/$t.test.js; done
 ```
 
-696 Tests, ausgeführt von der JS-Engine, die in macOS ohnehin steckt. Kein Node, kein Build.
+745 Tests, ausgeführt von der JS-Engine, die in macOS ohnehin steckt. Kein Node, kein Build.
 
 ---
 

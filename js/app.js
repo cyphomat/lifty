@@ -11,6 +11,7 @@ import * as G from './geraete.js';
 import { escHtml, sicherLink } from './sicher.js';
 import * as A from './aktualisierung.js';
 import * as E from './einrichten.js';
+import * as PS from './persoenlich.js';
 
 let config = null, state = null, stateSha = null, session = null;
 let ridesByDate = new Map(), letzterLog = null, trend = null;
@@ -695,6 +696,7 @@ async function renderHistory() {
   renderVersion();
   renderConnections();
   renderGymVerwaltung();
+  renderPersoenlich();
   // Ohne geladene Konfiguration gibt es nichts zu zeigen — und der Zugriff
   // auf config.lifts wuerde die ganze Ansicht mit einem leeren Bildschirm
   // quittieren statt mit einer Erklaerung.
@@ -1737,6 +1739,77 @@ function renderRad() {
       </div>`).join('')}
     ${sortiert.length > 20 ? `<p class="fine">${t('rad.weitere', { n: sortiert.length - 20 })}</p>` : ''}`;
 }
+
+
+/* ---------- Deine Stimme und deine Geschichte (Backstage) ----------
+   Diese drei Felder sind der Unterschied zwischen einem Timer mit Tabelle
+   und einer App, die etwas ueber dich weiss. Sie lagen bisher nur in
+   handgeschriebenem JSON — erreichbar fuer genau eine Person.            */
+
+function renderPersoenlich() {
+  const box = $('pers-rekorde');
+  if (!box || !config) return;
+
+  $('pers-grund').value = (config.ziele && config.ziele.warum) || '';
+  $('pers-zeilen').value = PS.eigeneZeilen(stimme);
+
+  box.innerHTML = PS.rekordEntwurf(config).map(r => `
+    <div class="pers-rekord" data-id="${escHtml(r.id)}">
+      <div class="n">${escHtml(r.name)}</div>
+      <div class="felder">
+        <label><span>${t('pers.datum')}</span>
+          <input class="pr-datum" type="date" value="${escHtml(r.datum)}"></label>
+        <label><span>${t('pers.einzel')}</span>
+          <input class="pr-einzel" type="number" inputmode="decimal" step="2.5" min="0"
+                 value="${escHtml(r.bestesEinzel)}" placeholder="kg"></label>
+        <label><span>${t('pers.fuenfer')}</span>
+          <input class="pr-fuenfer" type="number" inputmode="decimal" step="2.5" min="0"
+                 value="${escHtml(r.bestes5er)}" placeholder="kg"></label>
+      </div>
+    </div>`).join('');
+}
+
+/**
+ * Zwei Dateien, zwei Schreibvorgaenge — beide erst frisch gelesen, damit
+ * nichts ueberschrieben wird, was inzwischen von Hand dazukam. stimme.json
+ * wird nur angefasst, wenn sich dort auch etwas aendert.
+ */
+$('pers-speichern').onclick = async () => {
+  try {
+    banner(t('msg.speichere'), '', 0);
+
+    const rekorde = PS.baueRekorde([...$('pers-rekorde').querySelectorAll('.pers-rekord')].map(el => ({
+      id: el.dataset.id,
+      datum: el.querySelector('.pr-datum').value,
+      bestesEinzel: el.querySelector('.pr-einzel').value,
+      bestes5er: el.querySelector('.pr-fuenfer').value
+    })));
+
+    const datei = await S.readFile('config.json');
+    if (!datei) throw new Error(t('msg.configNichtLesbar'));
+    const neu = PS.setzeInConfig(datei.data, { grund: $('pers-grund').value, rekorde });
+    await S.writeFile('config.json', neu, 'Persönliches aktualisiert', datei.sha);
+    config = neu;
+
+    const vorher = await S.readFile('stimme.json');
+    const neueStimme = PS.baueStimme($('pers-zeilen').value, vorher ? vorher.data : null);
+    if (JSON.stringify(neueStimme) !== JSON.stringify(vorher ? vorher.data : null)) {
+      // Ohne eigene Zeilen bleibt eine leere Huelle stehen statt die Datei zu
+      // loeschen — Loeschen ueber die Contents-API waere ein eigener Weg, und
+      // eine leere sprueche-Liste hat exakt dieselbe Wirkung.
+      await S.writeFile('stimme.json', neueStimme || { sprueche: {} },
+        'Eigene Zeilen aktualisiert', vorher ? vorher.sha : undefined);
+      stimme = neueStimme;
+    }
+
+    S.cache({ config, stimme });
+    renderPersoenlich();
+    renderHome();
+    banner(t('pers.gespeichert'), 'ok');
+  } catch (e) {
+    banner(e.message, 'err', 8000);
+  }
+};
 
 /* ---------- Orte einrichten (Backstage) ----------
    Der Entwurf lebt bis zum Speichern nur hier. Jeder Haken einzeln ins Repo
