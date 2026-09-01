@@ -270,6 +270,107 @@ export function anteileAufSumme(summe, teilA, stellen = 2) {
 }
 
 /* ---------------------------------------------------------------
+   Aerobe Basis: Effizienzfaktor und Entkopplung.
+
+   Beides misst dasselbe von zwei Seiten — wie viel Leistung ein
+   Herzschlag traegt. Der Unterschied ist die Anforderung an die Fahrt:
+   der Effizienzfaktor kommt mit fuenfundvierzig Minuten aus, die
+   Entkopplung braucht eine lange ruhige Strecke am Stueck.
+
+   Deshalb traegt hier der Effizienzfaktor, und die Entkopplung bleibt
+   still, bis genug zusammenhaengende Grundlage dahintersteht. Eine
+   Kurve aus zwei Messpunkten waere kein Trend, sondern Dekoration.   */
+
+/**
+ * Der Effizienzfaktor ist nur innerhalb vergleichbarer Fahrten aussagekraeftig:
+ * eine harte Fahrt hat systematisch einen hoeheren Wert als eine ruhige, weil
+ * die Leistung schneller steigt als der Puls. Eine Kurve ueber alle Fahrten
+ * misst darum vor allem, wie hart die letzte war.
+ *
+ * Statt eine Zielzone vorzuschreiben, sucht diese Funktion das Band, in dem
+ * am meisten gefahren wurde, und vergleicht nur darin. Sie passt sich damit
+ * an, was tatsaechlich passiert — nicht an das, was jemand fuer richtig haelt.
+ */
+export function aerobeEffizienz(fahrten = [], { minMinuten = 25, bandBreite = 0.15, ab = 0.40 } = {}) {
+  const taugt = fahrten.filter(f =>
+    f && f.effizienz > 0 && f.intensitaet > 0 && (f.minutes || 0) >= minMinuten);
+  if (!taugt.length) return { band: null, punkte: [], geprueft: fahrten.length, verworfen: fahrten.length };
+
+  const bandVon = f => ab + Math.floor((f.intensitaet - ab) / bandBreite) * bandBreite;
+  const eimer = new Map();
+  for (const f of taugt) {
+    const k = Math.round(bandVon(f) * 100) / 100;
+    if (!eimer.has(k)) eimer.set(k, []);
+    eimer.get(k).push(f);
+  }
+  // Groesstes Band gewinnt; bei Gleichstand das haertere, weil dort die
+  // juengeren Fahrten liegen und der Trend aktueller ist.
+  const [von, gruppe] = [...eimer.entries()].sort((a, b) => b[1].length - a[1].length || b[0] - a[0])[0];
+
+  return {
+    band: [Math.round(von * 100) / 100, Math.round((von + bandBreite) * 100) / 100],
+    geprueft: fahrten.length,
+    verworfen: fahrten.length - gruppe.length,
+    punkte: gruppe
+      .map(f => ({
+        date: f.date,
+        ef: Math.round(f.effizienz * 1000) / 1000,
+        ist: Math.round(f.intensitaet * 100) / 100,
+        np: f.np || null, hf: f.hf || null, minuten: f.minutes || null
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date))
+  };
+}
+
+/**
+ * Trend ueber die Effizienzpunkte. Unter drei Punkten wird bewusst nichts
+ * ausgerechnet: zwei Werte sind eine Verbindungslinie, kein Verlauf.
+ */
+export function effizienzTrend(punkte = []) {
+  if (punkte.length < 3) return null;
+  const a = punkte[0], b = punkte[punkte.length - 1];
+  const delta = b.ef - a.ef;
+  return {
+    von: a, bis: b, n: punkte.length,
+    delta: Math.round(delta * 1000) / 1000,
+    prozent: Math.round((delta / a.ef) * 1000) / 10,
+    tage: Math.round((new Date(b.date) - new Date(a.date)) / 86400000)
+  };
+}
+
+/**
+ * Entkopplung, aber nur wo sie etwas bedeutet. `pwhrMin` sagt, ueber wie
+ * viele Minuten zusammenhaengender Grundlage intervals.icu den Wert
+ * gebildet hat — darunter ist die Zahl da, aber nicht belastbar.
+ *
+ * Gibt immer auch zurueck, WORAN es fehlt. "Keine Daten" und "die Fahrten
+ * sind zu kurz dafuer" sind zwei verschiedene Auskuenfte, und nur die
+ * zweite sagt einem, was sich aendern muesste.
+ */
+export function entkopplungsReihe(fahrten = [], minZ2Minuten = 20) {
+  const mitWert = fahrten.filter(f => f && f.entkopplung != null);
+  const punkte = mitWert
+    .filter(f => (f.pwhrMin || 0) >= minZ2Minuten)
+    .map(f => ({
+      date: f.date,
+      wert: Math.round(f.entkopplung * 10) / 10,
+      minuten: f.pwhrMin, fahrtMinuten: f.minutes || null
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const beste = mitWert.reduce((m, f) => Math.max(m, f.pwhrMin || 0), 0);
+  return {
+    punkte,
+    schwelle: minZ2Minuten,
+    mitWert: mitWert.length,
+    zuKurz: mitWert.length - punkte.length,
+    besteMinuten: beste,
+    // Genug fuer eine Aussage? Drei Punkte, dieselbe Begruendung wie oben.
+    tragfaehig: punkte.length >= 3
+  };
+}
+
+/* ---------------------------------------------------------------
    Plan gegen Ist. Die Frage ist nicht "wie stark bist du", sondern
    "hast du gemacht, was dran war" — und der Fehler, der wirklich
    etwas kostet, ist die leichte Einheit, die hart gefahren wurde.  */

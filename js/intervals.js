@@ -128,6 +128,11 @@ export async function rides(from, to) {
       hfMax: a.max_heartrate || null,
       effizienz: a.icu_efficiency_factor != null ? a.icu_efficiency_factor : null,
       entkopplung: a.decoupling != null ? a.decoupling : null,
+      // Wie viele Minuten zusammenhaengende Grundlage hinter dem
+      // Leistung:HF-Wert stehen. Das ist die Stichprobengroesse der
+      // Entkopplung — ohne sie waere jede Kurve daraus geraten.
+      pwhr: a.icu_power_hr_z2 != null ? a.icu_power_hr_z2 : null,
+      pwhrMin: a.icu_power_hr_z2_mins || 0,
       ftpDamals: a.icu_ftp || null,
       trainer: !!a.trainer,
       // {id, secs} je Zone. Nur die belegten, sonst blaeht das den

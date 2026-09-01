@@ -766,6 +766,7 @@ async function renderHistory() {
     renderAnsageAbgleich(logs);
     renderCharts(logs);
     renderIntensitaet();
+    renderAerob();
     renderRad();
     renderListe(logs);
   } catch (e) {
@@ -784,6 +785,7 @@ async function renderHistory() {
       renderAnsageAbgleich(alt.logs);
       renderCharts(alt.logs);
       renderIntensitaet();
+      renderAerob();
       renderRad();
       renderListe(alt.logs);
       banner(t('msg.offlineStand', { datum: new Date(alt.zeit).toLocaleDateString(locale()) }), '', 5000);
@@ -2433,6 +2435,79 @@ function planFuerDatum(datum) {
   if (!slot) return null;
   const info = RIDE_INFO[slot.label];
   return info ? { label: slot.label, ftp: info.ftp, struktur: info.struktur } : null;
+}
+
+/**
+ * Aerobe Basis: wie viel Leistung ein Herzschlag trägt.
+ *
+ * Der Effizienzfaktor trägt diesen Block, nicht die Entkopplung — er kommt
+ * mit fünfundvierzig Minuten aus, sie braucht eine lange ruhige Strecke am
+ * Stück. Die Entkopplung steht trotzdem hier, bleibt aber still, solange zu
+ * wenig zusammenhängende Grundlage dahintersteht, und sagt dann, woran es
+ * liegt. "Keine Daten" und "deine Fahrten sind zu kurz dafür" sind zwei
+ * verschiedene Auskünfte, und nur die zweite ist zu gebrauchen.
+ */
+function renderAerob() {
+  const box = $('hist-aerob');
+  if (!box) return;
+  const fahrten = fahrtenListe();
+  const ef = ST.aerobeEffizienz(fahrten);
+  const ent = ST.entkopplungsReihe(fahrten);
+
+  // Vier Zustände, nicht drei. "Lang genug gefahren, aber erst einmal"
+  // ist etwas anderes als "die Fahrten sind zu kurz" — mit nur drei
+  // Zweigen stand da sonst "braucht 20 Minuten, deine längste war 62".
+  const entText =
+    ent.tragfaehig
+      ? t('aerob.entkAn', { wert: ent.punkte[ent.punkte.length - 1].wert.toFixed(1), n: ent.punkte.length })
+      : ent.punkte.length
+        ? t('aerob.entkFast', { n: ent.punkte.length, noetig: 3 })
+        : ent.mitWert
+          ? t('aerob.entkAus', { schwelle: ent.schwelle, beste: ent.besteMinuten })
+          : t('aerob.entkKeine');
+  const entZeile = `<p class="fine" style="margin:6px 0 0">${entText}</p>`;
+
+  const tr = ST.effizienzTrend(ef.punkte);
+  if (!tr) {
+    box.innerHTML = `<div class="radbar">
+      <div class="h"><span class="t">${t('aerob.titel')}</span></div>
+      <p class="fine">${t('aerob.leer', { n: ef.punkte.length })}</p>
+      ${entZeile}</div>`;
+    return;
+  }
+
+  const breite = 300, hoehe = 74, rand = 5;
+  const werte = ef.punkte.map(p => p.ef);
+  const min = Math.min(...werte), max = Math.max(...werte);
+  const spanne = max - min || 1;
+  const n = ef.punkte.length;
+  const x = i => rand + (i / (n - 1)) * (breite - 2 * rand);
+  const y = v => rand + (1 - (v - min) / spanne) * (hoehe - 2 * rand);
+  const linie = ef.punkte.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.ef).toFixed(1)}`).join(' ');
+  const flaeche = `M${x(0).toFixed(1)},${hoehe} ${linie.slice(1)} L${x(n - 1).toFixed(1)},${hoehe} Z`;
+
+  const rauf = tr.delta > 0;
+  const farbe = rauf ? 'var(--gruen)' : tr.delta < 0 ? 'var(--rost)' : 'var(--muted)';
+  const jetzt = ef.punkte[n - 1];
+
+  box.innerHTML = `
+    <div class="radbar">
+      <div class="h"><span class="t">${t('aerob.titel')}</span>
+        <span class="r" style="color:${farbe}">${jetzt.ef.toFixed(2)}</span></div>
+      <svg viewBox="0 0 ${breite} ${hoehe}" preserveAspectRatio="none" aria-hidden="true">
+        <path d="${flaeche}" fill="${rauf ? 'var(--tint-gruen)' : 'var(--tint-rost)'}"/>
+        <path d="${linie}" fill="none" stroke="${farbe}" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+      <div class="h" style="margin:7px 0 0">
+        <span class="t">${t('aerob.stand', { np: jetzt.np || '?', hf: jetzt.hf || '?' })}</span>
+        <span class="t" style="color:${farbe}">${tr.prozent > 0 ? '+' : ''}${tr.prozent}% ${
+          t('wkg.inTagen', { n: tr.tage })}</span>
+      </div>
+      <p class="fine" style="margin:6px 0 0">${t('aerob.band', {
+        von: Math.round(ef.band[0] * 100), bis: Math.round(ef.band[1] * 100),
+        n: n, gesamt: ef.geprueft })}</p>
+      ${entZeile}
+    </div>`;
 }
 
 function renderIntensitaet() {

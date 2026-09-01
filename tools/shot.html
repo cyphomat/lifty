@@ -77,13 +77,13 @@ const vorStunden = h => { const d = new Date(Date.now() - h*3600000); const z=n=
   return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}:00`; };
 
 const fahrten = [
-  { id:'a1', date:tage(0), zeit:vorStunden(3), name:'Zwift — VO2max Blocks', minutes:50, km:24, load:96, intensitaet:1.08, np:268, watt:241, hf:152 },
-  { id:'a1b', date:tage(1),  name:'Zwift — Watopia Flat',  minutes:55, km:31.5, load:78, intensitaet:0.71, np:172, watt:165, hf:131 },
-  { id:'a2', date:tage(4),  name:'Feierabendrunde',        minutes:90, km:52,   load:121, intensitaet:0.68, np:165, watt:158, hf:128 },
-  { id:'a3', date:tage(8),  name:'Zwift — Alpe du Zwift',  minutes:70, km:22,   load:96, intensitaet:0.79, np:192, watt:184, hf:141 },
-  { id:'a4', date:tage(15), name:'Lange Runde',            minutes:150,km:88,   load:180, intensitaet:0.64, np:156, watt:148, hf:126 },
+  { id:'a1', date:tage(0), zeit:vorStunden(3), name:'Zwift — VO2max Blocks', minutes:50, km:24, load:96, intensitaet:1.08, np:268, watt:241, hf:152, effizienz:1.76, entkopplung:8.4, pwhrMin:5 },
+  { id:'a1b', date:tage(1),  name:'Zwift — Watopia Flat',  minutes:55, km:31.5, load:78, intensitaet:0.71, np:172, watt:165, hf:131, effizienz:1.31, entkopplung:5.2, pwhrMin:14 },
+  { id:'a2', date:tage(4),  name:'Feierabendrunde',        minutes:90, km:52,   load:121, intensitaet:0.76, np:184, watt:176, hf:142, effizienz:1.30, entkopplung:4.6, pwhrMin:17 },
+  { id:'a3', date:tage(8),  name:'Zwift — Alpe du Zwift',  minutes:70, km:22,   load:96, intensitaet:0.79, np:192, watt:184, hf:150, effizienz:1.28, entkopplung:6.1, pwhrMin:9 },
+  { id:'a4', date:tage(15), name:'Lange Runde',            minutes:150,km:88,   load:180, intensitaet:0.64, np:156, watt:148, hf:126, effizienz:1.24, entkopplung:3.9, pwhrMin:12 },
   // Der Fall, um den es geht: geplant war Grundlage, gefahren wurde Schwelle.
-  { id:'a5', date:tage(22), name:'Zwift — Gruppenfahrt',   minutes:50, km:15.3, load:73, intensitaet:0.91, np:221, watt:206, hf:149 }
+  { id:'a5', date:tage(22), name:'Zwift — Gruppenfahrt',   minutes:50, km:15.3, load:73, intensitaet:0.91, np:221, watt:206, hf:149, effizienz:1.48, entkopplung:7.2, pwhrMin:6 }
 ];
 
 // Watt pro Kilogramm: leichter Zuwachs aus beiden Richtungen — ein paar

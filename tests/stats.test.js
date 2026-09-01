@@ -354,4 +354,84 @@ const neg = S.anteileAufSumme(-0.07, -0.044);
 ok('auch bei fallenden Werten', Math.abs(neg.a + neg.b - neg.summe) < 1e-9);
 eq('ohne Rest bleibt es, wie es ist', S.anteileAufSumme(0.3, 0.1).b, 0.2);
 
+
+print('\n--- Aerobe Effizienz: nur Vergleichbares vergleichen ---');
+// Harte Fahrten haben systematisch den hoeheren Effizienzfaktor: die
+// Leistung steigt schneller als der Puls. Eine Kurve ueber alles misst
+// deshalb vor allem, wie hart die letzte Fahrt war.
+const efFahrten = [
+  { date:'2026-06-02', effizienz:0.95, intensitaet:0.90, minutes:45, np:120, hf:126 },
+  { date:'2026-06-09', effizienz:0.97, intensitaet:0.91, minutes:48, np:123, hf:127 },
+  { date:'2026-06-16', effizienz:0.82, intensitaet:0.68, minutes:60, np:96,  hf:117 },
+  { date:'2026-06-23', effizienz:1.01, intensitaet:0.93, minutes:50, np:127, hf:126 },
+  { date:'2026-06-30', effizienz:0.99, intensitaet:0.88, minutes:20, np:124, hf:125 }, // zu kurz
+  { date:'2026-07-07', effizienz:null, intensitaet:0.90, minutes:45 }                  // ohne Wert
+];
+const ef = S.aerobeEffizienz(efFahrten);
+eq('das meistgefahrene Band gewinnt', ef.band.join('-'), '0.85-1');
+eq('nur die Fahrten aus dem Band', ef.punkte.length, 3);
+eq('die ruhige Fahrt bleibt draussen', ef.punkte.some(p => p.date === '2026-06-16'), false);
+eq('zu kurze Fahrt bleibt draussen', ef.punkte.some(p => p.date === '2026-06-30'), false);
+eq('chronologisch', ef.punkte[0].date, '2026-06-02');
+eq('und es wird gesagt, wie viel verworfen wurde', ef.verworfen, 3);
+eq('ohne brauchbare Fahrten kein Band', S.aerobeEffizienz([]).band, null);
+eq('Fahrten ohne Leistungsmesser ergeben kein Band',
+   S.aerobeEffizienz([{ date:'2026-06-02', minutes:60 }]).band, null);
+
+// Wer nur ruhig faehrt, bekommt das ruhige Band — die Funktion schreibt
+// keine Zone vor, sie folgt dem, was tatsaechlich gefahren wurde.
+const ruhig = S.aerobeEffizienz([
+  { date:'2026-06-02', effizienz:0.80, intensitaet:0.62, minutes:60 },
+  { date:'2026-06-09', effizienz:0.83, intensitaet:0.66, minutes:60 },
+  { date:'2026-06-16', effizienz:1.02, intensitaet:0.95, minutes:45 }
+]);
+eq('das ruhige Band gewinnt hier', ruhig.band.join('-'), '0.55-0.7');
+eq('zwei Punkte darin', ruhig.punkte.length, 2);
+
+print('\n--- Effizienztrend ---');
+const eft = S.effizienzTrend(ef.punkte);
+eq('drei Punkte', eft.n, 3);
+eq('Zuwachs im Wert', eft.delta, 0.06);
+eq('in Prozent', eft.prozent, 6.3);
+eq('21 Tage', eft.tage, 21);
+eq('zwei Punkte sind kein Verlauf', S.effizienzTrend(ef.punkte.slice(0, 2)), null);
+eq('einer erst recht nicht', S.effizienzTrend(ef.punkte.slice(0, 1)), null);
+
+print('\n--- Entkopplung bleibt still, bis sie etwas bedeutet ---');
+// Genau Daniels Lage: kurze Zwift-Fahrten, der Wert steht da, aber es
+// stehen kaum Minuten zusammenhaengender Grundlage dahinter.
+const kurz = S.entkopplungsReihe([
+  { date:'2026-08-25', entkopplung:4.2, pwhrMin:6,  minutes:45 },
+  { date:'2026-09-01', entkopplung:5.1, pwhrMin:11, minutes:46 }
+]);
+eq('nichts Tragfaehiges', kurz.tragfaehig, false);
+eq('keine Punkte ueber der Schwelle', kurz.punkte.length, 0);
+eq('aber die Werte gibt es', kurz.mitWert, 2);
+eq('zwei waren zu kurz', kurz.zuKurz, 2);
+eq('und das laengste Stueck war elf Minuten', kurz.besteMinuten, 11);
+eq('die Schwelle wird mitgeteilt', kurz.schwelle, 20);
+
+const lang = S.entkopplungsReihe([
+  { date:'2026-08-25', entkopplung:4.2, pwhrMin:44, minutes:90 },
+  { date:'2026-09-01', entkopplung:3.4, pwhrMin:61, minutes:100 },
+  { date:'2026-09-08', entkopplung:2.9, pwhrMin:52, minutes:95 },
+  { date:'2026-09-10', entkopplung:9.9, pwhrMin:4,  minutes:40 }
+]);
+eq('drei tragfaehige Punkte', lang.punkte.length, 3);
+eq('jetzt traegt es', lang.tragfaehig, true);
+eq('die kurze Fahrt bleibt draussen', lang.zuKurz, 1);
+eq('sinkende Entkopplung bleibt in der Reihenfolge', lang.punkte[2].wert, 2.9);
+eq('leere Eingabe bleibt still', S.entkopplungsReihe([]).tragfaehig, false);
+
+// Der Zwischenzustand: lang genug gefahren, aber erst einmal. Das ist
+// etwas anderes als "zu kurz" und braucht eine eigene Auskunft.
+const eineLange = S.entkopplungsReihe([
+  { date:'2026-09-01', entkopplung:3.4, pwhrMin:62, minutes:100 },
+  { date:'2026-09-03', entkopplung:6.0, pwhrMin:8,  minutes:45 }
+]);
+eq('noch nicht tragfaehig', eineLange.tragfaehig, false);
+eq('aber ein Punkt ist da', eineLange.punkte.length, 1);
+ok('und die Schwelle war nicht das Problem', eineLange.besteMinuten > eineLange.schwelle,
+   `${eineLange.besteMinuten} vs ${eineLange.schwelle}`);
+
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
