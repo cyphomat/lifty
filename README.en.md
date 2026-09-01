@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://cyphomat.github.io/setlist/"><img alt="Open app" src="https://img.shields.io/badge/App-open-e8a23d?style=for-the-badge&labelColor=17161b"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/Tests-644%20green-7fa65c?style=for-the-badge&labelColor=17161b">
+  <img alt="Tests" src="https://img.shields.io/badge/Tests-696%20green-7fa65c?style=for-the-badge&labelColor=17161b">
   <img alt="Build" src="https://img.shields.io/badge/Build-none-6f93ad?style=for-the-badge&labelColor=17161b">
   <img alt="Dependencies" src="https://img.shields.io/badge/Dependencies-0-a7a3ab?style=for-the-badge&labelColor=17161b">
 </p>
@@ -160,7 +160,13 @@ Fork this repo (`cyphomat/setlist`) into your own GitHub account. That is the pu
 
 **2 · Create your own data repo**
 
-Create a **private** repo called `setlist-data`. It needs at least a `config.json` — the only file you have to write by hand:
+Create a **private** repo called `setlist-data`. That is all — **no file by hand**. On
+first open the app notices there is no programme yet and walks you through it: bar weight,
+the five lifts with a starting weight (or one click on “start with the empty bar”),
+strength days, optionally bike days. From that it writes a valid `config.json` into your
+repo.
+
+If you would rather write it yourself, you still can — the file looks like this:
 
 ```json
 {
@@ -185,9 +191,16 @@ Create a **private** repo called `setlist-data`. It needs at least a `config.jso
 }
 ```
 
-`start` is your entry weight per lift, `increment` the step up after a successful session. `week.slots` defines which weekdays have something scheduled (`day`: 1 = Monday … 7 = Sunday) — **unlike the other fields this is not optional**; without `week` the home screen crashes while building the week overview. If you also want bike slots (`"type": "ride"`), you additionally need a non-empty `rides` array (`label`/`detail` per entry) — same problem otherwise.
+`start` is your entry weight per lift, `increment` the step up after a successful session.
+`week.slots` defines which weekdays have something scheduled (`day`: 1 = Monday …
+7 = Sunday); bike slots (`"type": "ride"`) additionally need a `rides` array. If any of
+that is missing the week overview simply stays empty — the rest of the app carries on.
 
-Do **not** create `state.json` — the app derives the initial state from `config.json` itself the first time (`firstWorkout`, `start` weights) and only writes it back after your first completed session. An empty `einheiten/` folder is enough. Genuinely optional are `stimme.json` (your own lines, see `js/content.js` for the structure) as well as `records` and `ziele` in `config.json`, if you want milestones or old personal bests like in the original.
+Do **not** create `state.json` — the app derives the initial state from `config.json`
+itself the first time and only writes it back after your first completed session. An empty
+`einheiten/` folder is enough. Optional are `stimme.json` (your own lines, see
+`js/content.js` for the structure) as well as `records` and `ziele` in `config.json`, if
+you want milestones or old personal bests.
 
 **3 · Publish**
 
@@ -273,6 +286,7 @@ off under *Backstage → Connections*.
 | `js/geraete.js` | Places, equipment, whether a movement is doable. |
 | `js/sicher.js` | Escapes foreign text, validates URLs. |
 | `js/aktualisierung.js` | Compares your version against the original. |
+| `js/einrichten.js` | Builds a valid `config.json` from a few answers. |
 | `js/boot.js` | Theme and storage migration before first paint. |
 | `js/store.js` | GitHub API as storage, offline buffer. |
 | `js/intervals.js` | Reads rides and form; writes strength sessions back. |
@@ -285,10 +299,10 @@ off under *Backstage → Connections*.
 
 ```sh
 JSC=/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc
-for t in program coach wod stats intervals bibliothek i18n geraete sicher store grundlagen icu-queue aktualisierung; do $JSC --module-file=tests/$t.test.js; done
+for t in program coach wod stats intervals bibliothek i18n geraete sicher store grundlagen icu-queue aktualisierung einrichten; do $JSC --module-file=tests/$t.test.js; done
 ```
 
-644 tests, run by the JS engine that ships with macOS anyway. No Node, no build.
+696 tests, run by the JS engine that ships with macOS anyway. No Node, no build.
 
 ---
 

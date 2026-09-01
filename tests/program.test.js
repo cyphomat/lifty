@@ -131,6 +131,43 @@ const MI2 = new Date(2026, 8, 2);
 const nurWod = { ...P.initialState(config), history: [{ date: '2026-08-31', type: 'wod', label: 'AMRAP' }] };
 eq('Montag bleibt offen', P.planWeek(nurWod, config, MI2)[0].done, false);
 
+print('\n--- Unvollstaendige Konfiguration kippt die Woche nicht ---');
+// Eine von Hand geschriebene config.json ist selten vollstaendig. Frueher
+// starb der ganze Startbildschirm an einem fehlenden week-Block, ohne dass
+// irgendwo stand, warum.
+{
+  const basis = {
+    bar: 20, rounding: 2.5, deload: { afterFails: 3, factor: 0.9 },
+    lifts: { squat: { name: 'Back Squat', increment: 2.5, start: 40 } },
+    workouts: { A: [{ lift: 'squat', sets: 5, reps: 5 }], B: [{ lift: 'squat', sets: 5, reps: 5 }] },
+    firstWorkout: 'A', rest: { normal: 90, afterFail: 180 }, plates: [25, 20, 10, 5, 2.5]
+  };
+  const haelt = (name, cfg, erwartet) => {
+    try {
+      const w = P.planWeek(P.initialState(cfg), cfg, new Date(2026, 8, 2));
+      ok(name, w.length === erwartet, `(${w.length} statt ${erwartet} Slots)`);
+    } catch (e) { ok(name, false, e.message); }
+  };
+  haelt('ohne week-Block', { ...basis }, 0);
+  haelt('week ohne slots', { ...basis, week: {} }, 0);
+  haelt('slots ist kein Array', { ...basis, week: { slots: 'nein' } }, 0);
+  haelt('Radslot ohne rides', { ...basis, week: { slots: [{ day: 1, type: 'ride' }] } }, 0);
+  haelt('Radslot mit leerem rides', { ...basis, week: { slots: [{ day: 1, type: 'ride' }] }, rides: [] }, 0);
+  haelt('Krafttag bleibt, Radtag faellt weg',
+    { ...basis, week: { slots: [{ day: 1, type: 'strength' }, { day: 2, type: 'ride' }] } }, 1);
+  haelt('leerer Slot in der Liste',
+    { ...basis, week: { slots: [null, { day: 1, type: 'strength' }] } }, 1);
+  haelt('vollstaendig bleibt vollstaendig',
+    { ...basis, week: { slots: [{ day: 1, type: 'strength' }, { day: 4, type: 'strength' }] } }, 2);
+
+  // Mit Radeinheiten im Vorrat kommt der Radslot ganz normal durch.
+  const mitRad = { ...basis, week: { slots: [{ day: 2, type: 'ride' }] },
+                   rides: [{ label: 'Z2', detail: '60 Min ruhig' }] };
+  const w = P.planWeek(P.initialState(mitRad), mitRad, new Date(2026, 8, 2));
+  eq('Radslot mit Vorrat kommt durch', w.length, 1);
+  eq('und traegt seine Beschriftung', w[0].label, 'Z2');
+}
+
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
 
 print('\n--- Max-Out ist ein Test, kein Programmschritt ---');

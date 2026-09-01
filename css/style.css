@@ -629,3 +629,17 @@ h2.backstage::before{
 .bib-notiz{min-height:70px;font-size:14px}
 .bib-eigenesvideo{font-size:13px;padding:12px}
 .bib-detail .bib-speichern{margin-top:2px;width:auto;padding:11px 18px}
+
+/* ── Programm einrichten ──────────────────────────────────── */
+/* Die Wochentage sollen als Reihe stehen und nicht je nach Sprache
+   unterschiedlich breit werden — deshalb gleiche Anteile statt Inhalt. */
+.chips.tage button{flex:1;min-width:0;padding:11px 4px;text-align:center}
+.ein-lift{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.ein-lift .ein-name{flex:1;margin:0}
+.ein-lift .ein-kg{display:flex;align-items:center;gap:6px;flex:0 0 108px}
+.ein-lift .ein-kg input{margin:0;text-align:right}
+.ein-lift .ein-kg span{
+  font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--dim);
+}
+#ein-leer{margin-top:2px}
+#ein-fehler{margin-top:14px}

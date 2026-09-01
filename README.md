@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://cyphomat.github.io/setlist/"><img alt="App öffnen" src="https://img.shields.io/badge/App-öffnen-e8a23d?style=for-the-badge&labelColor=17161b"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/Tests-644%20grün-7fa65c?style=for-the-badge&labelColor=17161b">
+  <img alt="Tests" src="https://img.shields.io/badge/Tests-696%20grün-7fa65c?style=for-the-badge&labelColor=17161b">
   <img alt="Build" src="https://img.shields.io/badge/Build-keiner-6f93ad?style=for-the-badge&labelColor=17161b">
   <img alt="Abhängigkeiten" src="https://img.shields.io/badge/Abhängigkeiten-0-a7a3ab?style=for-the-badge&labelColor=17161b">
 </p>
@@ -160,7 +160,13 @@ Fork dieses Repo (`cyphomat/setlist`) in dein eigenes GitHub-Konto. Das ist der 
 
 **2 · Eigenes Datenrepo anlegen**
 
-Leg ein **privates** Repo namens `setlist-data` an. Dort hinein kommt mindestens eine `config.json` — das ist die einzige Datei, die du von Hand brauchst:
+Leg ein **privates** Repo namens `setlist-data` an. Mehr braucht es nicht — **keine Datei
+von Hand**. Beim ersten Öffnen merkt die App, dass noch kein Programm da ist, und fragt
+dich durch: Stangengewicht, die fünf Übungen mit Startgewicht (oder ein Klick auf „mit der
+leeren Stange anfangen"), Krafttage, optional Radtage. Daraus schreibt sie eine gültige
+`config.json` in dein Repo.
+
+Wer lieber selbst schreibt, kann das weiterhin — die Datei sieht dann so aus:
 
 ```json
 {
@@ -185,9 +191,16 @@ Leg ein **privates** Repo namens `setlist-data` an. Dort hinein kommt mindestens
 }
 ```
 
-`start` ist dein Einstiegsgewicht je Übung, `increment` die Steigerung pro erfolgreicher Einheit. `week.slots` legt fest, welche Wochentage etwas anstehen (`day`: 1 = Montag … 7 = Sonntag) — **anders als die übrigen Felder ist das nicht optional**, ohne `week` stürzt der Home-Screen beim Aufbau der Wochenübersicht ab. Willst du auch Radslots (`"type": "ride"`), brauchst du zusätzlich ein nicht-leeres `rides`-Array (`label`/`detail` je Eintrag) — sonst dasselbe Problem.
+`start` ist dein Einstiegsgewicht je Übung, `increment` die Steigerung pro erfolgreicher
+Einheit. `week.slots` legt fest, an welchen Wochentagen etwas ansteht (`day`: 1 = Montag …
+7 = Sonntag); Radslots (`"type": "ride"`) brauchen zusätzlich ein `rides`-Array. Fehlt
+etwas davon, bleibt die Wochenübersicht einfach leer — der Rest der App läuft weiter.
 
-`state.json` **nicht** anlegen — die App leitet den Startzustand beim ersten Mal selbst aus `config.json` ab (`firstWorkout`, `start`-Gewichte) und schreibt ihn erst nach der ersten abgeschlossenen Einheit zurück. `einheiten/` als Ordner reicht leer. Wirklich optional sind dagegen `stimme.json` (eigene Sprüche, siehe `js/content.js` für die Struktur) sowie `records` und `ziele` in `config.json`, wenn du Meilensteine oder alte Bestleistungen wie im Original willst — schau notfalls direkt in Daniels `setlist-data`, welche Felder es dafür gibt.
+`state.json` **nicht** anlegen — die App leitet den Startzustand beim ersten Mal selbst aus
+`config.json` ab und schreibt ihn erst nach der ersten abgeschlossenen Einheit zurück.
+`einheiten/` als Ordner reicht leer. Optional sind `stimme.json` (eigene Sprüche, siehe
+`js/content.js` für die Struktur) sowie `records` und `ziele` in `config.json`, wenn du
+Meilensteine oder alte Bestleistungen willst.
 
 **3 · Veröffentlichen**
 
@@ -277,6 +290,7 @@ Wiederholungen. Abschaltbar unter *Backstage → Verbindungen*.
 | `js/geraete.js` | Orte, Ausstattung, Machbarkeit einer Bewegung. |
 | `js/sicher.js` | Maskiert Fremdtext, prüft Adressen. |
 | `js/aktualisierung.js` | Vergleicht die eigene Version mit der des Originals. |
+| `js/einrichten.js` | Baut aus ein paar Antworten eine gültige `config.json`. |
 | `js/boot.js` | Thema und Speicherumzug vor dem ersten Bild. |
 | `js/store.js` | GitHub-API als Speicher, Offline-Puffer. |
 | `js/intervals.js` | Liest Fahrten und Form; schreibt Krafteinheiten zurück. |
@@ -289,10 +303,10 @@ Wiederholungen. Abschaltbar unter *Backstage → Verbindungen*.
 
 ```sh
 JSC=/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc
-for t in program coach wod stats intervals bibliothek i18n geraete sicher store grundlagen icu-queue aktualisierung; do $JSC --module-file=tests/$t.test.js; done
+for t in program coach wod stats intervals bibliothek i18n geraete sicher store grundlagen icu-queue aktualisierung einrichten; do $JSC --module-file=tests/$t.test.js; done
 ```
 
-644 Tests, ausgeführt von der JS-Engine, die in macOS ohnehin steckt. Kein Node, kein Build.
+696 Tests, ausgeführt von der JS-Engine, die in macOS ohnehin steckt. Kein Node, kein Build.
 
 ---
 

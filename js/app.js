@@ -10,6 +10,7 @@ import { t, locale, sprache, setSprache, uebersetzeStatisch } from './i18n.js';
 import * as G from './geraete.js';
 import { escHtml, sicherLink } from './sicher.js';
 import * as A from './aktualisierung.js';
+import * as E from './einrichten.js';
 
 let config = null, state = null, stateSha = null, session = null;
 let ridesByDate = new Map(), letzterLog = null, trend = null;
@@ -47,7 +48,7 @@ const $ = id => document.getElementById(id);
 uebersetzeStatisch();
 const VERSION_KEY = 'setlist.version';
 let laufendeVersion = localStorage.getItem(VERSION_KEY) || '—';
-const VIEWS = ['setup', 'home', 'session', 'wod', 'maxout', 'done', 'history', 'bibliothek'];
+const VIEWS = ['setup', 'einrichten', 'home', 'session', 'wod', 'maxout', 'done', 'history', 'bibliothek'];
 const show = n => { VIEWS.forEach(v => $('view-' + v).hidden = v !== n); window.scrollTo(0, 0); };
 
 let bannerTimer = null;
@@ -70,7 +71,8 @@ async function load() {
       S.readFile('config.json'), S.readFile('state.json'), S.readFile('stimme.json'), S.readFile('bibliothek.json')
     ]);
     stimme = sti ? sti.data : null;
-    if (!c) throw new Error(t('msg.configFehlt', { repo: S.getRepo() }));
+    // Kein Programm im Repo? Dann ist das kein Fehler, sondern der Anfang.
+    if (!c) { zeigeEinrichten(); return; }
     config = c.data;
     state = st ? st.data : P.initialState(config);
     stateSha = st ? st.sha : null;
@@ -321,7 +323,7 @@ function renderWeek() {
     const done = s.done || !!ride;
     const info = s.type === 'ride' ? RIDE_INFO[s.label] : null;
     return `<div class="slot ${s.isToday ? 'today-slot' : ''} ${done ? 'done' : ''}">
-        <span class="day">${escHtml(s.day)}</span>
+        <span class="day">${escHtml(s.tagNr === undefined ? s.day : t('tag.' + s.tagNr))}</span>
         <span class="what">${done ? '✓ ' : ''}${escHtml(s.label)}
           <span class="detail">${ride
             ? `<span class="ride-done">${escHtml(ride.minutes)} MIN · ${escHtml(ride.km)} KM${ride.load ? ` · LOAD ${escHtml(ride.load)}` : ''}</span>`
@@ -935,6 +937,97 @@ if (S.getToken()) {
   $('today').innerHTML = `<div class="kicker">${t('home.verbinde')}</div><div class="name neon">···</div>`;
   load();
 } else show('setup');
+
+
+/* ====================== Programm einrichten ======================
+   Wer neu anfaengt, hat noch keine config.json. Frueher stand hier eine
+   Fehlermeldung und der Hinweis, die Datei von Hand zu schreiben — samt
+   der Falle, dass week.slots nicht optional ist. Jetzt fragt die App das
+   Wenige, was sie braucht, und legt die Datei selbst an.               */
+
+let entwurf = null;
+
+function zeigeEinrichten() {
+  entwurf = entwurf || E.standardEntwurf();
+  renderEinrichten();
+  show('einrichten');
+}
+
+function renderEinrichten() {
+  document.querySelectorAll('.stangen button').forEach(b =>
+    b.classList.toggle('an', Number(b.dataset.bar) === entwurf.bar));
+
+  $('ein-lifts').innerHTML = entwurf.lifts.map((l, i) => `
+    <div class="ein-lift">
+      <input class="ein-name" data-i="${i}" type="text" value="${escHtml(l.name)}" autocomplete="off">
+      <label class="ein-kg">
+        <input class="ein-start" data-i="${i}" type="number" inputmode="decimal"
+               step="2.5" min="0" value="${escHtml(l.start)}">
+        <span>kg</span>
+      </label>
+    </div>`).join('');
+  $('ein-lifts').querySelectorAll('.ein-name').forEach(el => {
+    el.oninput = () => { entwurf.lifts[+el.dataset.i].name = el.value; };
+  });
+  $('ein-lifts').querySelectorAll('.ein-start').forEach(el => {
+    el.oninput = () => { entwurf.lifts[+el.dataset.i].start = el.value === '' ? '' : Number(el.value); };
+  });
+
+  // nr 1..7 ist Montag..Sonntag; die Schluessel folgen Date.getDay(),
+  // wo der Sonntag die Null ist.
+  const tage = (box, gewaehlt) => box.innerHTML = E.TAGE.map(tg =>
+    `<button data-tag="${tg.nr}" class="${gewaehlt.includes(tg.nr) ? 'an' : ''}">${
+      escHtml(t('tag.' + (tg.nr % 7)))}</button>`).join('');
+  tage($('ein-krafttage'), entwurf.krafttage);
+  tage($('ein-radtage'), entwurf.radtage);
+
+  const umschalten = (box, feld) => box.querySelectorAll('button').forEach(b => {
+    b.onclick = () => {
+      const nr = Number(b.dataset.tag);
+      entwurf[feld] = entwurf[feld].includes(nr)
+        ? entwurf[feld].filter(x => x !== nr)
+        : [...entwurf[feld], nr].sort((x, y) => x - y);
+      // Ein Tag gehoert nur einer Sorte — sonst stuenden zwei Einheiten
+      // uebereinander und der Plan waere nicht mehr lesbar.
+      const anderes = feld === 'krafttage' ? 'radtage' : 'krafttage';
+      entwurf[anderes] = entwurf[anderes].filter(x => x !== nr);
+      renderEinrichten();
+    };
+  });
+  umschalten($('ein-krafttage'), 'krafttage');
+  umschalten($('ein-radtage'), 'radtage');
+
+  const fehler = E.pruefeEntwurf(entwurf);
+  $('ein-fehler').innerHTML = fehler.length
+    ? `<p class="fine" style="color:var(--rot)">${fehler.map(f => escHtml(t('ein.fehler.' + f))).join('<br>')}</p>`
+    : '';
+  $('ein-anlegen').disabled = fehler.length > 0;
+}
+
+document.querySelectorAll('.stangen button').forEach(b => {
+  b.onclick = () => { entwurf.bar = Number(b.dataset.bar); renderEinrichten(); };
+});
+$('ein-leer').onclick = () => {
+  entwurf.lifts = entwurf.lifts.map(l => ({ ...l, start: entwurf.bar }));
+  renderEinrichten();
+};
+$('ein-anlegen').onclick = async () => {
+  if (E.pruefeEntwurf(entwurf).length) return;
+  try {
+    banner(t('ein.legtAn'), '', 0);
+    const neu = E.baueConfig(entwurf);
+    // Frisch nachsehen: liegt inzwischen doch eine config.json da, waere ein
+    // blindes Schreiben ein Ueberschreiben fremder Arbeit.
+    const da = await S.readFile('config.json');
+    if (da) { banner(t('msg.gespeichert'), 'ok'); return load(); }
+    await S.writeFile('config.json', neu, 'Programm angelegt');
+    banner(t('ein.fertig'), 'ok');
+    entwurf = null;
+    load();
+  } catch (e) {
+    banner(e.message, 'err', 8000);
+  }
+};
 
 /* =============================== Jam ===============================
    Bewusst getrennt vom 5x5: es wird als eigener Typ geloggt und beruehrt

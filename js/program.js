@@ -154,7 +154,15 @@ export function planWeek(state, config, today = new Date()) {
   let workout = state.next;
   let rideIndex = (state.history || []).length;
 
-  return config.week.slots.map(slot => {
+  // Eine von Hand geschriebene config.json ist selten vollstaendig. Fehlt
+  // die Wochenplanung, ist das kein Grund, den ganzen Startbildschirm
+  // sterben zu lassen — dann steht die Woche eben leer und alles andere
+  // funktioniert weiter. Ohne Radeinheiten im Vorrat werden Radslots
+  // uebersprungen statt an einer leeren Liste zu scheitern.
+  const slots = (config.week && Array.isArray(config.week.slots)) ? config.week.slots : [];
+  const rides = Array.isArray(config.rides) ? config.rides : [];
+
+  return slots.filter(slot => slot && (slot.type !== 'ride' || rides.length)).map(slot => {
     const date = new Date(monday);
     date.setDate(monday.getDate() + (slot.day - 1));
     const key = ymd(date);
@@ -167,6 +175,10 @@ export function planWeek(state, config, today = new Date()) {
     const item = {
       date: key,
       day: DAYS[date.getDay()],
+      // Zusaetzlich als Zahl, damit die Oberflaeche den Tag in der
+      // gewaehlten Sprache beschriften kann. `day` bleibt, weil der
+      // Zustand und die Tests darauf aufbauen.
+      tagNr: date.getDay(),
       type: slot.type,
       isToday: key === todayKey,
       isPast: key < todayKey,
@@ -179,7 +191,7 @@ export function planWeek(state, config, today = new Date()) {
       item.workout = workout;
       if (!done) workout = workout === 'A' ? 'B' : 'A';
     } else {
-      const ride = config.rides[rideIndex++ % config.rides.length];
+      const ride = rides[rideIndex++ % rides.length];
       item.label = ride.label;
       item.detail = ride.detail;
     }

@@ -55,6 +55,37 @@
   </div>
 </section>
 
+<!-- ============ PROGRAMM EINRICHTEN ============ -->
+<section id="view-einrichten" class="view" hidden>
+  <header class="head"><h1><span class="glow" data-i18n="ein.titel">Dein Programm</span></h1></header>
+  <div class="pad">
+    <p class="lead" data-i18n="ein.lead">Das Repo steht. Jetzt einmal dein Programm — danach nie wieder.</p>
+
+    <h2 data-i18n="ein.stange">Stange</h2>
+    <div class="themen stangen">
+      <button data-bar="20">20 kg</button>
+      <button data-bar="15">15 kg</button>
+    </div>
+
+    <h2 data-i18n="ein.uebungen">Übungen und Startgewicht</h2>
+    <p class="fine" data-i18n="ein.uebungenHinweis">Im Zweifel zu leicht anfangen. 5×5 lebt davon, dass du wochenlang steigern kannst — nicht davon, dass die erste Einheit schwer war.</p>
+    <div id="ein-lifts"></div>
+    <button id="ein-leer" class="btn ghost small" data-i18n="ein.leereStange">Überall mit der leeren Stange anfangen</button>
+
+    <h2 data-i18n="ein.krafttage">Krafttage</h2>
+    <p class="fine" data-i18n="ein.krafttageHinweis">Zwei pro Woche sind der Normalfall. Lass Erholung dazwischen.</p>
+    <div id="ein-krafttage" class="chips tage"></div>
+
+    <h2><span data-i18n="ein.radtage">Radtage</span> <span class="opt" data-i18n="setup.icu.opt">OPTIONAL</span></h2>
+    <p class="fine" data-i18n="ein.radtageHinweis">Nur wenn du auch fährst. Die Einheiten selbst kommen aus intervals.icu.</p>
+    <div id="ein-radtage" class="chips tage"></div>
+
+    <div id="ein-fehler"></div>
+    <button id="ein-anlegen" class="btn" data-i18n="ein.anlegen">Programm anlegen</button>
+    <p class="fine" data-i18n-html="ein.fine">Landet als <code>config.json</code> in deinem privaten Repo. Alles darin lässt sich später ändern — auch von Hand.</p>
+  </div>
+</section>
+
 <!-- ============ HOME ============ -->
 <section id="view-home" class="view" hidden>
   <header class="head">

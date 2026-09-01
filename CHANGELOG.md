@@ -10,6 +10,46 @@ sonst merkt die installierte App nichts von einer neuen Fassung.
 
 ---
 
+## 2026-09-01.77
+
+Der erste Schritt weg von „das ist Daniels App" hin zu „das kann jemand anderes auch
+benutzen". Die höchste Hürde war nicht das Training, sondern eine JSON-Datei.
+
+### Behoben
+- **Drei Abstürze bei unvollständiger `config.json`.** Fehlte `week`, fehlte `week.slots`
+  oder stand ein Radslot ohne `rides`-Array da, starb der komplette Startbildschirm — ohne
+  Meldung, ohne Hinweis, was fehlt. Wer die Datei von Hand schrieb, lief mit hoher
+  Wahrscheinlichkeit hinein. Jetzt bleibt die Wochenübersicht in diesen Fällen leer und
+  alles andere läuft weiter.
+
+### Neu
+- **Geführte Ersteinrichtung.** Findet die App kein Programm im Repo, kommt kein Fehler
+  mehr, sondern ein Bildschirm: Stangengewicht, die fünf Übungen mit Startgewicht,
+  Krafttage, optional Radtage. Daraus schreibt sie eine gültige `config.json`. Ein neues
+  Repo braucht damit **keine einzige Datei von Hand**.
+- „Überall mit der leeren Stange anfangen" als ein Klick — die ehrlichste Antwort auf
+  „welches Startgewicht?", wenn man es nicht weiß.
+- Ein Tag kann nicht Kraft- und Radtag zugleich sein; das Umschalten räumt den anderen
+  automatisch ab.
+- Wochentagskürzel sind jetzt übersetzt — vorher stand auch im englischen Modus
+  „MO DI MI DO FR SA SO", auf dem Startbildschirm wie im Einrichten.
+
+### Bewusst so
+- **Die Aufteilung bleibt fest.** A/B, 5×5, Deadlift 1×5 — das ist das Programm, keine
+  Einstellung. Wer daran dreht, hat am Ende eine beliebige Gym-App.
+- **Vor dem Schreiben wird frisch nachgesehen.** Liegt inzwischen doch eine `config.json`
+  da, wird sie nicht überschrieben.
+- `rides` wird nur angelegt, wenn es auch Radtage gibt — ein leeres Array war genau die
+  Falle, die den Startbildschirm sterben ließ.
+
+### Testabdeckung
+Von 644 auf **696**. `einrichten.test.js` prüft neben der Baulogik vor allem das, worauf es
+ankommt: dass jede erzeugte Konfiguration ohne Nacharbeit durch `initialState`,
+`planWeek` und `planWorkout` geht — für nur Kraft, Kraft und Rad, einen einzigen Tag und
+alle sieben. Dazu die drei Absturzfälle in `program.test.js`.
+
+---
+
 ## 2026-09-01.76
 
 ### Neu
