@@ -126,6 +126,10 @@
     <h1 data-i18n="wod.titel">Jam</h1>
     <button id="wod-reroll" class="icon-btn" data-i18n-aria="aria.neuWuerfeln" aria-label="Neu würfeln">⟳</button>
   </header>
+  <div class="pad" style="padding-bottom:0">
+    <div id="wod-gyms" class="chips"></div>
+    <div id="wod-gym-hinweis"></div>
+  </div>
   <div class="pad" id="wod-body"></div>
   <div class="pad">
     <button id="wod-finish" class="btn" disabled data-i18n="wod.abschliessen">Abschließen</button>
@@ -213,6 +217,12 @@
       <button data-thema="hell" data-i18n="bs.thema.hell">Hell</button>
       <button data-thema="dunkel" data-i18n="bs.thema.dunkel">Dunkel</button>
     </div>
+    <h2 data-i18n="gym.titel">Orte und Geräte</h2>
+    <p class="fine" data-i18n="gym.bsHinweis">Lege Orte an und hak ab, was dort steht.</p>
+    <div id="gym-liste"></div>
+    <button id="gym-neu" class="btn ghost" data-i18n="gym.neu">Ort hinzufügen</button>
+    <button id="gym-vorlagen" class="btn ghost" data-i18n="gym.vorlagen">Vorschläge übernehmen</button>
+    <button id="gym-speichern" class="btn" data-i18n="gym.speichern">Orte speichern</button>
     <h2 data-i18n="bs.sprache">Sprache</h2>
     <div class="themen sprachen">
       <button data-sprache="de" data-i18n="bs.sprache.de">Deutsch</button>

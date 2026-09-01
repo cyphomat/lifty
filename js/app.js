@@ -7,6 +7,7 @@ import * as WOD from './wod.js';
 import * as ST from './stats.js';
 import * as B from './bibliothek.js';
 import { t, locale, sprache, setSprache, uebersetzeStatisch } from './i18n.js';
+import * as G from './geraete.js';
 
 let config = null, state = null, stateSha = null, session = null;
 let ridesByDate = new Map(), letzterLog = null, trend = null;
@@ -676,6 +677,7 @@ async function renderHistory() {
   show('history');
   renderVersion();
   renderConnections();
+  renderGymVerwaltung();
   // Ohne geladene Konfiguration gibt es nichts zu zeigen — und der Zugriff
   // auf config.lifts wuerde die ganze Ansicht mit einem leeren Bildschirm
   // quittieren statt mit einer Erklaerung.
@@ -894,7 +896,7 @@ if (S.getToken()) {
 
 function starteWod(seed) {
   wodSeed = seed >>> 0;
-  wod = WOD.generateWod(state, wodSeed, config);
+  wod = WOD.generateWod(state, wodSeed, config, gymGeraete());
   swSek = 0; stopUhr();
   $('sw-time').textContent = '0:00';
   $('wod-finish').disabled = true;
@@ -902,7 +904,57 @@ function starteWod(seed) {
   show('wod');
 }
 
+/* ================= Orte und Geraete =================
+   Der gewaehlte Ort liegt bewusst im Browser, nicht im Repo: er sagt, wo du
+   gerade stehst, nicht wer du bist. Das Handy geht mit ins Studio, der
+   Rechner bleibt daheim — beide haetten mit einem gemeinsamen Wert unrecht.
+   Die Orte selbst gehoeren dagegen ins Repo, damit sie auf jedem Geraet
+   gelten.                                                                  */
+
+const GYM_KEY = 'setlist.gym';
+const gymWahl = () => localStorage.getItem(GYM_KEY) || '';
+
+/** Geraete am gewaehlten Ort, oder null fuer "keine Einschraenkung". */
+function gymGeraete() {
+  const id = gymWahl();
+  if (!id || !G.gym(config, id)) return null;
+  return G.aktiveGeraete(config, id);
+}
+
+/** Wie viele Jam-Bewegungen hier ueberhaupt gehen — inklusive der
+ *  dauerhaft ausgeschlossenen, sonst verspricht die Zahl zu viel. */
+function machbareAnzahl(geraete) {
+  const aus = new Set((config && config.wod && config.wod.aus) || []);
+  const moeglich = WOD.MOVES.filter(m => !aus.has(m.id));
+  return { n: G.machbare(moeglich, geraete).length, gesamt: moeglich.length };
+}
+
+function renderWodGyms() {
+  const box = $('wod-gyms'), hinweis = $('wod-gym-hinweis');
+  if (!box) return;
+  const orte = G.gyms(config);
+  if (!orte.length) { box.innerHTML = ''; hinweis.innerHTML = ''; return; }
+
+  const gewaehlt = gymWahl();
+  box.innerHTML = [{ id: '', name: t('gym.ueberall') }, ...orte].map(o =>
+    `<button data-gym="${o.id}" class="${o.id === gewaehlt ? 'an' : ''}">${o.name}</button>`).join('');
+  box.querySelectorAll('button').forEach(b => {
+    b.onclick = () => {
+      localStorage.setItem(GYM_KEY, b.dataset.gym);
+      starteWod(wodSeed);          // gleicher Seed, anderer Vorrat
+    };
+  });
+
+  const geraete = gymGeraete();
+  if (!geraete) { hinweis.innerHTML = `<p class="fine">${t('gym.hinweis')}</p>`; return; }
+  const { n, gesamt } = machbareAnzahl(geraete);
+  hinweis.innerHTML = n < 2
+    ? `<p class="fine" style="color:var(--rost)">${t('gym.zuWenig')}</p>`
+    : `<p class="fine">${t('gym.machbar', { n, gesamt })}</p>`;
+}
+
 function renderWod() {
+  renderWodGyms();
   const mobility = C.mobilityDran(state) ? C.tagesAuswahl(MOBILITY, new Date(), 'mob') : null;
   $('wod-body').innerHTML = `
     <div class="card">
@@ -1547,6 +1599,105 @@ function renderRad() {
       </div>`).join('')}
     ${sortiert.length > 20 ? `<p class="fine">${t('rad.weitere', { n: sortiert.length - 20 })}</p>` : ''}`;
 }
+
+/* ---------- Orte einrichten (Backstage) ----------
+   Der Entwurf lebt bis zum Speichern nur hier. Jeder Haken einzeln ins Repo
+   zu schreiben waere ein Commit pro Klick — und ein halb eingerichteter Ort
+   im Repo waere schlimmer als einer, den man verwirft.                    */
+
+let gymEntwurf = null;
+
+function renderGymVerwaltung() {
+  const box = $('gym-liste');
+  if (!box) return;
+  if (!gymEntwurf) gymEntwurf = G.gyms(config);
+
+  if (!gymEntwurf.length) {
+    box.innerHTML = `<p class="fine">${t('gym.keine')}</p>`;
+    return;
+  }
+
+  box.innerHTML = gymEntwurf.map((o, i) => {
+    const { n, gesamt } = machbareAnzahl(o.geraete);
+    return `<details class="info">
+      <summary>${escHtml(o.name)}<span class="bib-kat">${t('gym.machbarKurz', { n, gesamt })}</span></summary>
+      <div class="body">
+        <input class="gym-name" data-i="${i}" type="text" value="${escHtml(o.name)}"
+               placeholder="${t('gym.name.ph')}" autocomplete="off">
+        <p class="fine" style="margin:0 0 8px">${t('gym.machbar', { n, gesamt })}</p>
+        <div class="chips">
+          <button class="gym-alle" data-i="${i}" data-an="1">${t('gym.alleAn')}</button>
+          <button class="gym-alle" data-i="${i}" data-an="">${t('gym.alleAus')}</button>
+        </div>
+        ${G.GERAETE.map(g => `<label class="kv check">
+            <input type="checkbox" class="gym-geraet" data-i="${i}" data-g="${g.id}"
+                   ${o.geraete.includes(g.id) ? 'checked' : ''}>
+            <span class="v">${g.name}</span></label>`).join('')}
+        <button class="btn ghost small danger gym-weg" data-i="${i}">${t('gym.loeschen')}</button>
+      </div>
+    </details>`;
+  }).join('');
+
+  box.querySelectorAll('.gym-name').forEach(el => {
+    el.oninput = () => { gymEntwurf[+el.dataset.i].name = el.value; };
+  });
+  box.querySelectorAll('.gym-geraet').forEach(el => {
+    el.onchange = () => {
+      const o = gymEntwurf[+el.dataset.i];
+      o.geraete = el.checked
+        ? [...new Set([...o.geraete, el.dataset.g])]
+        : o.geraete.filter(x => x !== el.dataset.g);
+    };
+  });
+  box.querySelectorAll('.gym-alle').forEach(el => {
+    el.onclick = () => {
+      gymEntwurf[+el.dataset.i].geraete = el.dataset.an ? [...G.ALLE_GERAETE] : [];
+      renderGymVerwaltung();
+    };
+  });
+  box.querySelectorAll('.gym-weg').forEach(el => {
+    el.onclick = () => {
+      const o = gymEntwurf[+el.dataset.i];
+      if (!confirm(t('gym.loeschenFrage', { name: o.name }))) return;
+      gymEntwurf.splice(+el.dataset.i, 1);
+      renderGymVerwaltung();
+    };
+  });
+}
+
+/** Vor dem Schreiben frisch lesen — dieselbe Vorsicht wie ueberall sonst. */
+async function speichereGyms() {
+  try {
+    banner(t('msg.speichere'), '', 0);
+    const datei = await S.readFile('config.json');
+    if (!datei) throw new Error(t('msg.configNichtLesbar'));
+    const neu = datei.data;
+    neu.gyms = gymEntwurf.map(o => ({ id: o.id, name: o.name, geraete: o.geraete }));
+    await S.writeFile('config.json', neu, `Orte und Geräte aktualisiert`, datei.sha);
+    config = neu;
+    S.cache({ config });
+    // Ein geloeschter Ort darf nicht als Auswahl zurueckbleiben.
+    if (gymWahl() && !G.gym(config, gymWahl())) localStorage.removeItem(GYM_KEY);
+    gymEntwurf = null;
+    renderGymVerwaltung();
+    banner(t('gym.gespeichert'), 'ok');
+  } catch (e) {
+    banner(e.message, 'err', 8000);
+  }
+}
+
+$('gym-neu').onclick = () => {
+  if (!gymEntwurf) gymEntwurf = G.gyms(config);
+  gymEntwurf.push(G.neuerGym(t('gym.name.ph'), gymEntwurf));
+  renderGymVerwaltung();
+};
+$('gym-vorlagen').onclick = () => {
+  if (!gymEntwurf) gymEntwurf = G.gyms(config);
+  const belegt = new Set(gymEntwurf.map(o => o.id));
+  gymEntwurf.push(...G.vorlagen().filter(o => !belegt.has(o.id)));
+  renderGymVerwaltung();
+};
+$('gym-speichern').onclick = speichereGyms;
 
 /* ================= Darstellung ================= */
 

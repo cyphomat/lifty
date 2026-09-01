@@ -10,6 +10,30 @@ sonst merkt die installierte App nichts von einer neuen Fassung.
 
 ---
 
+## 2026-09-01.74
+
+### Neu
+- **Orte und Geräte.** Unter *Tour → Backstage → Orte und Geräte* legst du Gyms an —
+  Homegym, Box, Studio — und hakst ab, was dort steht. Im Jam wählst du oben aus, wo du
+  gerade bist; gewürfelt wird nur aus dem, was dieser Ort hergibt. Damit ist ein Jam
+  daheim kein Glücksspiel mehr, bei dem Rudergerät und Langhantel auftauchen.
+- Jede der 31 Jam-Bewegungen nennt jetzt ihre nötige Ausstattung. Reine
+  Körpergewichtsübungen gehen überall.
+- „Vorschläge übernehmen" legt die drei üblichen Orte grob ausgestattet an, als
+  Startpunkt zum Anpassen.
+
+### Bewusst so
+- **Voreinstellung ist alles an.** Wer nichts einrichtet, bekommt exakt das Verhalten
+  von vorher. Die Einschränkung ist eine Entscheidung, die man trifft, keine, in die
+  man hineinstolpert.
+- **Die Orte liegen im Repo, die aktuelle Wahl im Browser.** Wo du trainierst, gilt auf
+  jedem Gerät; *wo du gerade stehst*, ist Sache des Geräts, das mitgeht.
+- Bleiben an einem Ort weniger als zwei Bewegungen übrig, würfelt der Jam trotzdem aus
+  allem — und sagt in der Ansicht, dass er das tut. Ein leerer Bildschirm wäre die
+  schlechtere Antwort.
+
+---
+
 ## 2026-09-01.73
 
 ### Neu

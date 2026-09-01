@@ -150,6 +150,26 @@ export const TEXTE = {
     'wod.ausschliessen': '„{name}“ dauerhaft aus den Zufalls-Workouts nehmen?',
     'wod.ausgeschlossen': '{name} KOMMT NICHT MEHR VOR',
 
+    /* ---- Gyms und Geraete ---- */
+    'gym.titel': 'Orte und Geräte',
+    'gym.ueberall': 'Überall',
+    'gym.hier': 'Hier trainiere ich',
+    'gym.hinweis': 'Der Jam würfelt nur aus dem, was am gewählten Ort steht. Ohne Auswahl ist alles erlaubt.',
+    'gym.bsHinweis': 'Lege Orte an und hak ab, was dort steht. Im Jam wählst du dann oben aus, wo du gerade bist. Ohne eingerichtete Orte bleibt alles erlaubt — genau wie bisher.',
+    'gym.machbar': '{n} von {gesamt} Jam-Bewegungen möglich',
+    'gym.machbarKurz': '{n}/{gesamt}',
+    'gym.zuWenig': 'Hier stehen zu wenige Geräte für ein Workout — der Jam ignoriert die Auswahl und würfelt aus allem.',
+    'gym.name.ph': 'Name des Orts',
+    'gym.neu': 'Ort hinzufügen',
+    'gym.vorlagen': 'Vorschläge übernehmen',
+    'gym.loeschen': 'Ort löschen',
+    'gym.loeschenFrage': '„{name}“ löschen?',
+    'gym.speichern': 'Orte speichern',
+    'gym.gespeichert': 'ORTE GESPEICHERT',
+    'gym.keine': 'Noch keine Orte eingerichtet.',
+    'gym.alleAn': 'Alle',
+    'gym.alleAus': 'Keine',
+
     /* ---- Max-Out ---- */
     'mo.titel': 'Max-Out',
     'mo.tone': 'KRAFTTEST',
@@ -502,6 +522,26 @@ export const TEXTE = {
     'wod.spruch': 'Conditioning costs nothing as long as it comes last. Your weights are untouched.',
     'wod.ausschliessen': 'Remove “{name}” from random workouts for good?',
     'wod.ausgeschlossen': '{name} WILL NOT COME UP AGAIN',
+
+    /* ---- Gyms and equipment ---- */
+    'gym.titel': 'Places and equipment',
+    'gym.ueberall': 'Anywhere',
+    'gym.hier': 'Training here',
+    'gym.hinweis': 'The jam only draws from what is available at the selected place. With no selection everything is allowed.',
+    'gym.bsHinweis': 'Create places and tick what they have. In the jam you then pick where you are at the top. With no places set up everything stays allowed — exactly as before.',
+    'gym.machbar': '{n} of {gesamt} jam movements possible',
+    'gym.machbarKurz': '{n}/{gesamt}',
+    'gym.zuWenig': 'Too little equipment here for a workout — the jam ignores the selection and draws from everything.',
+    'gym.name.ph': 'Name of the place',
+    'gym.neu': 'Add place',
+    'gym.vorlagen': 'Use suggestions',
+    'gym.loeschen': 'Delete place',
+    'gym.loeschenFrage': 'Delete “{name}”?',
+    'gym.speichern': 'Save places',
+    'gym.gespeichert': 'PLACES SAVED',
+    'gym.keine': 'No places set up yet.',
+    'gym.alleAn': 'All',
+    'gym.alleAus': 'None',
 
     /* ---- Max-out ---- */
     'mo.titel': 'Max-out',

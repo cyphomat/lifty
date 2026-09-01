@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://cyphomat.github.io/setlist/"><img alt="Open app" src="https://img.shields.io/badge/App-open-e8a23d?style=for-the-badge&labelColor=17161b"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/Tests-460%20green-7fa65c?style=for-the-badge&labelColor=17161b">
+  <img alt="Tests" src="https://img.shields.io/badge/Tests-500%20green-7fa65c?style=for-the-badge&labelColor=17161b">
   <img alt="Build" src="https://img.shields.io/badge/Build-none-6f93ad?style=for-the-badge&labelColor=17161b">
   <img alt="Dependencies" src="https://img.shields.io/badge/Dependencies-0-a7a3ab?style=for-the-badge&labelColor=17161b">
 </p>
@@ -117,6 +117,7 @@ Back squat is in both workouts and therefore climbs twice as fast.
 | **Recovery (HRV/sleep)** | From intervals.icu, usually via HealthFit out of Apple Health. HRV is judged only relative to your own baseline of recent days, never absolutely. Feeds into the call. |
 | **Power targets** | From eFTP instead of percentages. |
 | **Jam** | Five formats, 31 movements, loads from your current state. Never two barbell parts. |
+| **Places and equipment** | Several gyms (home gym, box, studio …) each with their own kit. In the jam you pick at the top where you are — it only draws from what is there. With no places set up everything stays allowed. |
 | **Scaling** | Every movement names alternatives. “Can't do this” removes it for good. |
 
 ### App
@@ -217,6 +218,7 @@ Done. The first session creates `state.json` automatically; everything after tha
 | `js/content.js` | Knowledge layer: cues, soundcheck, technique, encore, voice. |
 | `js/bibliothek.js` | Bundles all exercises into one searchable list. |
 | `js/i18n.js` | Interface texts in German and English. |
+| `js/geraete.js` | Places, equipment, whether a movement is doable. |
 | `js/store.js` | GitHub API as storage, offline buffer. |
 | `js/intervals.js` | Reads rides and form; writes strength sessions back. |
 | `js/app.js` | Interface and flow. |
@@ -228,10 +230,10 @@ Done. The first session creates `state.json` automatically; everything after tha
 
 ```sh
 JSC=/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc
-for t in program coach wod stats intervals bibliothek i18n; do $JSC --module-file=tests/$t.test.js; done
+for t in program coach wod stats intervals bibliothek i18n geraete; do $JSC --module-file=tests/$t.test.js; done
 ```
 
-460 tests, run by the JS engine that ships with macOS anyway. No Node, no build.
+500 tests, run by the JS engine that ships with macOS anyway. No Node, no build.
 
 ---
 
