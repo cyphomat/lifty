@@ -99,6 +99,34 @@ export function entdoppeln(fahrten = []) {
     (a, b) => String(a.zeit || a.date).localeCompare(String(b.zeit || b.date)));
 }
 
+/**
+ * Der Intensitaetsfaktor kommt von intervals.icu als PROZENTZAHL (91.18),
+ * nicht als Verhaeltnis (0.9118) — so steht er auch in der Weboberflaeche
+ * ("Intensität 91%"). Das Schema unter /api/v1/docs sagt nur `number` und
+ * verraet die Einheit nicht; herausgekommen ist es erst, weil im Verlauf
+ * "gefahren mit 9118%" stand.
+ *
+ * Umgerechnet wird defensiv statt blind geteilt: ein Intensitaetsfaktor
+ * ueber 3.0 ist physiologisch unmoeglich, 3 % waeren es auch. Der Schnitt
+ * bei 3 trennt die beiden Schreibweisen also sauber, egal welche kommt.
+ */
+export function alsAnteil(v) {
+  if (v == null || !Number.isFinite(v) || v <= 0) return null;
+  return v > 3 ? v / 100 : v;
+}
+
+/**
+ * Einheiten geradeziehen. Laeuft auch auf dem Zwischenspeicher, weil dort
+ * noch Fahrten aus der Fassung liegen koennen, die den Prozentwert roh
+ * uebernommen hat.
+ */
+export function normalisiere(fahrten = []) {
+  return fahrten.map(f => {
+    const a = alsAnteil(f.intensitaet);
+    return a === f.intensitaet ? f : { ...f, intensitaet: a };
+  });
+}
+
 /** Radaktivitaeten in einem Zeitraum, auf das Noetige reduziert. */
 export async function rides(from, to) {
   const id = localStorage.getItem(KEY_ID);
@@ -121,12 +149,19 @@ export async function rides(from, to) {
       // Ab hier die Felder fuer die Auswertung. Namen sind nicht geraten,
       // sondern aus dem Schema unter /api/v1/docs (Activity) gelesen: es
       // heisst `icu_average_watts`, ein `average_watts` gibt es nicht.
-      intensitaet: a.icu_intensity != null ? a.icu_intensity : null,
+      intensitaet: alsAnteil(a.icu_intensity),
       np: a.icu_weighted_avg_watts || null,
       watt: a.icu_average_watts || null,
       hf: a.average_heartrate || null,
       hfMax: a.max_heartrate || null,
       effizienz: a.icu_efficiency_factor != null ? a.icu_efficiency_factor : null,
+      // ACHTUNG, ungeprueft: ob `decoupling` als Prozentzahl (5.1) oder als
+      // Anteil (0.051) kommt, ist nicht belegt — die Weboberflaeche zeigt den
+      // Wert im Kopf einer Aktivitaet nicht an, und das Schema nennt keine
+      // Einheit. Anders als bei der Intensitaet gibt es hier KEINE saubere
+      // Grenze zwischen beiden Schreibweisen, also wird nicht geraten. Der
+      // Wert wird nur angezeigt, nie verglichen: eine falsche Einheit faellt
+      // dann auf, statt still zu wirken. Beim ersten echten Wert pruefen.
       entkopplung: a.decoupling != null ? a.decoupling : null,
       // Wie viele Minuten zusammenhaengende Grundlage hinter dem
       // Leistung:HF-Wert stehen. Das ist die Stichprobengroesse der

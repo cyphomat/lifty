@@ -315,6 +315,12 @@ const radFahrten = [
   { date:'2026-09-11', intensitaet:null, minutes:40, name:'Ohne Leistungsmesser' }
 ];
 const ab = S.intensitaetsAbgleich(radFahrten, planFuer);
+// Regressionsschutz: kaeme die Intensitaet als Prozentzahl herein, waere
+// jede Fahrt "zu hart" und die Quote immer 0 %. Genau so sah es live aus.
+const alsProzent = S.intensitaetsAbgleich(
+  [{ date:'2026-09-08', intensitaet:68, minutes:90 }], planFuer);
+eq('ungerechnete Prozentwerte wuerden alles als zu hart werten',
+   alsProzent[0].stufe, 'zuHart');
 eq('Fahrten ohne Intensitaet fallen raus', ab.length, 4);
 eq('geplant locker, gefahren hart', ab[0].stufe, 'zuHart');
 eq('und das Ziel steht dabei', ab[0].ziel.join('-'), '0.56-0.75');

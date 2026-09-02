@@ -112,7 +112,7 @@ async function load() {
   if (zwischen.fahrten && zwischen.fahrten.length) {
     // Auch hier entdoppeln: der Zwischenspeicher kann noch aus einer
     // Fassung stammen, die Doppel nicht kannte.
-    alleFahrten = ICU.entdoppeln(zwischen.fahrten);
+    alleFahrten = ICU.entdoppeln(ICU.normalisiere(zwischen.fahrten));
     stoerung = C.interferenz(alleFahrten);
   }
   if (zwischen.form) form = zwischen.form;
@@ -1797,7 +1797,7 @@ async function verarbeiteIcuQueue() {
  * vorbeigeht — sonst zeigen Verlauf und Startbildschirm verschiedene Zahlen.
  */
 function fahrtenListe() {
-  return alleFahrten.length ? alleFahrten : ICU.entdoppeln(S.cached().fahrten || []);
+  return alleFahrten.length ? alleFahrten : ICU.entdoppeln(ICU.normalisiere(S.cached().fahrten || []));
 }
 
 /**

@@ -181,4 +181,30 @@ ok('nur ein Zipfel Ueberlappung reicht nicht',
    !I.selbeFahrt(zwift, { zeit:'2026-09-01T19:50:00', minutes:45 }));
 eq('leere Liste bleibt leer', I.entdoppeln([]).length, 0);
 
+
+print('\n--- Intensitaet kommt als Prozentzahl, nicht als Anteil ---');
+// Aufgefallen im Verlauf: "gefahren mit 9118% statt hoechstens 75%".
+// 9118 = 91,18 x 100 — der Wert war also schon Prozent.
+eq('91,18 wird zu 0,9118', I.alsAnteil(91.18), 0.9118);
+eq('ein echter Anteil bleibt', I.alsAnteil(0.91), 0.91);
+eq('75 wird zu 0,75', I.alsAnteil(75), 0.75);
+eq('null bleibt null', I.alsAnteil(null), null);
+eq('die Null ist kein Wert', I.alsAnteil(0), null);
+eq('Unsinn ergibt null', I.alsAnteil(NaN), null);
+// Die Grenze bei 3 trennt sauber: darueber ist kein Anteil moeglich,
+// darunter waere es als Prozentwert physiologisch Unsinn.
+eq('2,5 gilt als Anteil', I.alsAnteil(2.5), 2.5);
+eq('300 gilt als Prozent', I.alsAnteil(300), 3);
+
+print('\n--- Und der Zwischenspeicher wird mitgezogen ---');
+const roh = [{ date:'2026-09-01', intensitaet:91.18, minutes:45 },
+             { date:'2026-08-25', intensitaet:0.68, minutes:60 },
+             { date:'2026-08-18', minutes:50 }];
+const norm = I.normalisiere(roh);
+eq('Prozentwert umgerechnet', norm[0].intensitaet, 0.9118);
+eq('Anteil unangetastet', norm[1].intensitaet, 0.68);
+eq('ohne Wert bleibt null', norm[2].intensitaet, null);
+eq('unveraenderte Fahrten werden nicht kopiert', norm[1], roh[1]);
+eq('leere Liste bleibt leer', I.normalisiere([]).length, 0);
+
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
