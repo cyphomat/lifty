@@ -484,6 +484,8 @@ function korrekturHtml(info, zustand) {
   return `<div class="korrektur">
       <p class="kh">${t('ses.korrektur', { n: zustand.fails })}</p>
       <p class="kw">${escHtml(k.wenn)} ${escHtml(k.warum)}</p>
+      ${k.sofort ? `<p class="ks"><b>${t('ses.sofort')}</b> ${escHtml(k.sofort)}</p>` : ''}
+      <p class="kn">${t('ses.naechstesMal')}</p>
       ${k.uebungen.map(u =>
         `<div class="kv"><span class="k">${escHtml(u.dosis)}</span><span class="v">${escHtml(u.name)}</span></div>`).join('')}
       ${q ? `<p class="fine" title="${escHtml(q.lang)}">${t('bib.quelle')} ${escHtml(q.kurz)}</p>` : ''}
@@ -1322,6 +1324,8 @@ function bibDetailHtml(u) {
       ${u.korrektur ? `<div class="korrektur">
         <p class="kh">${t('bib.korrektur')}</p>
         <p class="kw">${escHtml(u.korrektur.wenn)} ${escHtml(u.korrektur.warum)}</p>
+        ${u.korrektur.sofort ? `<p class="ks"><b>${t('ses.sofort')}</b> ${escHtml(u.korrektur.sofort)}</p>` : ''}
+        <p class="kn">${t('ses.naechstesMal')}</p>
         ${u.korrektur.uebungen.map(x =>
           `<div class="kv"><span class="k">${escHtml(x.dosis)}</span><span class="v">${escHtml(x.name)}</span></div>`).join('')}
       </div>` : ''}

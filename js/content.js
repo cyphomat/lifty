@@ -30,6 +30,7 @@ export const LIFT_INFO = {
     oly: 'Aus deinem Gewichtheben kennst du die aufrechte Front-Position. Halte im Back Squat denselben Oberkörperwinkel wie im Clean, dann überträgt es sich.',
     korrektur: {
       wenn: 'Die Brust kippt nach vorn oder die Hüfte schießt zuerst hoch.',
+      sofort: 'Stell die Fersen auf zwei 2,5er-Scheiben und wiederhole einen Satz. Wird es dadurch besser, fehlt Beweglichkeit im Sprunggelenk. Bleibt es gleich, ist es der obere Rücken — dann Gewicht runter, nicht Technik suchen.',
       warum: 'Beides ist dieselbe Ursache: der obere Rücken hält die Last nicht aufrecht, also weicht der Körper in die stärkere Hüftstreckung aus.',
       uebungen: [
         { name: 'Front Squat mit 3 Sekunden Pause unten', dosis: '4x3, leicht' },
@@ -47,9 +48,10 @@ export const LIFT_INFO = {
     oly: null,
     korrektur: {
       wenn: 'Die Stange bleibt kurz über der Brust stehen.',
+      sofort: 'Nächster Satz mit 2 Sekunden Pause auf der Brust, gleiches Gewicht. Wenn er dann gar nicht geht, war der erste kein Zufall.',
       warum: 'Fehlende Anfangskraft aus Brust und Trizeps, nicht fehlende Kraft im Lockout.',
       uebungen: [
-        { name: 'Bankdrücken mit 2 Sekunden Pause auf der Brust', dosis: '4x3' },
+        { name: 'Bankdrücken vom Pin (Stange knapp über der Brust abgelegt)', dosis: '4x3' },
         { name: 'Schrägbank, enger Griff', dosis: '3x6–8' },
         { name: 'Trizepsdrücken am Kabelzug', dosis: '3x12' }
       ]
@@ -64,6 +66,7 @@ export const LIFT_INFO = {
     oly: 'Die Position ist deine Zugposition beim Clean. Betrachte jeden Satz als Positionstraining.',
     korrektur: {
       wenn: 'Du musst aus dem Aufrichten schwingen, um die Stange an den Bauch zu bekommen.',
+      sofort: '10 % runter und den Satz sauber zu Ende. Geschwungenes Rudern trainiert das Schwingen.',
       warum: 'Der obere Rücken ermüdet vor dem Latissimus — die Hüfte übernimmt, was die Schulterblätter nicht mehr leisten.',
       uebungen: [
         { name: 'Brustgestütztes Rudern (Schrägbank, Kurzhanteln)', dosis: '3x10' },
@@ -81,11 +84,12 @@ export const LIFT_INFO = {
     oly: 'Deine Overhead-Position hier entscheidet über den Jerk. Aktive Schulter, Ohren frei.',
     korrektur: {
       wenn: 'Die letzten Zentimeter über dem Kopf fehlen.',
+      sofort: 'Leg die Stange im Rack auf Stirnhöhe und drück von dort aus dem Stand an — ohne Schwung siehst du sofort, ob der Lockout fehlt oder der Anschub.',
       warum: 'Schwacher Lockout aus Trizeps und instabile Schulterblatt-Fixierung — nicht der Anschub aus der Schulter.',
       quelle: 'everett',
       uebungen: [
         { name: 'Push Press im Weitgriff', dosis: '4x3' },
-        { name: 'Overhead Pin Press ab Stirnhöhe (im Rack)', dosis: '4x3' },
+        { name: 'Trizepsdrücken über Kopf am Kabelzug', dosis: '3x12' },
         { name: 'Powell Raises (Kurzhantel, seitlich liegend)', dosis: '3x10 je Seite' }
       ]
     }
@@ -99,6 +103,7 @@ export const LIFT_INFO = {
     oly: 'Das ist dein erster Zug. Gleiche Position wie beim Clean bis Kniehöhe — nutze das bewusst.',
     korrektur: {
       wenn: 'Die Stange kommt nur schwer vom Boden weg, oben läuft es dann.',
+      sofort: 'Rundet dabei der untere Rücken, ist der Satz vorbei — 15–20 % runter und mit der Last zu Ende heben. Fast alles andere lässt sich wegdrücken, das hier nicht.',
       warum: 'Fehlender Beinantrieb am Boden und zu späte Latissimus-Spannung — nicht fehlende Kraft in der Hüfte.',
       quelle: 'everett',
       uebungen: [
@@ -147,12 +152,12 @@ export const WARMUP = {
 
 export const SKILL = [
   { id: 'snatch-balance', name: 'Snatch Balance', dosis: '3x3, leer bis leicht', warum: 'Holt dir die Overhead-Position zurück, ohne Ermüdung zu kosten.', quelle: 'everett' },
-  { id: 'hang-power-clean', name: 'Hang Power Clean', dosis: '4x2, technisch', warum: 'Explosive Hüftstreckung — der Teil, der nach einer Pause zuerst geht.' },
+  { id: 'hang-power-clean', name: 'Hang Power Clean', dosis: '4x2, technisch', warum: 'Explosive Hüftstreckung — der Teil, der nach einer Pause zuerst geht.', fehler: 'Die Arme beugen zu früh und ziehen die Stange hoch. Das ist kein Kraftproblem, sondern fehlendes Vertrauen in die Hüfte — die Arme sind Seile, nicht Motoren.', quelle: 'everett' },
   { id: 'overhead-squat', name: 'Overhead Squat', dosis: '3x5, leere Stange', warum: 'Ehrliches Feedback über Mobilität. Ignorier es nicht.' },
-  { id: 'clean-pull', name: 'Clean Pull', dosis: '3x3 @ 60 %', warum: 'Erster Zug, saubere Position, keine Landung.', quelle: 'everett' },
+  { id: 'clean-pull', name: 'Clean Pull', dosis: '3x3 @ 60 %', warum: 'Erster Zug, saubere Position, keine Landung.', fehler: 'Rückenwinkel öffnet sich schon vor dem Knie. Dann kommt die Stange nach vorn, und der zweite Zug findet ohne Hüfte statt.', quelle: 'everett' },
   { id: 'sots-press', name: 'Sots Press', dosis: '3x5, leer', warum: 'Unbequem, aber nichts öffnet die Schulter schneller.' },
   { id: 'push-jerk', name: 'Push Jerk', dosis: '4x3, leicht', warum: 'Vertikaler Dip, gerade Hantelbahn, Schulter-Drive. Der Weg zurück zum Split Jerk führt hier vorbei — und der Lockout überträgt sich direkt auf den Strict Press.', quelle: 'everett' },
-  { id: 'snatch-high-pull', name: 'Snatch High Pull', dosis: '3x3 @ 85 %', warum: 'Explosive Hüftstreckung und Zughöhe, ohne dass die Arme die Arbeit übernehmen. Kein Unterhocken, also auch keine Technikschuld, wenn der Tag schlecht läuft.', quelle: 'everett' },
+  { id: 'snatch-high-pull', name: 'Snatch High Pull', dosis: '3x3 @ 85 %', warum: 'Explosive Hüftstreckung und Zughöhe, ohne dass die Arme die Arbeit übernehmen. Kein Unterhocken, also auch keine Technikschuld, wenn der Tag schlecht läuft.', fehler: 'Sobald du die Arme einsetzt, ist der Zweck weg. Bewusst mit langen Armen ziehen — merkst du den Bizeps, war die Hüfte zu langsam.', quelle: 'everett' },
   { id: 'paused-front-squat', name: 'Front Squat mit Pause', dosis: '4x3, 2–3 Sek unten', warum: 'Quadrizeps-Kraft und aufrechter Rumpf genau in der Position, in der die Brust beim Umsetzen zusammenklappt. Die Pause nimmt den Sprungeffekt raus, der die Schwäche sonst überdeckt.', quelle: 'everett' }
 ];
 

@@ -98,6 +98,53 @@ ok('kein Strongman-Spezialgeraet in der Bibliothek',
 ok('auch nicht im Warm-up',
    !Object.values(WARMUP).flat().some(w => GIBT_ES_NICHT.test(w.was + ' ' + w.detail)));
 
+// Das Geraet ist nur die halbe Frage. Was er nicht KANN, steht in
+// config.wod.aus — bisher pruefte nichts, ob eine Korrektur genau das
+// vorschlaegt. Ein Referenzdokument riet zu "Latzug/Pull-ups" als
+// Aktivierung; Klimmzuege sind bei ihm ausgeschlossen.
+const ausConfig = { lifts: config.lifts, wod: { aus: ['pullup'] } };
+const verboten = (ausConfig.wod.aus || [])
+  .map(id => (MOVES.find(m => m.id === id) || {}).name)
+  .filter(Boolean);
+eq('die Ausschlussliste loest auf Namen auf', verboten.join(), 'Pull-ups');
+const ausTexte = B.alleUebungen(ausConfig, state)
+  .filter(u => u.kategorie !== 'Jam')   // im Jam-Pool filtert der Generator selbst
+  .flatMap(u => [u.name, u.cue, u.fehler,
+    ...(u.korrektur ? [u.korrektur.sofort, ...u.korrektur.uebungen.map(x => x.name)] : [])])
+  .filter(Boolean);
+ok('nichts Ausgeschlossenes in Korrekturen oder Technik',
+   !ausTexte.some(t => verboten.some(v => t.includes(v))),
+   ausTexte.filter(t => verboten.some(v => t.includes(v))).join(' | '));
+
+print('\n--- Jetzt gleich und beim naechsten Mal sind zweierlei ---');
+// Zubringer helfen naechste Woche. Waehrend der Einheit steht man mit
+// der Stange da und braucht eine Handlung, keine Hausaufgabe.
+ok('jeder Grundlift hat eine Sofort-Handlung',
+   lifts.every(([, d]) => d.korrektur.sofort),
+   lifts.filter(([, d]) => !d.korrektur.sofort).map(([n]) => n).join());
+ok('die Sofort-Handlung ist ein Satz, keine Uebungsliste',
+   lifts.every(([, d]) => d.korrektur.sofort.length > 40));
+ok('beim Kreuzheben heisst sie: Satz beenden',
+   /15.20 ?%|Satz ist vorbei/.test(LIFT_INFO.deadlift.korrektur.sofort),
+   LIFT_INFO.deadlift.korrektur.sofort);
+ok('die Kniebeuge liefert einen Test, keine Vermutung',
+   /Wird es dadurch besser/.test(LIFT_INFO.squat.korrektur.sofort));
+// "Jetzt gleich" und "beim naechsten Mal" duerfen nicht dasselbe sagen —
+// sonst liest man denselben Satz zweimal und traut keinem von beiden.
+const doppelt = lifts.filter(([, d]) => d.korrektur.uebungen.some(u => {
+  const kern = u.name.replace(/\s*\(.*\)/, '').toLowerCase();
+  return kern.length > 12 && d.korrektur.sofort.toLowerCase().includes(kern);
+})).map(([n]) => n);
+ok('kein Zubringer wiederholt die Sofort-Handlung', doppelt.length === 0, doppelt.join());
+
+print('\n--- Die Zugtechnik hat jetzt Fehlerbilder ---');
+const mitFehler = SKILL.filter(x => x.fehler);
+ok('mindestens drei Technikuebungen nennen ihren Fehler', mitFehler.length >= 3, String(mitFehler.length));
+ok('das Armziehen ist dabei',
+   SKILL.some(x => x.fehler && /Arme/.test(x.fehler)));
+ok('Fehlerbilder kommen in der Bibliothek an',
+   B.alleUebungen(config, state).some(u => u.id === 'skill:hang-power-clean' && u.fehler));
+
 print('\n--- Man sucht eine Uebung auch ueber ihr Problem ---');
 const lockout = B.suche(alles, 'lockout');
 ok('"Lockout" findet den Strict Press',

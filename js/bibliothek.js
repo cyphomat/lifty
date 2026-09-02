@@ -32,7 +32,7 @@ export function alleUebungen(config = {}, state = {}) {
     });
   }
   for (const s of SKILL) {
-    liste.push({ id: `skill:${s.id}`, kategorie: 'Technik', name: s.name, dosis: s.dosis, info: s.warum, cue: null, fehler: null, korrektur: null, quelle: s.quelle || null, aktuell: null });
+    liste.push({ id: `skill:${s.id}`, kategorie: 'Technik', name: s.name, dosis: s.dosis, info: s.warum, cue: null, fehler: s.fehler || null, korrektur: null, quelle: s.quelle || null, aktuell: null });
   }
   for (const m of MOBILITY) {
     liste.push({ id: `mobility:${m.id}`, kategorie: 'Mobility', name: m.name, dosis: m.dosis, info: m.warum, cue: null, fehler: null, korrektur: null, quelle: m.quelle || null, aktuell: null });

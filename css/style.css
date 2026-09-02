@@ -403,6 +403,12 @@ dialog::backdrop{background:var(--backdrop)}
 .korrektur .kh{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
   text-transform:uppercase;color:var(--rost);margin:0 0 6px}
 .korrektur .kw{font-size:13px;color:var(--muted);margin:0 0 8px;line-height:1.5}
+.korrektur .ks{font-size:13px;line-height:1.55;margin:0 0 10px;padding:8px 10px;
+  background:var(--tint-rost);border:1px solid var(--line)}
+.korrektur .ks b{color:var(--rost);font-family:var(--mono);font-size:11px;
+  letter-spacing:.12em;text-transform:uppercase;margin-right:6px}
+.korrektur .kn{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);margin:0 0 4px}
 .korrektur .kv{margin:3px 0}
 p.quelle{margin-top:10px;color:var(--dim);font-style:italic;line-height:1.5}
 
