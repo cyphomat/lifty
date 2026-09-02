@@ -2,7 +2,7 @@ import * as P from './program.js';
 import * as S from './store.js';
 import * as ICU from './intervals.js';
 import * as C from './coach.js';
-import { LIFT_INFO, WARMUP, SKILL, MOBILITY, FINISHER, RIDE_INFO } from './content.js';
+import { LIFT_INFO, WARMUP, SKILL, MOBILITY, FINISHER, RIDE_INFO, QUELLEN } from './content.js';
 import * as WOD from './wod.js';
 import * as ST from './stats.js';
 import * as B from './bibliothek.js';
@@ -413,10 +413,14 @@ function startSession() {
 
   const skill = C.tagesAuswahl(SKILL, new Date(), 'skill');
   const mobility = C.mobilityDran(state) ? C.tagesAuswahl(MOBILITY, new Date(), 'mob') : null;
+  // Der Rumpfblock haengt am Kreuzheben, nicht am Buchstaben des Workouts.
+  // Waere er an 'B' festgemacht, wuerde er falsch stehen, sobald jemand die
+  // Workouts anders zusammenstellt — und die Einheiten sind konfigurierbar.
+  const rumpf = plan.lifts.some(l => l.lift === 'deadlift') ? (WARMUP.rumpf || []) : [];
   $('warmup').innerHTML = `
     <details class="info" open><summary>${t('ses.soundcheck')}</summary>
       <div class="body">
-        ${WARMUP.allgemein.concat(WARMUP[plan.workout]).map((w, i) =>
+        ${WARMUP.allgemein.concat(WARMUP[plan.workout] || [], rumpf).map((w, i) =>
           `<label class="kv check"><input type="checkbox" data-w="${i}">
             <span class="k">${w.t}</span><span class="v"><b>${w.was}</b> — ${w.detail}</span></label>`).join('')}
       </div>
@@ -465,6 +469,27 @@ function startSession() {
   show('session');
 }
 
+/**
+ * Was gegen einen wiederkehrenden Fehlversuch hilft.
+ *
+ * Erscheint erst, wenn tatsächlich etwas offen ist: `fails` zählt, wie oft
+ * eine Übung zuletzt nicht durchging. Vorher wäre es ungefragter Rat, und
+ * die Einheit hat schon genug Text. Bisher führte ein Fehlversuch nur
+ * irgendwann zum Deload — was man dagegen TUN kann, stand nirgends.
+ */
+function korrekturHtml(info, zustand) {
+  const k = info && info.korrektur;
+  if (!k || !zustand || !zustand.fails) return '';
+  const q = k.quelle && QUELLEN[k.quelle];
+  return `<div class="korrektur">
+      <p class="kh">${t('ses.korrektur', { n: zustand.fails })}</p>
+      <p class="kw">${escHtml(k.wenn)} ${escHtml(k.warum)}</p>
+      ${k.uebungen.map(u =>
+        `<div class="kv"><span class="k">${escHtml(u.dosis)}</span><span class="v">${escHtml(u.name)}</span></div>`).join('')}
+      ${q ? `<p class="fine" title="${escHtml(q.lang)}">${t('bib.quelle')} ${escHtml(q.kurz)}</p>` : ''}
+    </div>`;
+}
+
 function renderSession() {
   $('session-body').innerHTML = session.lifts.map((l, li) => {
     const i = LIFT_INFO[l.lift] || {};
@@ -492,6 +517,7 @@ function renderSession() {
           <div class="kv"><span class="k">${t('ses.cue')}</span><span class="v">${i.cue || ''}</span></div>
           <div class="kv"><span class="k">${t('ses.fehler')}</span><span class="v">${i.fehler || ''}</span></div>
           ${i.oly ? `<div class="kv"><span class="k">OLY</span><span class="v">${i.oly}</span></div>` : ''}
+          ${korrekturHtml(i, state.lifts[l.lift])}
         </div>
       </details>
     </div>`;
@@ -1293,6 +1319,14 @@ function bibDetailHtml(u) {
       ${u.info ? `<p>${escHtml(u.info)}</p>` : ''}
       ${u.cue ? `<div class="kv"><span class="k">${t('bib.cue')}</span><span class="v">${escHtml(u.cue)}</span></div>` : ''}
       ${u.fehler ? `<div class="kv"><span class="k">${t('bib.fehler')}</span><span class="v">${escHtml(u.fehler)}</span></div>` : ''}
+      ${u.korrektur ? `<div class="korrektur">
+        <p class="kh">${t('bib.korrektur')}</p>
+        <p class="kw">${escHtml(u.korrektur.wenn)} ${escHtml(u.korrektur.warum)}</p>
+        ${u.korrektur.uebungen.map(x =>
+          `<div class="kv"><span class="k">${escHtml(x.dosis)}</span><span class="v">${escHtml(x.name)}</span></div>`).join('')}
+      </div>` : ''}
+      ${u.quelle && QUELLEN[u.quelle]
+        ? `<p class="fine quelle">${t('bib.quelle')} ${escHtml(QUELLEN[u.quelle].lang)}</p>` : ''}
       <a class="bib-video" href="${video}" target="_blank" rel="noopener noreferrer"
          referrerpolicy="no-referrer">${t('bib.video')}</a>
       <textarea class="bib-notiz" rows="3" placeholder="${t('bib.notiz.ph')}">${escHtml(eintrag.notiz)}</textarea>

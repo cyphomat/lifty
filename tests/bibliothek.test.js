@@ -1,6 +1,6 @@
 // Ausfuehren: jsc --module-file=tests/bibliothek.test.js
 import * as B from '../js/bibliothek.js';
-import { LIFT_INFO, SKILL, MOBILITY, FINISHER } from '../js/content.js';
+import { LIFT_INFO, SKILL, MOBILITY, FINISHER, WARMUP, QUELLEN } from '../js/content.js';
 import { MOVES } from '../js/wod.js';
 
 let pass = 0, fail = 0;
@@ -50,5 +50,68 @@ print('\n--- YouTube-Suchlink ---');
 ok('zeigt auf die YouTube-Suche, nicht auf ein geratenes Video',
    B.youtubeSuche('Back Squat').startsWith('https://www.youtube.com/results?search_query='));
 ok('Name steckt kodiert im Link', B.youtubeSuche('Back Squat').includes(encodeURIComponent('Back Squat')));
+
+
+print('\n--- Jede Uebung hat eine Korrektur, nicht nur ein Fehlerbild ---');
+const lifts = Object.entries(LIFT_INFO);
+ok('alle Grundlifts haben eine Korrektur',
+   lifts.every(([, d]) => d.korrektur), lifts.filter(([, d]) => !d.korrektur).map(([n]) => n).join());
+ok('jede Korrektur sagt WANN und WARUM',
+   lifts.every(([, d]) => d.korrektur.wenn && d.korrektur.warum));
+ok('jede Korrektur nennt mindestens zwei Uebungen',
+   lifts.every(([, d]) => (d.korrektur.uebungen || []).length >= 2));
+ok('jede Korrekturuebung hat Name und Dosis',
+   lifts.every(([, d]) => d.korrektur.uebungen.every(u => u.name && u.dosis)));
+
+print('\n--- Quellen zeigen ins Leere oder gar nicht ---');
+// Eine Quelle unter einem Satz, den sie nicht stuetzt, sieht nach Sorgfalt
+// aus und ist das Gegenteil. Mindestens die Kennung muss also aufloesen.
+const mitQuelle = [
+  ...lifts.map(([, d]) => d.korrektur && d.korrektur.quelle),
+  ...SKILL.map(x => x.quelle), ...MOBILITY.map(x => x.quelle), ...FINISHER.map(x => x.quelle)
+].filter(Boolean);
+ok('es gibt ueberhaupt Quellenangaben', mitQuelle.length >= 4, String(mitQuelle.length));
+ok('jede Kennung loest auf', mitQuelle.every(q => QUELLEN[q]),
+   mitQuelle.filter(q => !QUELLEN[q]).join());
+ok('jede Quelle hat Kurz- und Langform',
+   Object.values(QUELLEN).every(q => q.kurz && q.lang));
+ok('die Langform nennt ein Jahr',
+   Object.values(QUELLEN).every(q => /\b(19|20)\d\d\b/.test(q.lang)));
+
+print('\n--- McGill Big 3 im Warm-up ---');
+eq('drei Uebungen', (WARMUP.rumpf || []).length, 3);
+ok('Bird-Dog, Seitstuetz und Curl-up',
+   ['Bird-Dog', 'Seitstütz', 'Curl-up'].every(n => WARMUP.rumpf.some(w => w.was.includes(n))));
+ok('jede mit Dosis und Erklaerung', WARMUP.rumpf.every(w => w.t && w.was && w.detail));
+
+print('\n--- Nichts, was im Studio nicht steht ---');
+// Der Referenz-Guide, aus dem die Korrekturen stammen, ist zur Haelfte
+// Strongman mit Spezialgeraet. Nichts davon steht im Fitness First — ein
+// Eintrag, den er nicht ausfuehren kann, ist schlimmer als keiner.
+const GIBT_ES_NICHT = /\b(axle|log press|yoke|atlas|sandbag|viper|continental|fat gripz|reverse hyper)/i;
+const alles = B.alleUebungen(config, state);
+const texte = alles.flatMap(u => [u.name, u.info, u.cue, u.fehler,
+  ...(u.korrektur ? [u.korrektur.wenn, u.korrektur.warum, ...u.korrektur.uebungen.map(x => x.name)] : [])])
+  .filter(Boolean);
+ok('kein Strongman-Spezialgeraet in der Bibliothek',
+   !texte.some(t => GIBT_ES_NICHT.test(t)), texte.filter(t => GIBT_ES_NICHT.test(t)).join(' | '));
+ok('auch nicht im Warm-up',
+   !Object.values(WARMUP).flat().some(w => GIBT_ES_NICHT.test(w.was + ' ' + w.detail)));
+
+print('\n--- Man sucht eine Uebung auch ueber ihr Problem ---');
+const lockout = B.suche(alles, 'lockout');
+ok('"Lockout" findet den Strict Press',
+   lockout.some(u => u.id === 'lift:ohp'), lockout.map(u => u.id).join());
+const deficit = B.suche(alles, 'deficit');
+ok('"Deficit" findet das Kreuzheben',
+   deficit.some(u => u.id === 'lift:deadlift'), deficit.map(u => u.id).join());
+ok('die Korrektur haengt auch am Bibliothekseintrag',
+   alles.find(u => u.id === 'lift:squat').korrektur !== null);
+
+print('\n--- Die neuen Technikuebungen ---');
+for (const id of ['push-jerk', 'snatch-high-pull', 'paused-front-squat'])
+  ok(`${id} ist da`, SKILL.some(x => x.id === id));
+ok('alle Technikuebungen haben Dosis und Begruendung',
+   SKILL.every(x => x.name && x.dosis && x.warum));
 
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
