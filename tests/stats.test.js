@@ -440,4 +440,95 @@ eq('aber ein Punkt ist da', eineLange.punkte.length, 1);
 ok('und die Schwelle war nicht das Problem', eineLange.besteMinuten > eineLange.schwelle,
    `${eineLange.besteMinuten} vs ${eineLange.schwelle}`);
 
+
+print('\n--- Gewicht: der Tageswert luegt, der Schnitt nicht ---');
+// Zwei Kilo Unterschied zwischen zwei Morgen sind Wasser, nicht Fett.
+const wel2 = [
+  { date:'2026-08-01', weight:124.0 }, { date:'2026-08-02', weight:122.4 },
+  { date:'2026-08-03', weight:124.6 }, { date:'2026-08-04', weight:123.2 },
+  { date:'2026-08-05', weight:123.8 }, { date:'2026-08-06', weight:122.9 },
+  { date:'2026-08-07', weight:123.5 }, { date:'2026-08-08', weight:122.7 },
+  { date:'2026-08-09', weight:0 }
+];
+const reihe = S.gewichtsReihe(wel2);
+eq('Tage ohne Wert fallen raus', reihe.length, 8);
+eq('der erste Punkt ist er selbst', reihe[0].schnitt, 124);
+ok('der Schnitt glaettet den Ausreisser', reihe[2].schnitt < 124.6 && reihe[2].schnitt > 123,
+   String(reihe[2].schnitt));
+eq('das Fenster waechst erst an', reihe[2].n, 3);
+eq('und bleibt dann bei sieben', reihe[7].n, 7);
+eq('der Rohwert bleibt erhalten', reihe[2].roh, 124.6);
+eq('leere Eingabe bleibt leer', S.gewichtsReihe([]).length, 0);
+
+print('\n--- Abnehmrate als Ausgleichsgerade ---');
+// Sauberer Verlauf: 121 kg, jede Woche 0,7 kg runter, ueber 5 Wochen.
+const sauber = S.gewichtsReihe(Array.from({ length: 35 }, (_, i) => ({
+  date: new Date(Date.UTC(2026, 6, 1 + i)).toISOString().slice(0, 10),
+  weight: Math.round((121 - i * 0.1) * 100) / 100
+})));
+const r = S.abnehmRate(sauber, 28);
+ok('rund 0,7 kg pro Woche runter', Math.abs(r.proWoche + 0.7) < 0.05, String(r.proWoche));
+ok('das sind gut ein halbes Prozent', r.prozentProWoche > 0.5 && r.prozentProWoche < 0.7,
+   String(r.prozentProWoche));
+eq('28 Tage zurueck sind 29 Tageswerte, heute eingeschlossen', r.punkte, 29);
+eq('zu wenig Daten ergibt nichts', S.abnehmRate(sauber.slice(0, 3)), null);
+eq('leer ergibt nichts', S.abnehmRate([]), null);
+// Ein einzelner schwerer Abend darf die Richtung nicht drehen.
+const mitAusreisser = [...sauber];
+mitAusreisser[mitAusreisser.length - 1] = { ...mitAusreisser[34], schnitt: 123 };
+ok('ein Ausreisser dreht den Trend nicht',
+   S.abnehmRate(mitAusreisser, 28).proWoche < 0);
+
+print('\n--- Wohin die Arbeitsgewichte laufen ---');
+const kraftLogs = [
+  { date:'2026-08-05', type:'strength', lifts:[{lift:'squat',weight:60,reps:[5]},{lift:'bench',weight:45,reps:[5]}] },
+  { date:'2026-08-12', type:'strength', lifts:[{lift:'squat',weight:62.5,reps:[5]},{lift:'bench',weight:45,reps:[5]}] },
+  { date:'2026-08-19', type:'strength', lifts:[{lift:'squat',weight:65,reps:[5]},{lift:'bench',weight:47.5,reps:[5]}] }
+];
+const kr = S.kraftRichtung(kraftLogs, 42, new Date('2026-08-20'));
+eq('unterm Strich 7,5 kg mehr', kr.delta, 7.5);
+eq('Richtung stimmt', kr.richtung, 'rauf');
+eq('drei Einheiten', kr.einheiten, 3);
+// Die Summe taugt fuers Urteil, die Anzahl fuer die Anzeige.
+eq('beide Uebungen gestiegen', kr.gestiegen, 2);
+eq('keine gefallen', kr.gefallen, 0);
+eq('von zwei Uebungen', kr.uebungen, 2);
+eq('eine Einheit reicht nicht', S.kraftRichtung(kraftLogs.slice(0,1), 42, new Date('2026-08-20')), null);
+const runter = S.kraftRichtung([kraftLogs[2], { date:'2026-08-26', type:'strength',
+  lifts:[{lift:'squat',weight:57.5,reps:[5]},{lift:'bench',weight:42.5,reps:[5]}] }], 42, new Date('2026-08-27'));
+eq('fallende Gewichte werden erkannt', runter.richtung, 'runter');
+
+print('\n--- Die eigentliche Frage: schnell genug und langsam genug ---');
+const lage = S.abnehmLage(r, kr);
+eq('abnehmen und gleichzeitig staerker: das Fenster ist offen', lage.stufe, 'fenster');
+eq('das Tempo passt', lage.tempo, 'passend');
+// Fallende Gewichte schlagen alles andere — dann kostet das Defizit Substanz.
+eq('fallende Gewichte werden zuerst gemeldet',
+   S.abnehmLage(r, { richtung:'runter' }).stufe, 'teuer');
+eq('zu schnell wird benannt',
+   S.abnehmLage({ proWoche:-1.8, prozentProWoche:1.5, aktuell:120 }, { richtung:'flach' }).stufe, 'schnell');
+eq('kaum Bewegung auch',
+   S.abnehmLage({ proWoche:-0.1, prozentProWoche:0.08, aktuell:120 }, { richtung:'flach' }).stufe, 'traege');
+eq('nach oben ist eindeutig',
+   S.abnehmLage({ proWoche:0.4, prozentProWoche:0.33, aktuell:120 }, { richtung:'rauf' }).stufe, 'rauf');
+eq('ohne Rate keine Lage', S.abnehmLage(null, kr), null);
+ok('ohne Kraftdaten bleibt die Rate lesbar',
+   S.abnehmLage(r, null).stufe === 'haltend');
+
+print('\n--- Minierfolge auf der Waage ---');
+const erf = S.gewichtsErfolge(sauber);
+eq('Startgewicht', erf.start, 121);
+ok('runter seit Beginn', erf.runter > 3, String(erf.runter));
+eq('der Tiefstwert ist jetzt', erf.amTief, true);
+ok('volle Kilo werden gezaehlt', erf.erreicht.some(e => e.art === 'kilo'));
+ok('ein Prozent auch', erf.erreicht.some(e => e.art === 'prozent'));
+ok('der naechste Meilenstein liegt unter dem Tiefstwert', erf.naechstes < erf.tief,
+   `${erf.naechstes} vs ${erf.tief}`);
+// Steht die Waage auf einer runden Zahl, ist der naechste der darunter.
+const rund = S.gewichtsErfolge([{ date:'2026-08-01', schnitt:120 }, { date:'2026-08-02', schnitt:119 }]);
+eq('bei glatten 119 ist 118 dran', rund.naechstes, 118);
+eq('ohne Zielgewicht keine Restdistanz', erf.bisZiel, null);
+eq('mit Zielgewicht schon', S.gewichtsErfolge(sauber, 105).bisZiel > 0, true);
+eq('ein Punkt reicht nicht', S.gewichtsErfolge([{ date:'x', schnitt:120 }]), null);
+
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

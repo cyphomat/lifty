@@ -111,6 +111,21 @@ const state = {
 // Fitness/Ermuedung als Zeitreihe fuer den Verlauf-Chart — sonst zeigt die
 // Tour dort einen Leerzustand, weil das einzelne "form"-Objekt oben nur die
 // aktuelle Ansage speist, keine Kurve.
+// Gewichtsverlauf mit echtem Tagesrauschen — Wasser und Glykogen schwanken
+// staerker als der Trend faellt. Genau deshalb glaettet die App.
+const gewichtsReihe = (() => {
+  const roh = Array.from({ length: 60 }, (_, i) => ({
+    date: tage(59 - i),
+    weight: Math.round((88.4 - i * 0.048 + Math.sin(i * 1.7) * 0.55) * 100) / 100
+  }));
+  return roh.map((p, i) => {
+    const teil = roh.slice(Math.max(0, i - 6), i + 1);
+    return { date: p.date, roh: p.weight,
+             schnitt: Math.round((teil.reduce((s, x) => s + x.weight, 0) / teil.length) * 100) / 100,
+             n: teil.length };
+  });
+})();
+
 const formVerlauf = Array.from({ length: 30 }, (_, i) => {
   const t = i / 29;
   const ctl = Math.round((38 + t * 14) * 10) / 10;
@@ -137,7 +152,7 @@ if (!lokal) {
 localStorage.clear();
 localStorage.setItem('setlist.token', 'demo');
 localStorage.setItem('setlist.cache', JSON.stringify({
-  config, state, fahrten, formVerlauf, wkg,
+  config, state, fahrten, formVerlauf, wkg, gewichtsReihe,
   form: { form: 5, stufe: 'frisch', fitness: 52, ermuedung: 47,
           text: 'Ausgeruht. Wenn ein Tag für einen Versuch am oberen Ende taugt, dann dieser.' },
   eftp: 243

@@ -39,6 +39,8 @@ let stoerung = null;            // Interferenz Rad -> Eisen
 let stimme = null;              // deine eigenen Zeilen aus stimme.json
 let gewichtsPunkte = [];        // Rohwerte fuer die Gewichtskurve
 let wkgPunkte = [];             // Watt pro Kilogramm, aus eFTP und Gewicht
+let gewichtsReihe = [];         // geglaetteter Gewichtsverlauf
+let abnehmen = null;            // Tempo, Preis und Minierfolge
 let formPunkte = [];            // Fitness und Ermuedung ueber die Zeit
 let eftp = null;                // geschaetzte FTP, fuer Wattziele
 let bibliothek = {};            // eigene Notizen/Videos je Uebung, aus bibliothek.json
@@ -120,6 +122,7 @@ async function load() {
   if (zwischen.gewicht) gewichtsPunkte = zwischen.gewicht;
   if (zwischen.formVerlauf) formPunkte = zwischen.formVerlauf;
   if (zwischen.wkg) wkgPunkte = zwischen.wkg;
+  if (zwischen.gewichtsReihe) { gewichtsReihe = zwischen.gewichtsReihe; berechneAbnehmen(); }
   if (zwischen.eftp) eftp = zwischen.eftp;
 
   await flushQueue();
@@ -189,6 +192,9 @@ async function loadIntervals() {
     // derselben Abfrage. Es braucht nur die Division.
     wkgPunkte = ST.wattProKg(roh);
     S.cache({ wkg: wkgPunkte });
+    gewichtsReihe = ST.gewichtsReihe(roh);
+    S.cache({ gewichtsReihe });
+    berechneAbnehmen();
     trend = C.gewichtsTrend(roh);
     form = C.formLage(ICU.letzteForm(roh));
     erholung = C.erholung(roh);
@@ -289,6 +295,7 @@ function renderHome() {
     <div class="directive">
       <span class="tone ${d.intensitaet.stufe}">${d.intensitaet.label} · ${d.kopf}</span>
       <p class="txt">${d.intensitaet.text}</p>
+      ${abnehmZeile()}
       ${formZeile()}
       ${erholungsZeile()}
       ${stoerungsZeile()}
@@ -361,6 +368,93 @@ function renderWeek() {
         <div class="body"><p>${info.warum}</p>
         <div class="kv"><span class="k">${t('home.achtung')}</span><span class="v">${info.achtung}</span></div></div></details>` : ''}`;
   }).join('');
+}
+
+/**
+ * Abnehmen ist sein erklärter Hauptfokus. Die App kannte beide Hälften der
+ * Antwort — das Gewicht aus intervals.icu und die Arbeitsgewichte aus dem
+ * eigenen Protokoll — und hat sie nie zusammengebracht. Genau das steht in
+ * seinen eigenen Zielen: "Fett runter, Muskeln halten. Solange die Gewichte
+ * auf der Stange steigen, stimmt die Richtung."
+ */
+function berechneAbnehmen() {
+  const rate = ST.abnehmRate(gewichtsReihe);
+  const kraft = ST.kraftRichtung(alleLogs.length ? alleLogs : (S.cachedLogs() || {}).logs || []);
+  abnehmen = {
+    rate, kraft,
+    lage: ST.abnehmLage(rate, kraft),
+    erfolge: ST.gewichtsErfolge(gewichtsReihe, (config && config.ziele && config.ziele.zielGewicht) || null)
+  };
+}
+
+/** Eine Zeile, nicht mehr — auf Home zählt, was heute anders wird. */
+function abnehmZeile() {
+  if (!abnehmen || !abnehmen.lage) return '';
+  const { lage, rate } = abnehmen;
+  const farbe = { fenster: 'var(--gruen)', haltend: 'var(--akzent)', traege: 'var(--muted)',
+                  schnell: 'var(--rost)', teuer: 'var(--rot)', rauf: 'var(--rost)' }[lage.stufe];
+  const kg = `${rate.proWoche > 0 ? '+' : ''}${rate.proWoche.toFixed(2)}`;
+  return `<p class="formzeile" style="border-top-color:${farbe}">
+    <span class="fw" style="color:${farbe}">${t('abn.stufe.' + lage.stufe)}</span>
+    <span class="ft">${t('abn.text.' + lage.stufe)}</span>
+    <span class="fd">${t('abn.zeile', { kg, prozent: rate.prozentProWoche, jetzt: rate.aktuell.toFixed(1) })}</span>
+  </p>`;
+}
+
+/**
+ * Der ausführliche Block in der Tour: geglättete Kurve, Tempo, Preis.
+ *
+ * Was hier bewusst NICHT steht: ein Kalorienziel. Die App weiß weder, was
+ * er isst, noch was er verbraucht — eine Zahl dafür wäre erfunden, und eine
+ * erfundene Zahl ist an dieser Stelle schlimmer als keine.
+ */
+function renderAbnehmen() {
+  const box = $('hist-abnehmen');
+  if (!box) return;
+  if (!abnehmen || !abnehmen.lage || gewichtsReihe.length < 4) {
+    box.innerHTML = `<p class="fine">${t('abn.leer')}</p>`;
+    return;
+  }
+  const { lage, rate, kraft, erfolge } = abnehmen;
+  const breite = 300, hoehe = 74, rand = 5;
+  const p = gewichtsReihe.slice(-90);
+  const werte = p.flatMap(x => [x.schnitt, x.roh]);
+  const min = Math.min(...werte), max = Math.max(...werte);
+  const spanne = max - min || 1;
+  const n = p.length;
+  const x = i => rand + (i / (n - 1)) * (breite - 2 * rand);
+  const y = v => rand + (1 - (v - min) / spanne) * (hoehe - 2 * rand);
+  const pfad = feld => p.map((q, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(q[feld]).toFixed(1)}`).join(' ');
+
+  const farbe = { fenster: 'var(--gruen)', haltend: 'var(--akzent)', traege: 'var(--muted)',
+                  schnell: 'var(--rost)', teuer: 'var(--rot)', rauf: 'var(--rost)' }[lage.stufe];
+  const kg = `${rate.proWoche > 0 ? '+' : ''}${rate.proWoche.toFixed(2)}`;
+
+  box.innerHTML = `
+    <div class="radbar">
+      <div class="h"><span class="t">${t('abn.titel')}</span>
+        <span class="r" style="color:${farbe}">${kg} ${t('abn.proWoche')}</span></div>
+      <svg viewBox="0 0 ${breite} ${hoehe}" preserveAspectRatio="none" aria-hidden="true">
+        <path d="${pfad('roh')}" fill="none" stroke="var(--line)" stroke-width="1"/>
+        <path d="${pfad('schnitt')}" fill="none" stroke="${farbe}" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+      <div class="h" style="margin:7px 0 0">
+        <span class="t">${t('abn.jetzt', { kg: rate.aktuell.toFixed(1) })}</span>
+        <span class="t">${t('abn.duenn')}</span>
+      </div>
+      <p class="ks" style="margin:10px 0 0"><b>${t('abn.stufe.' + lage.stufe)}</b> ${t('abn.text.' + lage.stufe)}</p>
+      <div class="kv"><span class="k">${t('abn.tempo')}</span><span class="v">${
+        t('abn.tempoWert', { prozent: rate.prozentProWoche, von: lage.spanne[0], bis: lage.spanne[1] })}</span></div>
+      ${kraft ? `<div class="kv"><span class="k">${t('abn.stange')}</span><span class="v">${
+        t('abn.stangeWert', { rauf: kraft.gestiegen, gesamt: kraft.uebungen, n: kraft.einheiten })}</span></div>` : ''}
+      ${erfolge ? `<div class="kv"><span class="k">${t('abn.seitStart')}</span><span class="v">${
+        t('abn.seitStartWert', { runter: erfolge.runter.toFixed(1), start: erfolge.start.toFixed(1),
+                                 tief: erfolge.tief.toFixed(1) })}</span></div>
+      <div class="kv"><span class="k">${t('abn.naechstes')}</span><span class="v">${
+        t('abn.naechstesWert', { kg: erfolge.naechstes, rest: (erfolge.tief - erfolge.naechstes).toFixed(1) })}${
+        erfolge.bisZiel != null ? ' · ' + t('abn.bisZiel', { kg: erfolge.bisZiel.toFixed(1) }) : ''}</span></div>` : ''}
+      <p class="fine" style="margin:8px 0 0">${t('abn.faustregel')}</p>
+    </div>`;
 }
 
 function renderBodyTrend() {
@@ -789,6 +883,7 @@ async function renderHistory() {
     renderLast(logs);
     renderTonnage(logs);
     renderFormVerlauf();
+    renderAbnehmen();
     renderWattProKg();
     renderPRs(logs);
     renderAnsageAbgleich(logs);
@@ -808,6 +903,7 @@ async function renderHistory() {
       renderLast(alt.logs);
       renderTonnage(alt.logs);
       renderFormVerlauf();
+      renderAbnehmen();
       renderWattProKg();
       renderPRs(alt.logs);
       renderAnsageAbgleich(alt.logs);
