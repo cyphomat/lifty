@@ -121,11 +121,14 @@ export function alsAktivitaet(log, config = {}) {
   if (!dauerSek || dauerSek < 60) return null;
 
   const istWod = log.type === 'wod';
+  const istUnplugged = log.type === 'unplugged';
   const minuten = dauerSek / 60;
-  const last = Math.max(1, Math.round(minuten * (istWod ? faktor.wod : faktor.strength)));
+  const last = Math.max(1, Math.round(minuten * (istWod || istUnplugged ? faktor.wod : faktor.strength)));
   const start = log.started ? new Date(log.started) : new Date(`${log.date}T18:00:00`);
 
-  const beschreibung = istWod
+  const beschreibung = istUnplugged
+    ? (log.label || 'Unplugged')
+    : istWod
     ? (log.label || 'WOD')
     : (log.lifts || []).map(e => {
         const name = (config.lifts && config.lifts[e.lift] && config.lifts[e.lift].name) || e.lift;
@@ -135,8 +138,10 @@ export function alsAktivitaet(log, config = {}) {
   return {
     external_id: `setlist-${log.date}-${log.type || 'strength'}${log.workout ? '-' + log.workout : ''}`,
     start_date_local: lokalIso(start),
-    type: istWod ? 'Crossfit' : 'WeightTraining',
-    name: istWod ? `WOD — ${log.label || ''}`.trim() : `Kraft — Workout ${log.workout || ''}`.trim(),
+    type: istWod || istUnplugged ? 'Crossfit' : 'WeightTraining',
+    name: istUnplugged ? 'Unplugged — Körpergewicht'
+        : istWod ? `WOD — ${log.label || ''}`.trim()
+        : `Kraft — Workout ${log.workout || ''}`.trim(),
     moving_time: dauerSek,
     elapsed_time: dauerSek,
     icu_training_load: last,

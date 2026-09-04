@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://cyphomat.github.io/setlist/"><img alt="App öffnen" src="https://img.shields.io/badge/App-öffnen-e8a23d?style=for-the-badge&labelColor=17161b"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/Tests-753%20grün-7fa65c?style=for-the-badge&labelColor=17161b">
+  <img alt="Tests" src="https://img.shields.io/badge/Tests-801%20grün-7fa65c?style=for-the-badge&labelColor=17161b">
   <img alt="Build" src="https://img.shields.io/badge/Build-keiner-6f93ad?style=for-the-badge&labelColor=17161b">
   <img alt="Abhängigkeiten" src="https://img.shields.io/badge/Abhängigkeiten-0-a7a3ab?style=for-the-badge&labelColor=17161b">
 </p>
@@ -131,6 +131,7 @@ Back Squat ist in beiden Workouts dabei und steigt darum doppelt so schnell.
 | **Fitness gegen Ermüdung** | Zwei Linien aus intervals.icu — die Fläche dazwischen *ist* die Form. |
 | **Erholung (HRV/Schlaf)** | Aus intervals.icu, meist via HealthFit aus Apple Health. HRV nur relativ zur eigenen Basis der letzten Tage bewertet, nicht absolut. Fließt in die Ansage ein. |
 | **Wattziele** | Aus der eFTP statt Prozentangaben. |
+| **Unplugged** | Fünfzehn Minuten, nur Körpergewicht, im Zweifel leise. Feste Intervalle mit geführter Uhr statt Wiederholungszahlen — für den Morgen, an dem noch jemand schläft. Der Leise-Modus lässt alles Springende weg und gibt keinen Ton, nur Vibration. |
 | **Jam** | Fünf Formate, 31 Übungen, Lasten aus dem aktuellen Stand. Nie zwei Langhantelteile. |
 | **Skalierung** | Jede Übung nennt Alternativen. „Kann ich nicht" nimmt sie dauerhaft raus. |
 
@@ -331,6 +332,7 @@ Wiederholungen. Abschaltbar unter *Backstage → Verbindungen*.
 | `js/aktualisierung.js` | Vergleicht die eigene Version mit der des Originals. |
 | `js/einrichten.js` | Baut aus ein paar Antworten eine gültige `config.json`. |
 | `js/persoenlich.js` | Grund, eigene Zeilen und alte Bestleistungen. |
+| `js/unplugged.js` | Körpergewichts-Intervalle, Vorrat und Ablauf. |
 | `js/boot.js` | Thema und Speicherumzug vor dem ersten Bild. |
 | `js/store.js` | GitHub-API als Speicher, Offline-Puffer. |
 | `js/intervals.js` | Liest Fahrten und Form; schreibt Krafteinheiten zurück. |
@@ -343,10 +345,10 @@ Wiederholungen. Abschaltbar unter *Backstage → Verbindungen*.
 
 ```sh
 JSC=/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc
-for t in program coach wod stats intervals bibliothek i18n geraete sicher store grundlagen icu-queue aktualisierung einrichten persoenlich; do $JSC --module-file=tests/$t.test.js; done
+for t in program coach wod stats intervals bibliothek i18n geraete sicher store grundlagen icu-queue aktualisierung einrichten persoenlich unplugged; do $JSC --module-file=tests/$t.test.js; done
 ```
 
-753 Tests, ausgeführt von der JS-Engine, die in macOS ohnehin steckt. Kein Node, kein Build.
+801 Tests, ausgeführt von der JS-Engine, die in macOS ohnehin steckt. Kein Node, kein Build.
 
 ---
 

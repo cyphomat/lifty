@@ -102,6 +102,7 @@
       <div class="actions">
         <button id="swap-workout" class="btn ghost small">Workout wechseln</button>
         <button id="go-wod" class="btn small" data-i18n="home.jam">Jam</button>
+        <button id="go-unplugged" class="btn ghost small" data-i18n="home.unplugged">Unplugged</button>
         <button id="go-mobility" class="btn ghost small" data-i18n="home.mobility">Mobility</button>
         <button id="go-maxout" class="btn ghost small" data-i18n="home.maxout">Max-Out</button>
       </div>
@@ -157,6 +158,50 @@
   <div id="stopwatch" class="rest" hidden>
     <span><span class="lbl" data-i18n="wod.laufzeit">LAUFZEIT</span><span id="sw-time" class="t">0:00</span></span>
     <button id="sw-toggle" data-i18n="wod.stopp">STOPP</button>
+  </div>
+</section>
+
+<!-- ============ UNPLUGGED ============ -->
+<section id="view-unplugged" class="view" hidden>
+  <header class="head">
+    <button id="up-back" class="icon-btn" data-i18n-aria="aria.zurueck" aria-label="Zurück">‹</button>
+    <h1 data-i18n="up.titel">Unplugged</h1>
+    <button id="up-reroll" class="icon-btn" data-i18n-aria="aria.wuerfeln" aria-label="Neu würfeln">⟳</button>
+  </header>
+
+  <div class="pad" id="up-plan">
+    <div class="directive">
+      <span class="tone technik" data-i18n="up.tag">NUR KÖRPERGEWICHT</span>
+      <p class="txt" data-i18n="up.lead">Kein Gerät, kein Platz, keine Ausrede. Die Uhr führt — du arbeitest nur.</p>
+    </div>
+
+    <h2 data-i18n="up.dauer">Wie lange</h2>
+    <div id="up-laengen" class="themen"></div>
+
+    <h2 data-i18n="up.ruecksicht">Rücksicht</h2>
+    <div id="up-leise" class="chips"></div>
+    <p class="fine" data-i18n="up.leiseHinweis">Leise lässt alles weg, was springt. Für den Morgen, an dem noch jemand schläft.</p>
+
+    <h2 data-i18n="up.ablauf">Der Ablauf</h2>
+    <div id="up-uebersicht"></div>
+    <div id="up-teile"></div>
+    <button id="up-start" class="btn" data-i18n="up.start">Los</button>
+  </div>
+
+  <!-- Die laufende Einheit: gross genug, um sie vom Boden aus zu lesen. -->
+  <div class="pad" id="up-lauf" hidden>
+    <div id="up-buehne" class="buehne">
+      <div class="runde" id="up-runde"></div>
+      <div class="was" id="up-was"></div>
+      <div class="uhr num" id="up-uhr">0</div>
+      <div class="cue" id="up-cue"></div>
+      <div class="danach" id="up-danach"></div>
+    </div>
+    <div class="up-steuer">
+      <button id="up-pause" class="btn ghost" data-i18n="up.pausieren">Pause</button>
+      <button id="up-weiter" class="btn ghost" data-i18n="up.ueberspringen">Weiter</button>
+    </div>
+    <button id="up-abbruch" class="btn ghost small danger" data-i18n="up.abbrechen">Abbrechen</button>
   </div>
 </section>
 

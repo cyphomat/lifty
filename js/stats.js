@@ -259,7 +259,10 @@ export function kalender(logs = [], fahrten = [], wochen = 26, heute = new Date(
   const kraft = new Set(), wod = new Set(), rad = new Set();
   for (const l of logs) {
     if (!l.date) continue;
-    if (l.type === 'wod') wod.add(l.date);
+    // Unplugged faellt in dieselbe Spalte wie der Jam: beides ist
+    // Beiwerk neben dem Programm, und zwei zusaetzliche Farben im Raster
+    // wuerden mehr verwirren als erklaeren.
+    if (l.type === 'wod' || l.type === 'unplugged') wod.add(l.date);
     else if (!l.type || l.type === 'strength') kraft.add(l.date);
   }
   for (const f of fahrten) if (f.date) rad.add(f.date);
@@ -305,7 +308,8 @@ export function wochenLast(logs = [], fahrten = [], wochen = 12, heute = new Dat
     const sek = l.dauerSekunden ||
       (l.started && l.finished ? Math.round((new Date(l.finished) - new Date(l.started)) / 1000) : 0);
     if (!sek) continue;
-    eimer[i].kraft += Math.round((sek / 60) * (l.type === 'wod' ? faktor.wod : faktor.strength));
+    const beiwerk = l.type === 'wod' || l.type === 'unplugged';
+    eimer[i].kraft += Math.round((sek / 60) * (beiwerk ? faktor.wod : faktor.strength));
   }
   for (const f of fahrten) {
     if (!f.date) continue;

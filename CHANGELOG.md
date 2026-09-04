@@ -10,6 +10,36 @@ sonst merkt die installierte App nichts von einer neuen Fassung.
 
 ---
 
+## 2026-09-01.82
+
+### Neu
+- **Unplugged.** Fünfzehn Minuten, nur Körpergewicht, im Zweifel leise. Der Jam braucht
+  Platz, Gerät und meist zwanzig Minuten — das hier ist die andere Lage: morgens im
+  Wohnzimmer, die Familie schläft noch, in einer Viertelstunde muss es vorbei sein.
+  - 22 Übungen, nichts davon braucht Gerät. Stuhl und Sofa stehen ohnehin da.
+  - Feste Intervalle statt Wiederholungszahlen — bei Zeitdruck zählt niemand mit.
+  - Eine geführte Uhr, die selbst durch die Abschnitte läuft: große Zahl, aktueller Cue,
+    Vorschau auf das Nächste. Lesbar vom Boden aus, mitten im Liegestütz.
+  - 10, 15 oder 20 Minuten. Pause, Überspringen, Abbrechen.
+
+### Bewusst so
+- **„Leise" ist Voreinstellung, nicht Zusatz.** Wer um sechs Uhr Burpees springt, weckt das
+  halbe Haus — und macht es genau einmal. Im Leise-Modus fällt alles Springende weg, und
+  die App gibt beim Wechsel **keinen Ton**, nur Vibration.
+- **Ausgewogen statt zufällig.** Jede Runde nimmt eine Übung je Muskelrichtung (Druck,
+  Beine, Rumpf, Puls). Ohne das kämen vier Beinsachen hintereinander und Runde drei wäre
+  nur noch Verwaltung. Über 60 Seeds geprüft.
+- **Ehrlich beim Ziehen.** Ohne Stange gibt es keinen vertikalen Zug. Der Rücken bekommt
+  Streckarbeit am Boden, und genau das steht auch auf dem Bildschirm — statt so zu tun,
+  als wäre Superman ein Klimmzug.
+- Unplugged rührt weder Arbeitsgewichte noch den A/B-Wechsel an, taucht aber in Historie,
+  Kalender und Wochenlast auf — wie der Jam.
+
+### Nebenbei
+- Commit-Nachrichten für Einheiten ohne `workout` lauteten „Einheit undefined am …".
+
+---
+
 ## 2026-09-01.81
 
 ### Dokumentation

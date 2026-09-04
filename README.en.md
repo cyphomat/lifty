@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://cyphomat.github.io/setlist/"><img alt="Open app" src="https://img.shields.io/badge/App-open-e8a23d?style=for-the-badge&labelColor=17161b"></a>
-  <img alt="Tests" src="https://img.shields.io/badge/Tests-753%20green-7fa65c?style=for-the-badge&labelColor=17161b">
+  <img alt="Tests" src="https://img.shields.io/badge/Tests-801%20green-7fa65c?style=for-the-badge&labelColor=17161b">
   <img alt="Build" src="https://img.shields.io/badge/Build-none-6f93ad?style=for-the-badge&labelColor=17161b">
   <img alt="Dependencies" src="https://img.shields.io/badge/Dependencies-0-a7a3ab?style=for-the-badge&labelColor=17161b">
 </p>
@@ -131,6 +131,7 @@ Back squat is in both workouts and therefore climbs twice as fast.
 | **Fitness vs. fatigue** | Two lines from intervals.icu — the area between them *is* your form. |
 | **Recovery (HRV/sleep)** | From intervals.icu, usually via HealthFit out of Apple Health. HRV is judged only relative to your own baseline of recent days, never absolutely. Feeds into the call. |
 | **Power targets** | From eFTP instead of percentages. |
+| **Unplugged** | Fifteen minutes, bodyweight only, quiet if needed. Fixed intervals with a guided clock instead of rep counts — for the morning when someone is still asleep. Quiet mode drops everything that jumps and makes no sound, only vibration. |
 | **Jam** | Five formats, 31 movements, loads from your current state. Never two barbell parts. |
 | **Scaling** | Every movement names alternatives. “Can't do this” removes it for good. |
 
@@ -327,6 +328,7 @@ off under *Backstage → Connections*.
 | `js/aktualisierung.js` | Compares your version against the original. |
 | `js/einrichten.js` | Builds a valid `config.json` from a few answers. |
 | `js/persoenlich.js` | Your reason, your own lines and old personal bests. |
+| `js/unplugged.js` | Bodyweight intervals, pool and run order. |
 | `js/boot.js` | Theme and storage migration before first paint. |
 | `js/store.js` | GitHub API as storage, offline buffer. |
 | `js/intervals.js` | Reads rides and form; writes strength sessions back. |
@@ -339,10 +341,10 @@ off under *Backstage → Connections*.
 
 ```sh
 JSC=/System/Library/Frameworks/JavaScriptCore.framework/Versions/A/Helpers/jsc
-for t in program coach wod stats intervals bibliothek i18n geraete sicher store grundlagen icu-queue aktualisierung einrichten persoenlich; do $JSC --module-file=tests/$t.test.js; done
+for t in program coach wod stats intervals bibliothek i18n geraete sicher store grundlagen icu-queue aktualisierung einrichten persoenlich unplugged; do $JSC --module-file=tests/$t.test.js; done
 ```
 
-753 tests, run by the JS engine that ships with macOS anyway. No Node, no build.
+801 tests, run by the JS engine that ships with macOS anyway. No Node, no build.
 
 ---
 

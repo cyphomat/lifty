@@ -12,6 +12,7 @@ import { escHtml, sicherLink } from './sicher.js';
 import * as A from './aktualisierung.js';
 import * as E from './einrichten.js';
 import * as PS from './persoenlich.js';
+import * as UP from './unplugged.js';
 
 let config = null, state = null, stateSha = null, session = null;
 let ridesByDate = new Map(), letzterLog = null, trend = null;
@@ -49,7 +50,7 @@ const $ = id => document.getElementById(id);
 uebersetzeStatisch();
 const VERSION_KEY = 'setlist.version';
 let laufendeVersion = localStorage.getItem(VERSION_KEY) || '—';
-const VIEWS = ['setup', 'einrichten', 'home', 'session', 'wod', 'maxout', 'done', 'history', 'bibliothek'];
+const VIEWS = ['setup', 'einrichten', 'home', 'session', 'wod', 'unplugged', 'maxout', 'done', 'history', 'bibliothek'];
 const show = n => { VIEWS.forEach(v => $('view-' + v).hidden = v !== n); window.scrollTo(0, 0); };
 
 let bannerTimer = null;
@@ -620,7 +621,10 @@ async function finishSession() {
 async function commit(log) {
   let path = `${S.LOG_DIR}/${log.date}.json`;
   if (await S.readFile(path)) path = `${S.LOG_DIR}/${log.date}-2.json`;
-  await S.writeFile(path, log, `Einheit ${log.workout} am ${log.date}`);
+  // Ohne workout — etwa bei einer Anpassung — waere hier "Einheit undefined"
+  // gestanden. Die Nachricht ist das, was man spaeter in der Historie liest.
+  const was = log.workout ? `Einheit ${log.workout}` : `Einheit (${log.type || 'strength'})`;
+  await S.writeFile(path, log, `${was} am ${log.date}`);
   const cur = await S.readFile('state.json');
   await S.writeFile('state.json', state, `Zustand nach ${log.date}`, cur ? cur.sha : stateSha);
   return path;
@@ -952,6 +956,187 @@ if (S.getToken()) {
   load();
 } else show('setup');
 
+
+
+/* ============================ Unplugged ============================
+   Fuenfzehn Minuten, nur Koerpergewicht, im Zweifel leise. Der Jam
+   braucht Platz, Geraet und meist zwanzig Minuten — das hier ist die
+   Lage morgens im Wohnzimmer, wenn die Familie noch schlaeft.
+
+   Der Unterschied zur Jam-Ansicht ist die Uhr: sie fuehrt selbst durch
+   die Abschnitte, statt nur mitzulaufen. Bei Zeitdruck zaehlt niemand
+   Wiederholungen mit.                                                 */
+
+const UP_LAENGE_KEY = 'setlist.up.minuten';
+const UP_LEISE_KEY = 'setlist.up.leise';
+
+let upSession = null, upSeed = 0;
+let upAblauf = [], upIndex = 0, upRest = 0, upTimer = null, upPausiert = false;
+
+const upMinuten = () => Number(localStorage.getItem(UP_LAENGE_KEY)) || 15;
+// Leise ist Voreinstellung: der Anlass fuer diese Einheit ist meistens,
+// dass gerade Ruecksicht noetig ist.
+const upLeise = () => localStorage.getItem(UP_LEISE_KEY) !== '0';
+
+function starteUnplugged(seed) {
+  upSeed = seed >>> 0;
+  upSession = UP.baueSession({ minuten: upMinuten(), seed: upSeed, leise: upLeise() });
+  upStopp();
+  $('up-plan').hidden = false;
+  $('up-lauf').hidden = true;
+  renderUnplugged();
+  show('unplugged');
+}
+
+function renderUnplugged() {
+  const s = upSession;
+
+  $('up-laengen').innerHTML = UP.LAENGEN.map(l =>
+    `<button data-min="${l.minuten}" class="${l.minuten === upMinuten() ? 'an' : ''}">${l.minuten} MIN</button>`).join('');
+  $('up-laengen').querySelectorAll('button').forEach(b => {
+    b.onclick = () => { localStorage.setItem(UP_LAENGE_KEY, b.dataset.min); starteUnplugged(upSeed); };
+  });
+
+  $('up-leise').innerHTML = [[true, t('up.leise')], [false, t('up.laut')]].map(([wert, text]) =>
+    `<button data-leise="${wert ? 1 : 0}" class="${wert === upLeise() ? 'an' : ''}">${escHtml(text)}</button>`).join('');
+  $('up-leise').querySelectorAll('button').forEach(b => {
+    b.onclick = () => { localStorage.setItem(UP_LEISE_KEY, b.dataset.leise); starteUnplugged(upSeed); };
+  });
+
+  $('up-uebersicht').innerHTML = `<p class="lead">${escHtml(t('up.uebersicht', {
+    runden: s.runden, arbeit: s.arbeit, pause: s.pause,
+    dauer: Math.round(s.gesamtSekunden / 60)
+  }))}</p>`;
+
+  $('up-teile').innerHTML = s.teile.map((teil, i) => `
+    <details class="info">
+      <summary>${i + 1} · ${escHtml(teil.name)}</summary>
+      <div class="body">
+        <p class="tagline"><b>${escHtml(teil.cue)}</b></p>
+        <p>${escHtml(teil.erklaerung)}</p>
+        <div class="kv"><span class="k">${t('up.leichter')}</span>
+          <span class="v">${escHtml(teil.leichter.join(' · '))}</span></div>
+        <div class="kv"><span class="k">${t('up.schwerer')}</span>
+          <span class="v">${escHtml(teil.schwerer.join(' · '))}</span></div>
+      </div>
+    </details>`).join('') +
+    `<p class="fine">${escHtml(t('up.keinZug'))}</p>`;
+}
+
+/* ---------- Die laufende Einheit ---------- */
+
+function upStart() {
+  upAblauf = UP.ablauf(upSession);
+  upIndex = 0;
+  upPausiert = false;
+  $('up-plan').hidden = true;
+  $('up-lauf').hidden = false;
+  upZeigeAbschnitt();
+  upTicke();
+}
+
+function upZeigeAbschnitt() {
+  const a = upAblauf[upIndex];
+  if (!a) return upFertig();
+  upRest = a.sekunden;
+  const arbeit = a.art === 'arbeit';
+  $('up-buehne').classList.toggle('pause', !arbeit);
+  $('up-runde').textContent = t('up.runde', { n: a.runde, gesamt: upSession.runden });
+  $('up-was').textContent = arbeit ? a.teil.name : t('up.pause.jetzt');
+  $('up-cue').textContent = arbeit ? a.teil.cue : '';
+  $('up-danach').textContent = arbeit ? '' : t('up.danach', { name: a.naechster.name });
+  $('up-uhr').textContent = upRest;
+}
+
+function upTicke() {
+  clearInterval(upTimer);
+  upTimer = setInterval(() => {
+    if (upPausiert) return;
+    upRest--;
+    $('up-uhr').textContent = Math.max(0, upRest);
+    // Drei Sekunden vorher ein kurzes Zeichen — sonst kommt der Wechsel
+    // aus dem Nichts und man verliert die erste Wiederholung.
+    if (upRest === 3) upSignal(false);
+    if (upRest <= 0) { upIndex++; upSignal(true); upZeigeAbschnitt(); }
+  }, 1000);
+}
+
+/**
+ * Zeichen beim Wechsel. Im Leise-Modus ausdruecklich ohne Ton: der ganze
+ * Sinn dieser Einheit ist, dass niemand davon aufwacht.
+ */
+function upSignal(wechsel) {
+  if (navigator.vibrate) navigator.vibrate(wechsel ? [180, 90, 180] : 60);
+  if (!upLeise()) toene(wechsel ? [880] : [660], 120);
+}
+
+const upStopp = () => { clearInterval(upTimer); upTimer = null; upPausiert = false; };
+
+async function upFertig() {
+  upStopp();
+  $('up-lauf').hidden = true;
+  $('up-plan').hidden = false;
+
+  const log = {
+    date: P.ymd(new Date()),
+    type: 'unplugged',
+    label: UP.label(upSession),
+    dauerSekunden: upSession.gesamtSekunden,
+    leise: upSession.leise,
+    teile: upSession.teile.map(x => x.id),
+    seed: upSession.seed,
+    finished: new Date().toISOString()
+  };
+  // Wie beim Jam: taucht in der Historie auf, ruehrt aber weder
+  // Arbeitsgewichte noch den A/B-Wechsel an.
+  state = P.applyLog(state, config, log);
+  S.cache({ state });
+
+  $('done-body').innerHTML = `
+    <div class="card">
+      <div class="kicker">${escHtml(log.date)} · ${t('hist.unplugged')}</div>
+      <div class="name">${upSession.minuten}:00</div>
+      <ul>${upSession.teile.map(teil =>
+        `<li><span>${escHtml(teil.name)}</span><span>${upSession.runden}×${upSession.arbeit}s</span></li>`).join('')}</ul>
+    </div>
+    <p class="spruch">${t('wod.spruch')}</p>`;
+  show('done');
+  // Der Abschlusston auch hier nur, wenn Laerm gerade in Ordnung ist.
+  if (!upLeise()) toene([660, 880]);
+  if (navigator.vibrate) navigator.vibrate([180, 90, 180]);
+
+  try {
+    await commitUnplugged(log);
+    banner(t('up.abgeschlossen'), 'ok');
+    if (ICU.pushAktiv() && ICU.isConfigured()) ICU.queuePush(log);
+  } catch { S.queue(log); banner(t('msg.keinNetz'), '', 6000); }
+  upSession = null;
+}
+
+async function commitUnplugged(log) {
+  let path = `${S.LOG_DIR}/${log.date}-unplugged.json`;
+  let n = 2;
+  while (await S.readFile(path)) path = `${S.LOG_DIR}/${log.date}-unplugged-${n++}.json`;
+  await S.writeFile(path, log, `Unplugged am ${log.date}`);
+  const cur = await S.readFile('state.json');
+  await S.writeFile('state.json', state, `Zustand nach Unplugged ${log.date}`, cur ? cur.sha : stateSha);
+}
+
+$('go-unplugged').onclick = () => starteUnplugged((Date.now() / 1000) | 0);
+$('up-reroll').onclick = () => starteUnplugged(upSeed + 1);
+$('up-back').onclick = () => { upStopp(); show('home'); };
+$('up-start').onclick = upStart;
+$('up-weiter').onclick = () => { upIndex++; upZeigeAbschnitt(); };
+$('up-pause').onclick = () => {
+  upPausiert = !upPausiert;
+  $('up-pause').textContent = upPausiert ? t('up.fortsetzen') : t('up.pausieren');
+};
+$('up-abbruch').onclick = () => {
+  if (!confirm(t('up.abbrechenFrage'))) return;
+  upStopp();
+  $('up-lauf').hidden = true;
+  $('up-plan').hidden = false;
+};
 
 /* ====================== Programm einrichten ======================
    Wer neu anfaengt, hat noch keine config.json. Frueher stand hier eine
@@ -1442,7 +1627,11 @@ function renderListe(logs) {
     }
     if (l.type && l.type !== 'strength') {
       const m = l.dauerSekunden ? `${Math.floor(l.dauerSekunden / 60)}:${String(l.dauerSekunden % 60).padStart(2, '0')}` : '—';
-      return `<div class="hist wod"><div class="d">${escHtml(l.date)} · WOD · ${m}</div>
+      // Bis hierher landete jeder fremde Typ unter "WOD". Unplugged ist
+      // aber kein Jam, und in der Historie soll stehen, was man gemacht hat.
+      const art = l.type === 'unplugged' ? t('hist.unplugged') : 'WOD';
+      const leise = l.type === 'unplugged' && l.leise ? ` · ${t('up.leise')}` : '';
+      return `<div class="hist wod"><div class="d">${escHtml(l.date)} · ${art} · ${m}${leise}</div>
         <div class="l">${escHtml(l.label || '')}</div></div>`;
     }
     return `<div class="hist"><div class="d">${escHtml(l.date)} · WORKOUT ${escHtml(l.workout)}</div>

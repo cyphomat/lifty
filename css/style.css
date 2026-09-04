@@ -687,3 +687,34 @@ h2.backstage::before{
 
 /* Ankreuzfelder in der Palette statt im Browser-Blau. */
 input[type=checkbox]{accent-color:var(--akzent);width:16px;height:16px}
+
+/* ── Unplugged: die Buehne ────────────────────────────────── */
+/* Man liest das vom Boden aus, im Liegestütz, mit dem Handy irgendwo neben
+   sich. Deshalb gross, ruhig und ohne alles, was man nicht sofort braucht. */
+.buehne{
+  text-align:center;padding:26px 12px 30px;border:1px solid var(--line);
+  background:var(--panel);border-radius:2px;margin-top:16px;
+}
+.buehne.pause{background:var(--sunken);border-color:var(--stahl)}
+.buehne .runde{
+  font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--muted);
+  text-transform:uppercase;
+}
+.buehne .was{
+  font-family:var(--display);font-size:30px;line-height:1.1;text-transform:uppercase;
+  color:var(--akzent);margin:10px 0 4px;letter-spacing:.02em;
+}
+.buehne.pause .was{color:var(--stahl)}
+.buehne .uhr{
+  font-size:88px;font-weight:700;line-height:1;margin:6px 0 8px;color:var(--fg);
+  font-variant-numeric:tabular-nums;
+}
+.buehne .cue{color:var(--muted);font-size:14.5px;max-width:24em;margin:0 auto}
+.buehne .danach{
+  font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--dim);margin-top:8px;
+}
+.up-steuer{display:flex;gap:8px;margin-top:14px}
+.up-steuer .btn{flex:1;margin:0}
+#up-abbruch{margin-top:10px}
+#up-teile{margin-top:14px}
+#up-start{margin-top:16px}
