@@ -67,9 +67,21 @@ eq('kaputte Warteschlange ergibt eine leere Liste', ICU.pendingPush().length, 0)
 print('\n--- Dublettenerkennung ---');
 // Die Apple Watch traegt Krafttraining oft selbst ein. Wird das nicht
 // erkannt, steht dieselbe Einheit doppelt in Fitness und Ermuedung.
+//
+// `started` traegt eine Zone (Z = UTC), `start_date_local` von intervals.icu
+// nicht — das wird als Ortszeit gelesen. Beide fest zu verdrahten hiess:
+// gruen nur auf einer Maschine, die in UTC laeuft, und in Darmstadt zwei
+// Stunden daneben. Die Fremdaktivitaet wird deshalb aus derselben Instanz
+// gebaut, gegen die geprueft wird.
 const log = { date: '2026-09-01', type: 'strength',
               started: '2026-09-01T17:00:00.000Z', finished: '2026-09-01T18:00:00.000Z' };
-const fremd = [{ start_date_local: '2026-09-01T17:05:00', type: 'WeightTraining', moving_time: 3300 }];
+const alsLocal = d => {
+  const z = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}` +
+         `T${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}`;
+};
+const fuenfMinutenSpaeter = alsLocal(new Date(new Date(log.started).getTime() + 5 * 60000));
+const fremd = [{ start_date_local: fuenfMinutenSpaeter, type: 'WeightTraining', moving_time: 3300 }];
 ok('von der Uhr erfasste Einheit wird erkannt', ICU.schonErfasst(log, fremd));
 ok('an einem anderen Tag nicht', !ICU.schonErfasst(log, [{ start_date_local: '2026-09-05T17:05:00', type: 'WeightTraining', moving_time: 3300 }]));
 ok('leere Fremdliste ist keine Dublette', !ICU.schonErfasst(log, []));

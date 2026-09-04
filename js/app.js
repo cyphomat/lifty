@@ -2,7 +2,7 @@ import * as P from './program.js';
 import * as S from './store.js';
 import * as ICU from './intervals.js';
 import * as C from './coach.js';
-import { LIFT_INFO, WARMUP, SKILL, MOBILITY, FINISHER, RIDE_INFO } from './content.js';
+import { LIFT_INFO, WARMUP, SKILL, MOBILITY, FINISHER, RIDE_INFO, QUELLEN } from './content.js';
 import * as WOD from './wod.js';
 import * as ST from './stats.js';
 import * as B from './bibliothek.js';
@@ -39,6 +39,9 @@ let alleFahrten = [];           // Radfahrten der letzten 90 Tage
 let stoerung = null;            // Interferenz Rad -> Eisen
 let stimme = null;              // deine eigenen Zeilen aus stimme.json
 let gewichtsPunkte = [];        // Rohwerte fuer die Gewichtskurve
+let wkgPunkte = [];             // Watt pro Kilogramm, aus eFTP und Gewicht
+let gewichtsReihe = [];         // geglaetteter Gewichtsverlauf
+let abnehmen = null;            // Tempo, Preis und Minierfolge
 let formPunkte = [];            // Fitness und Ermuedung ueber die Zeit
 let eftp = null;                // geschaetzte FTP, fuer Wattziele
 let bibliothek = {};            // eigene Notizen/Videos je Uebung, aus bibliothek.json
@@ -110,13 +113,17 @@ async function load() {
   // aber ein leerer Bildschirm im Funkloch waere die schlechtere Antwort.
   const zwischen = S.cached();
   if (zwischen.fahrten && zwischen.fahrten.length) {
-    alleFahrten = zwischen.fahrten;
-    stoerung = C.interferenz(zwischen.fahrten);
+    // Auch hier entdoppeln: der Zwischenspeicher kann noch aus einer
+    // Fassung stammen, die Doppel nicht kannte.
+    alleFahrten = ICU.entdoppeln(ICU.normalisiere(zwischen.fahrten));
+    stoerung = C.interferenz(alleFahrten);
   }
   if (zwischen.form) form = zwischen.form;
   if (zwischen.erholung) erholung = zwischen.erholung;
   if (zwischen.gewicht) gewichtsPunkte = zwischen.gewicht;
   if (zwischen.formVerlauf) formPunkte = zwischen.formVerlauf;
+  if (zwischen.wkg) wkgPunkte = zwischen.wkg;
+  if (zwischen.gewichtsReihe) { gewichtsReihe = zwischen.gewichtsReihe; berechneAbnehmen(); }
   if (zwischen.eftp) eftp = zwischen.eftp;
 
   await flushQueue();
@@ -163,7 +170,11 @@ async function loadIntervals() {
       stand: 'ok',
       text: '',
       letzte: sortiert[0] || null,
-      anzahl: alle.length
+      anzahl: alle.length,
+      // Zusammengefasste Doppel werden benannt, nicht verschwiegen: sonst
+      // ist "eine Fahrt weniger als erwartet" von einem Fehler nicht zu
+      // unterscheiden — und in intervals.icu selbst zaehlen sie weiter.
+      doppel: alle.reduce((n, r) => n + (r.doppel ? r.doppel.length : 0), 0)
     };
     renderWeek();
   } catch (e) {
@@ -178,6 +189,13 @@ async function loadIntervals() {
     S.cache({ gewicht: gewichtsPunkte });
     formPunkte = ST.formVerlauf(roh);
     S.cache({ formVerlauf: formPunkte });
+    // Beide Haelften liegen schon hier: eFTP und Gewicht kommen aus
+    // derselben Abfrage. Es braucht nur die Division.
+    wkgPunkte = ST.wattProKg(roh);
+    S.cache({ wkg: wkgPunkte });
+    gewichtsReihe = ST.gewichtsReihe(roh);
+    S.cache({ gewichtsReihe });
+    berechneAbnehmen();
     trend = C.gewichtsTrend(roh);
     form = C.formLage(ICU.letzteForm(roh));
     erholung = C.erholung(roh);
@@ -218,7 +236,9 @@ function renderIcuStatus() {
     — ${escHtml(icu.letzte.name)} · ${escHtml(icu.letzte.minutes)} Min · ${escHtml(icu.letzte.km)} km.
     ${t(icu.anzahl === 1 ? 'icu.fahrtenIn90' : 'icu.fahrtenIn90.mehr', { n: icu.anzahl })}
     ${lange ? `<br>${t('icu.radRuht')}` : ''}
-  </p>`;
+  </p>
+  ${icu.doppel ? `<p class="fine" style="color:var(--rost)">${
+    t(icu.doppel === 1 ? 'icu.doppel' : 'icu.doppel.mehr', { n: icu.doppel })}</p>` : ''}`;
 }
 
 /** Verbindungsuebersicht unter ≡. */
@@ -276,6 +296,7 @@ function renderHome() {
     <div class="directive">
       <span class="tone ${d.intensitaet.stufe}">${d.intensitaet.label} · ${d.kopf}</span>
       <p class="txt">${d.intensitaet.text}</p>
+      ${abnehmZeile()}
       ${formZeile()}
       ${erholungsZeile()}
       ${stoerungsZeile()}
@@ -350,6 +371,93 @@ function renderWeek() {
   }).join('');
 }
 
+/**
+ * Abnehmen ist sein erklärter Hauptfokus. Die App kannte beide Hälften der
+ * Antwort — das Gewicht aus intervals.icu und die Arbeitsgewichte aus dem
+ * eigenen Protokoll — und hat sie nie zusammengebracht. Genau das steht in
+ * seinen eigenen Zielen: "Fett runter, Muskeln halten. Solange die Gewichte
+ * auf der Stange steigen, stimmt die Richtung."
+ */
+function berechneAbnehmen() {
+  const rate = ST.abnehmRate(gewichtsReihe);
+  const kraft = ST.kraftRichtung(alleLogs.length ? alleLogs : (S.cachedLogs() || {}).logs || []);
+  abnehmen = {
+    rate, kraft,
+    lage: ST.abnehmLage(rate, kraft),
+    erfolge: ST.gewichtsErfolge(gewichtsReihe, (config && config.ziele && config.ziele.zielGewicht) || null)
+  };
+}
+
+/** Eine Zeile, nicht mehr — auf Home zählt, was heute anders wird. */
+function abnehmZeile() {
+  if (!abnehmen || !abnehmen.lage) return '';
+  const { lage, rate } = abnehmen;
+  const farbe = { fenster: 'var(--gruen)', haltend: 'var(--akzent)', traege: 'var(--muted)',
+                  schnell: 'var(--rost)', teuer: 'var(--rot)', rauf: 'var(--rost)' }[lage.stufe];
+  const kg = `${rate.proWoche > 0 ? '+' : ''}${rate.proWoche.toFixed(2)}`;
+  return `<p class="formzeile" style="border-top-color:${farbe}">
+    <span class="fw" style="color:${farbe}">${t('abn.stufe.' + lage.stufe)}</span>
+    <span class="ft">${t('abn.text.' + lage.stufe)}</span>
+    <span class="fd">${t('abn.zeile', { kg, prozent: rate.prozentProWoche, jetzt: rate.aktuell.toFixed(1) })}</span>
+  </p>`;
+}
+
+/**
+ * Der ausführliche Block in der Tour: geglättete Kurve, Tempo, Preis.
+ *
+ * Was hier bewusst NICHT steht: ein Kalorienziel. Die App weiß weder, was
+ * er isst, noch was er verbraucht — eine Zahl dafür wäre erfunden, und eine
+ * erfundene Zahl ist an dieser Stelle schlimmer als keine.
+ */
+function renderAbnehmen() {
+  const box = $('hist-abnehmen');
+  if (!box) return;
+  if (!abnehmen || !abnehmen.lage || gewichtsReihe.length < 4) {
+    box.innerHTML = `<p class="fine">${t('abn.leer')}</p>`;
+    return;
+  }
+  const { lage, rate, kraft, erfolge } = abnehmen;
+  const breite = 300, hoehe = 74, rand = 5;
+  const p = gewichtsReihe.slice(-90);
+  const werte = p.flatMap(x => [x.schnitt, x.roh]);
+  const min = Math.min(...werte), max = Math.max(...werte);
+  const spanne = max - min || 1;
+  const n = p.length;
+  const x = i => rand + (i / (n - 1)) * (breite - 2 * rand);
+  const y = v => rand + (1 - (v - min) / spanne) * (hoehe - 2 * rand);
+  const pfad = feld => p.map((q, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(q[feld]).toFixed(1)}`).join(' ');
+
+  const farbe = { fenster: 'var(--gruen)', haltend: 'var(--akzent)', traege: 'var(--muted)',
+                  schnell: 'var(--rost)', teuer: 'var(--rot)', rauf: 'var(--rost)' }[lage.stufe];
+  const kg = `${rate.proWoche > 0 ? '+' : ''}${rate.proWoche.toFixed(2)}`;
+
+  box.innerHTML = `
+    <div class="radbar">
+      <div class="h"><span class="t">${t('abn.titel')}</span>
+        <span class="r" style="color:${farbe}">${kg} ${t('abn.proWoche')}</span></div>
+      <svg viewBox="0 0 ${breite} ${hoehe}" preserveAspectRatio="none" aria-hidden="true">
+        <path d="${pfad('roh')}" fill="none" stroke="var(--line)" stroke-width="1"/>
+        <path d="${pfad('schnitt')}" fill="none" stroke="${farbe}" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+      <div class="h" style="margin:7px 0 0">
+        <span class="t">${t('abn.jetzt', { kg: rate.aktuell.toFixed(1) })}</span>
+        <span class="t">${t('abn.duenn')}</span>
+      </div>
+      <p class="ks" style="margin:10px 0 0"><b>${t('abn.stufe.' + lage.stufe)}</b> ${t('abn.text.' + lage.stufe)}</p>
+      <div class="kv"><span class="k">${t('abn.tempo')}</span><span class="v">${
+        t('abn.tempoWert', { prozent: rate.prozentProWoche, von: lage.spanne[0], bis: lage.spanne[1] })}</span></div>
+      ${kraft ? `<div class="kv"><span class="k">${t('abn.stange')}</span><span class="v">${
+        t('abn.stangeWert', { rauf: kraft.gestiegen, gesamt: kraft.uebungen, n: kraft.einheiten })}</span></div>` : ''}
+      ${erfolge ? `<div class="kv"><span class="k">${t('abn.seitStart')}</span><span class="v">${
+        t('abn.seitStartWert', { runter: erfolge.runter.toFixed(1), start: erfolge.start.toFixed(1),
+                                 tief: erfolge.tief.toFixed(1) })}</span></div>
+      <div class="kv"><span class="k">${t('abn.naechstes')}</span><span class="v">${
+        t('abn.naechstesWert', { kg: erfolge.naechstes, rest: (erfolge.tief - erfolge.naechstes).toFixed(1) })}${
+        erfolge.bisZiel != null ? ' · ' + t('abn.bisZiel', { kg: erfolge.bisZiel.toFixed(1) }) : ''}</span></div>` : ''}
+      <p class="fine" style="margin:8px 0 0">${t('abn.faustregel')}</p>
+    </div>`;
+}
+
 function renderBodyTrend() {
   if (!trend) { $('body-trend').innerHTML = ''; return; }
   const runter = trend.delta !== null && trend.delta < 0;
@@ -400,10 +508,14 @@ function startSession() {
 
   const skill = C.tagesAuswahl(SKILL, new Date(), 'skill');
   const mobility = C.mobilityDran(state) ? C.tagesAuswahl(MOBILITY, new Date(), 'mob') : null;
+  // Der Rumpfblock haengt am Kreuzheben, nicht am Buchstaben des Workouts.
+  // Waere er an 'B' festgemacht, wuerde er falsch stehen, sobald jemand die
+  // Workouts anders zusammenstellt — und die Einheiten sind konfigurierbar.
+  const rumpf = plan.lifts.some(l => l.lift === 'deadlift') ? (WARMUP.rumpf || []) : [];
   $('warmup').innerHTML = `
     <details class="info" open><summary>${t('ses.soundcheck')}</summary>
       <div class="body">
-        ${WARMUP.allgemein.concat(WARMUP[plan.workout]).map((w, i) =>
+        ${WARMUP.allgemein.concat(WARMUP[plan.workout] || [], rumpf).map((w, i) =>
           `<label class="kv check"><input type="checkbox" data-w="${i}">
             <span class="k">${w.t}</span><span class="v"><b>${w.was}</b> — ${w.detail}</span></label>`).join('')}
       </div>
@@ -452,6 +564,29 @@ function startSession() {
   show('session');
 }
 
+/**
+ * Was gegen einen wiederkehrenden Fehlversuch hilft.
+ *
+ * Erscheint erst, wenn tatsächlich etwas offen ist: `fails` zählt, wie oft
+ * eine Übung zuletzt nicht durchging. Vorher wäre es ungefragter Rat, und
+ * die Einheit hat schon genug Text. Bisher führte ein Fehlversuch nur
+ * irgendwann zum Deload — was man dagegen TUN kann, stand nirgends.
+ */
+function korrekturHtml(info, zustand) {
+  const k = info && info.korrektur;
+  if (!k || !zustand || !zustand.fails) return '';
+  const q = k.quelle && QUELLEN[k.quelle];
+  return `<div class="korrektur">
+      <p class="kh">${t('ses.korrektur', { n: zustand.fails })}</p>
+      <p class="kw">${escHtml(k.wenn)} ${escHtml(k.warum)}</p>
+      ${k.sofort ? `<p class="ks"><b>${t('ses.sofort')}</b> ${escHtml(k.sofort)}</p>` : ''}
+      <p class="kn">${t('ses.naechstesMal')}</p>
+      ${k.uebungen.map(u =>
+        `<div class="kv"><span class="k">${escHtml(u.dosis)}</span><span class="v">${escHtml(u.name)}</span></div>`).join('')}
+      ${q ? `<p class="fine" title="${escHtml(q.lang)}">${t('bib.quelle')} ${escHtml(q.kurz)}</p>` : ''}
+    </div>`;
+}
+
 function renderSession() {
   $('session-body').innerHTML = session.lifts.map((l, li) => {
     const i = LIFT_INFO[l.lift] || {};
@@ -479,6 +614,7 @@ function renderSession() {
           <div class="kv"><span class="k">${t('ses.cue')}</span><span class="v">${i.cue || ''}</span></div>
           <div class="kv"><span class="k">${t('ses.fehler')}</span><span class="v">${i.fehler || ''}</span></div>
           ${i.oly ? `<div class="kv"><span class="k">OLY</span><span class="v">${i.oly}</span></div>` : ''}
+          ${korrekturHtml(i, state.lifts[l.lift])}
         </div>
       </details>
     </div>`;
@@ -751,9 +887,13 @@ async function renderHistory() {
     renderLast(logs);
     renderTonnage(logs);
     renderFormVerlauf();
+    renderAbnehmen();
+    renderWattProKg();
     renderPRs(logs);
     renderAnsageAbgleich(logs);
     renderCharts(logs);
+    renderIntensitaet();
+    renderAerob();
     renderRad();
     renderListe(logs);
   } catch (e) {
@@ -767,9 +907,13 @@ async function renderHistory() {
       renderLast(alt.logs);
       renderTonnage(alt.logs);
       renderFormVerlauf();
+      renderAbnehmen();
+      renderWattProKg();
       renderPRs(alt.logs);
       renderAnsageAbgleich(alt.logs);
       renderCharts(alt.logs);
+      renderIntensitaet();
+      renderAerob();
       renderRad();
       renderListe(alt.logs);
       banner(t('msg.offlineStand', { datum: new Date(alt.zeit).toLocaleDateString(locale()) }), '', 5000);
@@ -1458,6 +1602,16 @@ function bibDetailHtml(u) {
       ${u.info ? `<p>${escHtml(u.info)}</p>` : ''}
       ${u.cue ? `<div class="kv"><span class="k">${t('bib.cue')}</span><span class="v">${escHtml(u.cue)}</span></div>` : ''}
       ${u.fehler ? `<div class="kv"><span class="k">${t('bib.fehler')}</span><span class="v">${escHtml(u.fehler)}</span></div>` : ''}
+      ${u.korrektur ? `<div class="korrektur">
+        <p class="kh">${t('bib.korrektur')}</p>
+        <p class="kw">${escHtml(u.korrektur.wenn)} ${escHtml(u.korrektur.warum)}</p>
+        ${u.korrektur.sofort ? `<p class="ks"><b>${t('ses.sofort')}</b> ${escHtml(u.korrektur.sofort)}</p>` : ''}
+        <p class="kn">${t('ses.naechstesMal')}</p>
+        ${u.korrektur.uebungen.map(x =>
+          `<div class="kv"><span class="k">${escHtml(x.dosis)}</span><span class="v">${escHtml(x.name)}</span></div>`).join('')}
+      </div>` : ''}
+      ${u.quelle && QUELLEN[u.quelle]
+        ? `<p class="fine quelle">${t('bib.quelle')} ${escHtml(QUELLEN[u.quelle].lang)}</p>` : ''}
       <a class="bib-video" href="${video}" target="_blank" rel="noopener noreferrer"
          referrerpolicy="no-referrer">${t('bib.video')}</a>
       <textarea class="bib-notiz" rows="3" placeholder="${t('bib.notiz.ph')}">${escHtml(eintrag.notiz)}</textarea>
@@ -1544,7 +1698,7 @@ const MARSHALL_KG = 55; // Halfstack, Kopf + 4x12-Box, grob gerundet
 function renderAngeben(logs) {
   const box = $('hist-angeben');
   if (!box) return;
-  const fahrten = alleFahrten.length ? alleFahrten : (S.cached().fahrten || []);
+  const fahrten = fahrtenListe();
   const s = ST.summary(logs);
   const reps = ST.wiederholungenGesamt(logs);
   const tag = ST.lieblingstag(logs, fahrten);
@@ -1923,6 +2077,15 @@ async function verarbeiteIcuQueue() {
 /* ================= Radfahrten ================= */
 
 /**
+ * Die Fahrten dieser Sitzung, ersatzweise aus dem Zwischenspeicher.
+ * An einer Stelle, damit das Entdoppeln nicht an einem der Aufrufer
+ * vorbeigeht — sonst zeigen Verlauf und Startbildschirm verschiedene Zahlen.
+ */
+function fahrtenListe() {
+  return alleFahrten.length ? alleFahrten : ICU.entdoppeln(ICU.normalisiere(S.cached().fahrten || []));
+}
+
+/**
  * Die Fahrten kommen fertig aus intervals.icu — hier werden sie nur
  * sichtbar gemacht. Ohne diese Ansicht hat man zwei Trainingsleben
  * und sieht immer nur eines davon.
@@ -1931,11 +2094,7 @@ function renderRad() {
   const box = $('hist-rad');
   if (!box) return;
 
-  let fahrten = alleFahrten;
-  if (!fahrten.length) {
-    const c = S.cached();
-    if (c.fahrten && c.fahrten.length) fahrten = c.fahrten;
-  }
+  let fahrten = fahrtenListe();
 
   if (!ICU.isConfigured()) {
     box.innerHTML = `<p class="fine">${t('rad.nichtVerbunden')}</p>`;
@@ -2423,7 +2582,7 @@ function meilensteinKarte() {
 function renderKalender(logs) {
   const box = $('hist-kalender');
   if (!box) return;
-  const fahrten = alleFahrten.length ? alleFahrten : (S.cached().fahrten || []);
+  const fahrten = fahrtenListe();
   const k = ST.kalender(logs, fahrten, 26, new Date());
 
   const zellen = k.tage.map(tag => {
@@ -2467,7 +2626,7 @@ function renderKalender(logs) {
 function renderLast(logs) {
   const box = $('hist-last');
   if (!box) return;
-  const fahrten = alleFahrten.length ? alleFahrten : (S.cached().fahrten || []);
+  const fahrten = fahrtenListe();
   const faktor = (config.intervals && config.intervals.loadProMinute) || { strength: 0.8, wod: 1.4 };
   const wochen = ST.wochenLast(logs, fahrten, 12, new Date(), faktor);
   const max = Math.max(1, ...wochen.map(w => w.gesamt));
@@ -2526,6 +2685,206 @@ function renderTonnage(logs) {
       <div class="h" style="margin:7px 0 0">
         <span class="t">${t('ton.beste', { t: (beste.tonnage/1000).toFixed(1) })}</span>
         <span class="t">${t('last.dieseWoche')}</span></div>
+    </div>`;
+}
+
+/**
+ * Watt pro Kilogramm.
+ *
+ * Im Defizit ist das die einzige Leistungskurve, die ehrlich steigen kann:
+ * die absoluten Watt bleiben stehen oder fallen, das ist Physiologie und
+ * kein Rückschritt — sieht in einer Wattkurve aber genau danach aus. Deshalb
+ * steht unter der Kurve auch, WOHER die Veränderung kam. Ein Plus aus dem
+ * Gewicht ist ein anderer Vorgang als ein Plus aus der Leistung, und beides
+ * in einer Zahl zu verstecken wäre die halbe Wahrheit.
+ */
+function renderWattProKg() {
+  const box = $('hist-wkg');
+  if (!box) return;
+  if (wkgPunkte.length < 2) {
+    box.innerHTML = `<p class="fine">${t('wkg.leer')}</p>`;
+    return;
+  }
+  const breite = 300, hoehe = 74, rand = 5;
+  const werte = wkgPunkte.map(p => p.wkg);
+  const min = Math.min(...werte), max = Math.max(...werte);
+  const spanne = max - min || 1;
+  const n = wkgPunkte.length;
+  const x = i => rand + (i / (n - 1)) * (breite - 2 * rand);
+  const y = v => rand + (1 - (v - min) / spanne) * (hoehe - 2 * rand);
+  const linie = wkgPunkte.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.wkg).toFixed(1)}`).join(' ');
+  const flaeche = `M${x(0).toFixed(1)},${hoehe} ${linie.slice(1)} L${x(n - 1).toFixed(1)},${hoehe} Z`;
+
+  const tr = ST.wattProKgTrend(wkgPunkte);
+  const jetzt = wkgPunkte[n - 1];
+  // Die beiden Anteile werden gegen die gerundete Summe gerundet, sonst
+  // ergeben +0,12 und +0,09 auf dem Bildschirm nicht die genannten +0,22.
+  const anteile = ST.anteileAufSumme(tr.delta, tr.ausLeistung);
+  const rauf = tr && tr.delta > 0;
+  const farbe = rauf ? 'var(--gruen)' : tr && tr.delta < 0 ? 'var(--rost)' : 'var(--muted)';
+  const zahl = v => `${v > 0 ? '+' : ''}${v.toFixed(2)}`;
+
+  box.innerHTML = `
+    <div class="radbar">
+      <div class="h"><span class="t">${t('wkg.titel')}</span>
+        <span class="r" style="color:${farbe}">${jetzt.wkg.toFixed(2)} W/kg</span></div>
+      <svg viewBox="0 0 ${breite} ${hoehe}" preserveAspectRatio="none" aria-hidden="true">
+        <path d="${flaeche}" fill="${rauf ? 'var(--tint-gruen)' : 'var(--tint-rost)'}"/>
+        <path d="${linie}" fill="none" stroke="${farbe}" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+      <div class="h" style="margin:7px 0 0">
+        <span class="t">${t('wkg.stand', { w: jetzt.eftp, kg: jetzt.weight.toFixed(1) })}</span>
+        <span class="t" style="color:${farbe}">${zahl(anteile.summe)} ${t('wkg.inTagen', { n: tr.tage })}</span>
+      </div>
+      <p class="fine" style="margin:6px 0 0">${t('wkg.zerlegung', {
+        leistung: zahl(anteile.a), gewicht: zahl(anteile.b),
+        watt: `${tr.wattDelta > 0 ? '+' : ''}${tr.wattDelta}`,
+        kg: `${tr.kgDelta > 0 ? '+' : ''}${tr.kgDelta.toFixed(1)}`
+      })}</p>
+    </div>`;
+}
+
+/**
+ * Was für den Tag angesagt war — und was daraus wurde.
+ *
+ * Möglich ist das erst, seit der Wochenplan aus dem Datum folgt und nicht
+ * mehr aus der Länge der Historie: nur so lässt sich für eine Fahrt von
+ * vor sechs Wochen noch rekonstruieren, was damals dranstand.
+ */
+function planFuerDatum(datum) {
+  if (!state || !config) return null;
+  const woche = P.planWeek(state, config, new Date(datum + 'T12:00:00'));
+  const slot = woche.find(s => s.date === datum && s.type === 'ride');
+  if (!slot) return null;
+  const info = RIDE_INFO[slot.label];
+  return info ? { label: slot.label, ftp: info.ftp, struktur: info.struktur } : null;
+}
+
+/**
+ * Aerobe Basis: wie viel Leistung ein Herzschlag trägt.
+ *
+ * Der Effizienzfaktor trägt diesen Block, nicht die Entkopplung — er kommt
+ * mit fünfundvierzig Minuten aus, sie braucht eine lange ruhige Strecke am
+ * Stück. Die Entkopplung steht trotzdem hier, bleibt aber still, solange zu
+ * wenig zusammenhängende Grundlage dahintersteht, und sagt dann, woran es
+ * liegt. "Keine Daten" und "deine Fahrten sind zu kurz dafür" sind zwei
+ * verschiedene Auskünfte, und nur die zweite ist zu gebrauchen.
+ */
+function renderAerob() {
+  const box = $('hist-aerob');
+  if (!box) return;
+  const fahrten = fahrtenListe();
+  const ef = ST.aerobeEffizienz(fahrten);
+  const ent = ST.entkopplungsReihe(fahrten);
+
+  // Vier Zustände, nicht drei. "Lang genug gefahren, aber erst einmal"
+  // ist etwas anderes als "die Fahrten sind zu kurz" — mit nur drei
+  // Zweigen stand da sonst "braucht 20 Minuten, deine längste war 62".
+  const entText =
+    ent.tragfaehig
+      ? t('aerob.entkAn', { wert: ent.punkte[ent.punkte.length - 1].wert.toFixed(1), n: ent.punkte.length })
+      : ent.punkte.length
+        ? t('aerob.entkFast', { n: ent.punkte.length, noetig: 3 })
+        : ent.mitWert
+          ? t('aerob.entkAus', { schwelle: ent.schwelle, beste: ent.besteMinuten })
+          : t('aerob.entkKeine');
+  const entZeile = `<p class="fine" style="margin:6px 0 0">${entText}</p>`;
+
+  const tr = ST.effizienzTrend(ef.punkte);
+  if (!tr) {
+    box.innerHTML = `<div class="radbar">
+      <div class="h"><span class="t">${t('aerob.titel')}</span></div>
+      <p class="fine">${t('aerob.leer', { n: ef.punkte.length })}</p>
+      ${entZeile}</div>`;
+    return;
+  }
+
+  const breite = 300, hoehe = 74, rand = 5;
+  const werte = ef.punkte.map(p => p.ef);
+  const min = Math.min(...werte), max = Math.max(...werte);
+  const spanne = max - min || 1;
+  const n = ef.punkte.length;
+  const x = i => rand + (i / (n - 1)) * (breite - 2 * rand);
+  const y = v => rand + (1 - (v - min) / spanne) * (hoehe - 2 * rand);
+  const linie = ef.punkte.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.ef).toFixed(1)}`).join(' ');
+  const flaeche = `M${x(0).toFixed(1)},${hoehe} ${linie.slice(1)} L${x(n - 1).toFixed(1)},${hoehe} Z`;
+
+  const rauf = tr.delta > 0;
+  const farbe = rauf ? 'var(--gruen)' : tr.delta < 0 ? 'var(--rost)' : 'var(--muted)';
+  const jetzt = ef.punkte[n - 1];
+
+  box.innerHTML = `
+    <div class="radbar">
+      <div class="h"><span class="t">${t('aerob.titel')}</span>
+        <span class="r" style="color:${farbe}">${jetzt.ef.toFixed(2)}</span></div>
+      <svg viewBox="0 0 ${breite} ${hoehe}" preserveAspectRatio="none" aria-hidden="true">
+        <path d="${flaeche}" fill="${rauf ? 'var(--tint-gruen)' : 'var(--tint-rost)'}"/>
+        <path d="${linie}" fill="none" stroke="${farbe}" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+      <div class="h" style="margin:7px 0 0">
+        <span class="t">${t('aerob.stand', { np: jetzt.np || '?', hf: jetzt.hf || '?' })}</span>
+        <span class="t" style="color:${farbe}">${tr.prozent > 0 ? '+' : ''}${tr.prozent}% ${
+          t('wkg.inTagen', { n: tr.tage })}</span>
+      </div>
+      <p class="fine" style="margin:6px 0 0">${t('aerob.band', {
+        von: Math.round(ef.band[0] * 100), bis: Math.round(ef.band[1] * 100),
+        n: n, gesamt: ef.geprueft })}</p>
+      ${entZeile}
+    </div>`;
+}
+
+function renderIntensitaet() {
+  const box = $('hist-intensitaet');
+  if (!box) return;
+  const fahrten = fahrtenListe();
+  const eintraege = ST.intensitaetsAbgleich(fahrten, planFuerDatum);
+  if (!eintraege.length) {
+    box.innerHTML = `<p class="fine">${t('int.leer')}</p>`;
+    return;
+  }
+  const bil = ST.abgleichBilanz(eintraege);
+  const FARBE = { imZiel: 'var(--gruen)', zuHart: 'var(--rot)',
+                  zuLocker: 'var(--stahl)', unklar: 'var(--muted)', ohnePlan: 'var(--muted)' };
+
+  // Die zwölf jüngsten, chronologisch — mehr trägt die Zeile nicht.
+  const zeigen = eintraege.slice(-12);
+
+  // Die Skala beginnt NICHT bei null. Ein Intensitätsfaktor von 0 ist kein
+  // Zustand, den es gibt — mit Nulllinie sehen 0,64 und 0,91 fast gleich
+  // aus, und genau dieser Unterschied ist die ganze Aussage. Untergrenze
+  // und Obergrenze stehen deshalb unter dem Diagramm, damit die gestauchte
+  // Skala nicht heimlich übertreibt.
+  const UNTEN = 0.40, OBEN = 1.20;
+  const pos = v => Math.max(0, Math.min(100, ((v - UNTEN) / (OBEN - UNTEN)) * 100));
+
+  const balken = zeigen.map(e => {
+    const hoehe = Math.max(3, pos(e.ist));
+    const ziel = e.ziel
+      ? `<span class="zielband" style="bottom:${pos(e.ziel[0]).toFixed(1)}%;height:${Math.max(2, pos(e.ziel[1]) - pos(e.ziel[0])).toFixed(1)}%"></span>` : '';
+    return `<span class="isbar ${e.stufe}" title="${escHtml(e.date)} · ${escHtml(t('int.' + e.stufe))} · IF ${e.ist.toFixed(2)}">
+        ${ziel}<span class="fill" style="height:${hoehe.toFixed(1)}%;background:${FARBE[e.stufe]}"></span>
+      </span>`;
+  }).join('');
+
+  const letzte = zeigen[zeigen.length - 1];
+  box.innerHTML = `
+    <div class="radbar">
+      <div class="h"><span class="t">${t('int.titel')}</span>
+        <span class="r" style="color:${bil.quote != null && bil.quote >= 60 ? 'var(--gruen)' : 'var(--rost)'}">${
+          bil.quote != null ? t('int.quote', { p: bil.quote, n: bil.beurteilt }) : t('int.keineQuote')}</span></div>
+      <div class="isbars">${balken}</div>
+      <div class="h" style="margin:5px 0 0">
+        <span class="t">${t('int.skala', { unten: Math.round(UNTEN * 100), oben: Math.round(OBEN * 100) })}</span>
+        <span class="t">${t('int.zielband')}</span></div>
+      <div class="h" style="margin:7px 0 0">
+        <span class="t" style="color:var(--gruen)">${t('int.zaehlerZiel', { n: bil.imZiel })}</span>
+        <span class="t" style="color:var(--rot)">${t('int.zaehlerHart', { n: bil.zuHart })}</span>
+        <span class="t" style="color:var(--stahl)">${t('int.zaehlerLocker', { n: bil.zuLocker })}</span>
+      </div>
+      ${letzte && letzte.stufe === 'zuHart' ? `<p class="fine" style="margin:6px 0 0;color:var(--rost)">${
+        t('int.warnung', { label: escHtml(letzte.label), ist: Math.round(letzte.ist * 100),
+                           bis: Math.round(letzte.ziel[1] * 100) })}</p>` : ''}
+      ${bil.unklar ? `<p class="fine" style="margin:6px 0 0">${t('int.unklarHinweis', { n: bil.unklar })}</p>` : ''}
     </div>`;
 }
 

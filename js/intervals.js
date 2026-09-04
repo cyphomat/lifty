@@ -42,13 +42,98 @@ export async function resolveAthlete() {
   return null;
 }
 
+/**
+ * Dieselbe Fahrt kann zweimal in intervals.icu landen, wenn zwei Wege
+ * dorthin fuehren — Zwift -> Strava und daneben Apple Health -> HealthFit.
+ * Die Kopien tragen verschiedene Kennungen und leicht verschiedene Zeiten,
+ * sind aber dieselbe Stunde auf dem Rad. Ungefiltert verdoppeln sie
+ * Kilometer, Stunden und Wochenlast: jeder Graph waere dann Fiktion.
+ */
+
+/** Zeitfenster einer Fahrt in Millisekunden, oder null ohne Uhrzeit. */
+function fenster(f) {
+  const start = f.zeit ? new Date(f.zeit).getTime() : NaN;
+  if (isNaN(start)) return null;
+  return [start, start + Math.max(f.minutes || 0, 1) * 60000];
+}
+
+/**
+ * Zwei Fahrten sind dieselbe, wenn sich ihre Zeitfenster zur Haelfte der
+ * kuerzeren ueberlappen. Ueber die Uhrzeit statt ueber den Tag, weil zwei
+ * echte Fahrten an einem Tag erhalten bleiben muessen — und ueber die
+ * Ueberlappung statt ueber die exakte Startzeit, weil die Quellen um
+ * Minuten auseinanderliegen (45 Min bei Zwift, 46 in Apple Health).
+ */
+export function selbeFahrt(a, b) {
+  const fa = fenster(a), fb = fenster(b);
+  if (!fa || !fb) return false;   // ohne Uhrzeit wird nicht geraten
+  const ueberlappung = Math.min(fa[1], fb[1]) - Math.max(fa[0], fb[0]);
+  if (ueberlappung <= 0) return false;
+  return ueberlappung >= Math.min(fa[1] - fa[0], fb[1] - fb[0]) / 2;
+}
+
+/**
+ * Wie viel eine Fahrt hergibt. Die reichere Kopie gewinnt: die Zwift-Fassung
+ * mit Watt und Trainingslast, nicht der nackte Health-Eintrag ohne beides.
+ * Ohne Last stuft `coach.interferenz` eine harte Fahrt als locker ein.
+ */
+function reichtum(f) {
+  return (f.load ? 4 : 0) + (f.km ? 2 : 0) + (f.minutes ? 1 : 0);
+}
+
+/**
+ * Doppelte Fahrten zusammenfassen. Die verworfenen Kennungen bleiben unter
+ * `doppel` stehen — verschwiegen wird nichts, die App sagt es im Status.
+ */
+export function entdoppeln(fahrten = []) {
+  const behalten = [];
+  const nachReichtum = [...fahrten].sort(
+    (a, b) => reichtum(b) - reichtum(a) || (b.minutes || 0) - (a.minutes || 0));
+
+  for (const f of nachReichtum) {
+    const treffer = behalten.find(g => selbeFahrt(f, g));
+    if (treffer) (treffer.doppel = treffer.doppel || []).push(f.id);
+    else behalten.push({ ...f });
+  }
+  return behalten.sort(
+    (a, b) => String(a.zeit || a.date).localeCompare(String(b.zeit || b.date)));
+}
+
+/**
+ * Der Intensitaetsfaktor kommt von intervals.icu als PROZENTZAHL (91.18),
+ * nicht als Verhaeltnis (0.9118) — so steht er auch in der Weboberflaeche
+ * ("Intensität 91%"). Das Schema unter /api/v1/docs sagt nur `number` und
+ * verraet die Einheit nicht; herausgekommen ist es erst, weil im Verlauf
+ * "gefahren mit 9118%" stand.
+ *
+ * Umgerechnet wird defensiv statt blind geteilt: ein Intensitaetsfaktor
+ * ueber 3.0 ist physiologisch unmoeglich, 3 % waeren es auch. Der Schnitt
+ * bei 3 trennt die beiden Schreibweisen also sauber, egal welche kommt.
+ */
+export function alsAnteil(v) {
+  if (v == null || !Number.isFinite(v) || v <= 0) return null;
+  return v > 3 ? v / 100 : v;
+}
+
+/**
+ * Einheiten geradeziehen. Laeuft auch auf dem Zwischenspeicher, weil dort
+ * noch Fahrten aus der Fassung liegen koennen, die den Prozentwert roh
+ * uebernommen hat.
+ */
+export function normalisiere(fahrten = []) {
+  return fahrten.map(f => {
+    const a = alsAnteil(f.intensitaet);
+    return a === f.intensitaet ? f : { ...f, intensitaet: a };
+  });
+}
+
 /** Radaktivitaeten in einem Zeitraum, auf das Noetige reduziert. */
 export async function rides(from, to) {
   const id = localStorage.getItem(KEY_ID);
   if (!id) return [];
   const list = await get(`/athlete/${id}/activities?oldest=${from}&newest=${to}`);
   if (!Array.isArray(list)) return [];
-  return list
+  return entdoppeln(list
     .filter(a => RIDE_TYPES.includes(a.type))
     .map(a => ({
       id: a.id,
@@ -60,8 +145,37 @@ export async function rides(from, to) {
       name: a.name || 'Fahrt',
       minutes: Math.round((a.moving_time || 0) / 60),
       km: Math.round((a.distance || 0) / 100) / 10,
-      load: a.icu_training_load || null
-    }));
+      load: a.icu_training_load || null,
+      // Ab hier die Felder fuer die Auswertung. Namen sind nicht geraten,
+      // sondern aus dem Schema unter /api/v1/docs (Activity) gelesen: es
+      // heisst `icu_average_watts`, ein `average_watts` gibt es nicht.
+      intensitaet: alsAnteil(a.icu_intensity),
+      np: a.icu_weighted_avg_watts || null,
+      watt: a.icu_average_watts || null,
+      hf: a.average_heartrate || null,
+      hfMax: a.max_heartrate || null,
+      effizienz: a.icu_efficiency_factor != null ? a.icu_efficiency_factor : null,
+      // ACHTUNG, ungeprueft: ob `decoupling` als Prozentzahl (5.1) oder als
+      // Anteil (0.051) kommt, ist nicht belegt — die Weboberflaeche zeigt den
+      // Wert im Kopf einer Aktivitaet nicht an, und das Schema nennt keine
+      // Einheit. Anders als bei der Intensitaet gibt es hier KEINE saubere
+      // Grenze zwischen beiden Schreibweisen, also wird nicht geraten. Der
+      // Wert wird nur angezeigt, nie verglichen: eine falsche Einheit faellt
+      // dann auf, statt still zu wirken. Beim ersten echten Wert pruefen.
+      entkopplung: a.decoupling != null ? a.decoupling : null,
+      // Wie viele Minuten zusammenhaengende Grundlage hinter dem
+      // Leistung:HF-Wert stehen. Das ist die Stichprobengroesse der
+      // Entkopplung — ohne sie waere jede Kurve daraus geraten.
+      pwhr: a.icu_power_hr_z2 != null ? a.icu_power_hr_z2 : null,
+      pwhrMin: a.icu_power_hr_z2_mins || 0,
+      ftpDamals: a.icu_ftp || null,
+      trainer: !!a.trainer,
+      // {id, secs} je Zone. Nur die belegten, sonst blaeht das den
+      // Zwischenspeicher fuer nichts auf.
+      zonen: Array.isArray(a.icu_zone_times)
+        ? a.icu_zone_times.filter(z => z && z.secs).map(z => ({ id: z.id, secs: z.secs }))
+        : null
+    })));
 }
 
 /** Wellness-Daten: Gewicht, Fitness (ctl), Ermuedung (atl), HRV und Schlaf. */
@@ -232,16 +346,20 @@ export function alsEvent(slot, config = {}) {
 }
 
 /**
- * Was von den geplanten Eintraegen noch fehlt. Abgleich ueber
- * external_id und ersatzweise ueber Datum plus Name — Letzteres
- * traegt auch dann, wenn die Kennung nicht zurueckkommt.
+ * Was von den geplanten Eintraegen noch fehlt. Abgleich ueber external_id
+ * und ersatzweise ueber Datum plus **Typ** — nicht ueber den Namen: der
+ * darf sich aendern (eine andere Radeinheit rotiert herein, eine Uebung
+ * kommt dazu), ohne dass daraus ein zweiter Eintrag fuer denselben Tag
+ * werden darf. Der Preis ist, dass ein fremder Eintrag gleichen Typs am
+ * selben Tag unseren verhindert. Das ist der bessere Tausch: ein fehlender
+ * Plan faellt auf, ein doppelter verschmutzt den Kalender still.
  */
 export function fehlendeEvents(geplant, vorhanden = []) {
   const kennungen = new Set(vorhanden.map(e => e.external_id).filter(Boolean));
-  const paare = new Set(vorhanden.map(e => `${(e.start_date_local || '').slice(0, 10)}|${e.name || ''}`));
+  const paare = new Set(vorhanden.map(e => `${(e.start_date_local || '').slice(0, 10)}|${e.type || ''}`));
   return geplant.filter(e =>
     !kennungen.has(e.external_id) &&
-    !paare.has(`${e.start_date_local.slice(0, 10)}|${e.name}`));
+    !paare.has(`${e.start_date_local.slice(0, 10)}|${e.type}`));
 }
 
 /** Mehrere Kalendereintraege auf einmal anlegen. */

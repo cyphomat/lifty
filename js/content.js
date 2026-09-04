@@ -2,6 +2,24 @@
 // Trainingsdaten: das ist Programmwissen, kein Personenbezug. Ausserdem muss
 // es im Studio sofort da sein, ohne zweiten API-Aufruf.
 
+/* ---------------------------------------------------------------
+   Quellen. Nur dort angehaengt, wo die Aussage tatsaechlich aus der
+   genannten Arbeit stammt — eine Quelle unter einem Satz, den sie
+   nicht stuetzt, sieht nach Sorgfalt aus und ist das Gegenteil.
+   Alles ohne `quelle` ist selbst geschrieben und soll auch so
+   gelesen werden.                                                  */
+
+export const QUELLEN = {
+  everett: { kurz: 'Everett 2016',
+    lang: 'Everett, Greg: Olympic Weightlifting — A Complete Guide for Athletes & Coaches, 3. Auflage, 2016' },
+  mcgill: { kurz: 'McGill',
+    lang: 'McGill, Stuart M.: Back Mechanic (2015) sowie McGill et al.: Loads on the lumbar spine and lower back musculature during strongman exercises, J Strength Cond Res 23(1), 2009' },
+  starrett: { kurz: 'Starrett 2013',
+    lang: 'Starrett, Kelly: Becoming a Supple Leopard, Victory Belt Publishing, 2013' },
+  supertraining: { kurz: 'Verkhoshansky & Siff 2009',
+    lang: 'Verkhoshansky, Yuri & Siff, Mel C.: Supertraining, 6. Auflage, Ultimate Athlete Concepts, 2009' }
+};
+
 export const LIFT_INFO = {
   squat: {
     tag: 'BACK SQUAT',
@@ -9,7 +27,17 @@ export const LIFT_INFO = {
     kadenz: '3 Sekunden runter, unten nicht abfedern, explosiv hoch.',
     cue: 'Bruch aus der Hüfte und den Knien gleichzeitig. Ellbogen unter die Stange, Brust bleibt offen.',
     fehler: 'Hüfte schießt zuerst hoch — dann wird aus dem Squat ein Good Morning. Zweiter Klassiker: Fersen heben ab, dann übernehmen die Zehen und die Gesäßmuskulatur steigt aus.',
-    oly: 'Aus deinem Gewichtheben kennst du die aufrechte Front-Position. Halte im Back Squat denselben Oberkörperwinkel wie im Clean, dann überträgt es sich.'
+    oly: 'Aus deinem Gewichtheben kennst du die aufrechte Front-Position. Halte im Back Squat denselben Oberkörperwinkel wie im Clean, dann überträgt es sich.',
+    korrektur: {
+      wenn: 'Die Brust kippt nach vorn oder die Hüfte schießt zuerst hoch.',
+      sofort: 'Stell die Fersen auf zwei 2,5er-Scheiben und wiederhole einen Satz. Wird es dadurch besser, fehlt Beweglichkeit im Sprunggelenk. Bleibt es gleich, ist es der obere Rücken — dann Gewicht runter, nicht Technik suchen.',
+      warum: 'Beides ist dieselbe Ursache: der obere Rücken hält die Last nicht aufrecht, also weicht der Körper in die stärkere Hüftstreckung aus.',
+      uebungen: [
+        { name: 'Front Squat mit 3 Sekunden Pause unten', dosis: '4x3, leicht' },
+        { name: 'Good Mornings', dosis: '3x8, betont leicht' },
+        { name: 'Front Rack Carry (Langhantel oder Kettlebells)', dosis: '3x30 m' }
+      ]
+    }
   },
   bench: {
     tag: 'BENCH PRESS',
@@ -17,7 +45,17 @@ export const LIFT_INFO = {
     kadenz: 'Kontrolliert runter bis Brustkontakt, kurze Pause, dann drücken.',
     cue: 'Schulterblätter zusammen und in die Bank. Füße fest, leichter Bogen im unteren Rücken.',
     fehler: 'Ellbogen 90 Grad abgespreizt. Etwa 45 Grad, das schont die Schulter.',
-    oly: null
+    oly: null,
+    korrektur: {
+      wenn: 'Die Stange bleibt kurz über der Brust stehen.',
+      sofort: 'Nächster Satz mit 2 Sekunden Pause auf der Brust, gleiches Gewicht. Wenn er dann gar nicht geht, war der erste kein Zufall.',
+      warum: 'Fehlende Anfangskraft aus Brust und Trizeps, nicht fehlende Kraft im Lockout.',
+      uebungen: [
+        { name: 'Bankdrücken vom Pin (Stange knapp über der Brust abgelegt)', dosis: '4x3' },
+        { name: 'Schrägbank, enger Griff', dosis: '3x6–8' },
+        { name: 'Trizepsdrücken am Kabelzug', dosis: '3x12' }
+      ]
+    }
   },
   row: {
     tag: 'BARBELL ROW',
@@ -25,7 +63,17 @@ export const LIFT_INFO = {
     kadenz: 'Explosiv ziehen, betont langsam ablassen.',
     cue: 'Oberkörper knapp über parallel, Stange an den unteren Bauch. Rücken bleibt flach.',
     fehler: 'Aus dem Aufrichten schwingen. Wenn du reißen musst, ist es zu schwer.',
-    oly: 'Die Position ist deine Zugposition beim Clean. Betrachte jeden Satz als Positionstraining.'
+    oly: 'Die Position ist deine Zugposition beim Clean. Betrachte jeden Satz als Positionstraining.',
+    korrektur: {
+      wenn: 'Du musst aus dem Aufrichten schwingen, um die Stange an den Bauch zu bekommen.',
+      sofort: '10 % runter und den Satz sauber zu Ende. Geschwungenes Rudern trainiert das Schwingen.',
+      warum: 'Der obere Rücken ermüdet vor dem Latissimus — die Hüfte übernimmt, was die Schulterblätter nicht mehr leisten.',
+      uebungen: [
+        { name: 'Brustgestütztes Rudern (Schrägbank, Kurzhanteln)', dosis: '3x10' },
+        { name: 'Latzug, betont langsam zurück', dosis: '3x10' },
+        { name: 'Face Pulls am Kabelzug', dosis: '3x15' }
+      ]
+    }
   },
   ohp: {
     tag: 'STRICT PRESS',
@@ -33,7 +81,18 @@ export const LIFT_INFO = {
     kadenz: 'Gleichmäßig hoch, kontrolliert zurück ins Rack.',
     cue: 'Gesäß und Bauch fest. Kopf leicht zurück, dann Stange am Gesicht vorbei, dann Kopf durch.',
     fehler: 'Rücklage aus dem unteren Rücken. Wenn du dich zurücklehnen musst, ist es zu schwer.',
-    oly: 'Deine Overhead-Position hier entscheidet über den Jerk. Aktive Schulter, Ohren frei.'
+    oly: 'Deine Overhead-Position hier entscheidet über den Jerk. Aktive Schulter, Ohren frei.',
+    korrektur: {
+      wenn: 'Die letzten Zentimeter über dem Kopf fehlen.',
+      sofort: 'Leg die Stange im Rack auf Stirnhöhe und drück von dort aus dem Stand an — ohne Schwung siehst du sofort, ob der Lockout fehlt oder der Anschub.',
+      warum: 'Schwacher Lockout aus Trizeps und instabile Schulterblatt-Fixierung — nicht der Anschub aus der Schulter.',
+      quelle: 'everett',
+      uebungen: [
+        { name: 'Push Press im Weitgriff', dosis: '4x3' },
+        { name: 'Trizepsdrücken über Kopf am Kabelzug', dosis: '3x12' },
+        { name: 'Powell Raises (Kurzhantel, seitlich liegend)', dosis: '3x10 je Seite' }
+      ]
+    }
   },
   deadlift: {
     tag: 'DEADLIFT',
@@ -41,7 +100,18 @@ export const LIFT_INFO = {
     kadenz: 'Spannung aufbauen, dann ohne Ruck. Jede Wiederholung neu ansetzen.',
     cue: 'Stange am Schienbein. Brust hoch, bevor die Hüfte kommt. Schieben, nicht ziehen.',
     fehler: 'Aus dem Boden reißen. Zieh die Stange erst auf Spannung, dann kommt die Bewegung.',
-    oly: 'Das ist dein erster Zug. Gleiche Position wie beim Clean bis Kniehöhe — nutze das bewusst.'
+    oly: 'Das ist dein erster Zug. Gleiche Position wie beim Clean bis Kniehöhe — nutze das bewusst.',
+    korrektur: {
+      wenn: 'Die Stange kommt nur schwer vom Boden weg, oben läuft es dann.',
+      sofort: 'Rundet dabei der untere Rücken, ist der Satz vorbei — 15–20 % runter und mit der Last zu Ende heben. Fast alles andere lässt sich wegdrücken, das hier nicht.',
+      warum: 'Fehlender Beinantrieb am Boden und zu späte Latissimus-Spannung — nicht fehlende Kraft in der Hüfte.',
+      quelle: 'everett',
+      uebungen: [
+        { name: 'Kreuzheben mit 2 Sekunden Stopp am Schienbein', dosis: '4x3 @ 70 %' },
+        { name: 'Deficit Deadlift (5 cm Erhöhung)', dosis: '4x4 @ 70–75 %' },
+        { name: 'Latzug mit gestreckten Armen (Straight-Arm Pulldown)', dosis: '3x12' }
+      ]
+    }
   }
 };
 
@@ -63,6 +133,16 @@ export const WARMUP = {
   B: [
     { t: '5x', was: 'Leere Stange Overhead', detail: 'Position über dem Kopf suchen.' },
     { t: '5x', was: 'Romanian Deadlift, leer', detail: 'Hüfte lernt den Weg.' }
+  ],
+  // McGill Big 3 — bewusst NUR vor Workout B, dem Tag mit dem Kreuzheben.
+  // Die drei Uebungen sollen die Wirbelsaeule steif halten, waehrend die
+  // Huefte arbeitet; genau darum geht es beim schweren Hinge. In jedes
+  // Warm-up gepackt waeren sie nach drei Wochen der Block, den man
+  // ueberspringt — dieselbe Ueberlegung wie bei der Mobility.
+  rumpf: [
+    { t: '8x je Seite', was: 'Bird-Dog', detail: 'Arm und gegenüberliegendes Bein lang. Becken bleibt waagerecht — eine Wasserflasche auf dem Rücken dürfte nicht kippen.' },
+    { t: '3x 20 Sek je Seite', was: 'Seitstütz (Side Plank)', detail: 'Auf dem Unterarm, Hüfte hoch. Kurz und oft schlägt lang und wackelig.' },
+    { t: '3x 8 Sek', was: 'Curl-up nach McGill', detail: 'Hände unter dem unteren Rücken, ein Bein angestellt. Nur Kopf und Schultern lösen, der Rücken bleibt, wo er ist.' }
   ]
 };
 
@@ -71,11 +151,14 @@ export const WARMUP = {
    Auffrischung von etwas, das du kannst, kein neuer Trainingsreiz. */
 
 export const SKILL = [
-  { id: 'snatch-balance', name: 'Snatch Balance', dosis: '3x3, leer bis leicht', warum: 'Holt dir die Overhead-Position zurück, ohne Ermüdung zu kosten.' },
-  { id: 'hang-power-clean', name: 'Hang Power Clean', dosis: '4x2, technisch', warum: 'Explosive Hüftstreckung — der Teil, der nach einer Pause zuerst geht.' },
+  { id: 'snatch-balance', name: 'Snatch Balance', dosis: '3x3, leer bis leicht', warum: 'Holt dir die Overhead-Position zurück, ohne Ermüdung zu kosten.', quelle: 'everett' },
+  { id: 'hang-power-clean', name: 'Hang Power Clean', dosis: '4x2, technisch', warum: 'Explosive Hüftstreckung — der Teil, der nach einer Pause zuerst geht.', fehler: 'Die Arme beugen zu früh und ziehen die Stange hoch. Das ist kein Kraftproblem, sondern fehlendes Vertrauen in die Hüfte — die Arme sind Seile, nicht Motoren.', quelle: 'everett' },
   { id: 'overhead-squat', name: 'Overhead Squat', dosis: '3x5, leere Stange', warum: 'Ehrliches Feedback über Mobilität. Ignorier es nicht.' },
-  { id: 'clean-pull', name: 'Clean Pull', dosis: '3x3 @ 60 %', warum: 'Erster Zug, saubere Position, keine Landung.' },
-  { id: 'sots-press', name: 'Sots Press', dosis: '3x5, leer', warum: 'Unbequem, aber nichts öffnet die Schulter schneller.' }
+  { id: 'clean-pull', name: 'Clean Pull', dosis: '3x3 @ 60 %', warum: 'Erster Zug, saubere Position, keine Landung.', fehler: 'Rückenwinkel öffnet sich schon vor dem Knie. Dann kommt die Stange nach vorn, und der zweite Zug findet ohne Hüfte statt.', quelle: 'everett' },
+  { id: 'sots-press', name: 'Sots Press', dosis: '3x5, leer', warum: 'Unbequem, aber nichts öffnet die Schulter schneller.' },
+  { id: 'push-jerk', name: 'Push Jerk', dosis: '4x3, leicht', warum: 'Vertikaler Dip, gerade Hantelbahn, Schulter-Drive. Der Weg zurück zum Split Jerk führt hier vorbei — und der Lockout überträgt sich direkt auf den Strict Press.', quelle: 'everett' },
+  { id: 'snatch-high-pull', name: 'Snatch High Pull', dosis: '3x3 @ 85 %', warum: 'Explosive Hüftstreckung und Zughöhe, ohne dass die Arme die Arbeit übernehmen. Kein Unterhocken, also auch keine Technikschuld, wenn der Tag schlecht läuft.', fehler: 'Sobald du die Arme einsetzt, ist der Zweck weg. Bewusst mit langen Armen ziehen — merkst du den Bizeps, war die Hüfte zu langsam.', quelle: 'everett' },
+  { id: 'paused-front-squat', name: 'Front Squat mit Pause', dosis: '4x3, 2–3 Sek unten', warum: 'Quadrizeps-Kraft und aufrechter Rumpf genau in der Position, in der die Brust beim Umsetzen zusammenklappt. Die Pause nimmt den Sprungeffekt raus, der die Schwäche sonst überdeckt.', quelle: 'everett' }
 ];
 
 /* ---------------------------------------------------------------
@@ -88,7 +171,7 @@ export const MOBILITY = [
   { id: 'pigeon-pose', name: 'Taubenhaltung (Pigeon Pose)', dosis: '2x 60 Sek je Seite', warum: 'Öffnet die Hüfte in der Außenrotation — die Position, die beim Abstieg zuerst fehlt.' },
   { id: 'sprunggelenk', name: 'Sprunggelenksmobilisation', dosis: '10x je Seite, Knie über die Zehenspitze', warum: 'Steife Sprunggelenke zwingen den Oberkörper in der Kniebeuge nach vorn — das kostet Stabilität, keine Kraft.' },
   { id: 'skorpion', name: 'Liegende Skorpion-Dehnung', dosis: '8x je Seite', warum: 'Löst die Hüfte in Rotation, ohne die Wirbelsäule zu belasten — gut nach dem Kreuzheben.' },
-  { id: 'wall-slides', name: 'Wandschieben (Thoracic Wall Slides)', dosis: '2x10, langsam', warum: 'Öffnet die Überkopf-Position aus der Brustwirbelsäule statt aus dem unteren Rücken — genau da, wo Strict Press sonst ins Hohlkreuz kippt.' },
+  { id: 'wall-slides', name: 'Wandschieben (Thoracic Wall Slides)', dosis: '2x10, langsam', warum: 'Öffnet die Überkopf-Position aus der Brustwirbelsäule statt aus dem unteren Rücken — genau da, wo Strict Press sonst ins Hohlkreuz kippt.', quelle: 'starrett' },
   { id: 'doorway-pec-stretch', name: 'Türrahmen-Dehnung (Brust und Schulter)', dosis: '2x 45 Sek je Seite', warum: 'Verkürzte Brustmuskulatur zieht die Schulter nach vorn — die Position, aus der die Schulterblätter beim Bankdrücken nicht mehr zusammenkommen.' },
   { id: '90-90-huefte', name: '90/90-Hüftwechsel', dosis: '8x je Seite, langsam wechseln', warum: 'Trainiert Innen- und Außenrotation der Hüfte im selben Satz — die Bewegung, die beim Umsetzen in die Front-Position fehlt, wenn nur eine Richtung geübt wird.' },
   { id: 'beinbeuger-dehnung', name: 'Aktive Beinbeuger-Dehnung (mit Band)', dosis: '2x8 je Seite', warum: 'Kurze Beinbeuger kippen das Becken beim Kreuzheben-Setup nach hinten, bevor die Stange überhaupt vom Boden ist. Aktiv statt passiv, weil das die Position trainiert, nicht nur die Länge.' },
@@ -103,7 +186,7 @@ export const FINISHER = [
   { id: 'ropes-waves', name: 'Battle Ropes — Waves', dosis: '8x 20 Sek an / 40 Sek Pause', warum: 'Hoher Puls, null Belastung für Knie und Wirbelsäule. Perfekt nach schwerem Beintag.' },
   { id: 'ropes-slams', name: 'Battle Ropes — Slams', dosis: '6x 15 Sek maximal', warum: 'Ganzkörper, explosiv. Der Rest vom Gewichtheber in dir.' },
   { id: 'ropes-alternating', name: 'Battle Ropes — Alternating', dosis: '5x 30 Sek', warum: 'Rumpf muss gegen die Rotation arbeiten. Unterschätzt.' },
-  { id: 'farmer-walk', name: 'Farmer Walk', dosis: '4x 40 m schwer', warum: 'Griff, Rumpf, Haltung — alles, was den Deadlift trägt.' },
+  { id: 'farmer-walk', name: 'Farmer Walk', dosis: '4x 40 m schwer', warum: 'Griff, Rumpf, Haltung — alles, was den Deadlift trägt. Trageübungen belasten die Lendenwirbelsäule vor allem gegen seitliches Abkippen — deshalb zählt die Haltung hier mehr als das Gewicht.', quelle: 'mcgill' },
   { id: 'row-erg', name: 'Row (Erg)', dosis: '5x 250 m, 1 Min Pause', warum: 'Wenn die Seile besetzt sind.' }
 ];
 
@@ -111,20 +194,27 @@ export const FINISHER = [
    Radeinheiten mit Begruendung. "Zone 2" ohne Warum ist eine
    Anweisung; mit Warum ist es eine Entscheidung.                  */
 
+// `struktur` entscheidet, wie streng man die Intensitaet der ganzen Fahrt
+// lesen darf. Bei einer dauerhaften Fahrt ist der Schnitt ueber die Fahrt
+// die Fahrt. Bei Intervallen druecken Aufwaermen und Pausen den Schnitt
+// unter das Ziel der Intervalle — "zu locker" waere dort ein Fehlurteil.
 export const RIDE_INFO = {
   'Grundlage Z2': {
+    struktur: 'dauerhaft',
     intensitaet: 'locker',
     ftp: [0.56, 0.75],
     warum: 'Baut das aerobe Fundament und verbrennt Fett, ohne deine Beine für den Squat zu ruinieren. Der wichtigste Teil deines Radumfangs — und der, den alle zu hart fahren.',
     achtung: 'Wenn du dich unterhalten kannst, stimmt es. Wenn es sich gut anfühlt, ist es meistens zu hart.'
   },
   'Sweet Spot': {
+    struktur: 'intervalle',
     intensitaet: 'mittel',
     ftp: [0.88, 0.93],
     warum: 'Bestes Verhältnis von Reiz zu Erholungskosten. Hebt die Schwelle, ohne dich für Tage zu zerstören.',
     achtung: 'Zäh, aber kontrolliert. Du solltest das letzte Intervall genauso fahren können wie das erste.'
   },
   'VO2max': {
+    struktur: 'intervalle',
     intensitaet: 'hart',
     ftp: [1.06, 1.20],
     warum: 'Hebt die Decke. Wenige, kurze, wirklich harte Intervalle.',

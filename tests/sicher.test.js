@@ -1,11 +1,19 @@
 // Ausfuehren: jsc --module-file=tests/sicher.test.js
 import { escHtml, sicherLink } from '../js/sicher.js';
 
-let pass = 0, fail = 0;
+let pass = 0, fail = 0, weg = 0;
 const ok = (n, c, x = '') => c ? (pass++, print(`  ok   ${n}`)) : (fail++, print(`  FAIL ${n} ${x}`));
 const eq = (n, a, b) => ok(n, a === b, `(${a} != ${b})`);
 
 const BASIS = 'https://example.test/app/';
+
+// `sicherLink` entscheidet ueber `new URL`. JavaScriptCore aus macOS kennt
+// die Klasse nicht — dann wirft jeder Aufruf und liefert ''. Die negativen
+// Faelle (javascript:, data:, vbscript:) waeren damit gruen, ohne dass die
+// Schutzfunktion irgendetwas geprueft haette: gruen aus dem falschen Grund
+// ist schlimmer als rot. Deshalb wird der ganze Block uebersprungen, laut
+// und gezaehlt, statt eine Abdeckung vorzutaeuschen, die es nicht gibt.
+const hatURL = typeof URL === 'function';
 
 print('\n--- Maskieren ---');
 eq('spitze Klammern', escHtml('<b>'), '&lt;b&gt;');
@@ -30,19 +38,28 @@ ok('der Text selbst bleibt lesbar', maskiert.includes('img src=x'));
 // Ein Attributausbruch braucht nur ein Anfuehrungszeichen.
 ok('Attributausbruch geschlossen', !escHtml('" onmouseover="alert(1)').includes('"'));
 
-print('\n--- Adressen ---');
-eq('https bleibt', sicherLink('https://youtube.com/x', BASIS), 'https://youtube.com/x');
-ok('http bleibt', sicherLink('http://a.test/', BASIS).startsWith('http://'));
-eq('javascript: wird verworfen', sicherLink('javascript:alert(1)', BASIS), '');
-eq('javascript: mit Grossbuchstaben ebenso', sicherLink('JavaScript:alert(1)', BASIS), '');
-eq('javascript: mit fuehrendem Leerraum ebenso', sicherLink('  javascript:alert(1)', BASIS), '');
-eq('data: wird verworfen', sicherLink('data:text/html,<script>1</script>', BASIS), '');
-eq('vbscript: wird verworfen', sicherLink('vbscript:msgbox', BASIS), '');
-eq('leer bleibt leer', sicherLink('', BASIS), '');
-eq('null bleibt leer', sicherLink(null, BASIS), '');
-eq('Unsinn ohne Schema wird relativ aufgeloest',
-  sicherLink('video', BASIS), 'https://example.test/app/video');
-ok('Anfuehrungszeichen in der Adresse werden maskiert',
-  !sicherLink('https://a.test/"onmouseover="alert(1)', BASIS).includes('"'));
+if (!hatURL) {
+  weg = 12;
+  print('\n--- Adressen ---');
+  print('  !!   UEBERSPRUNGEN: diese Laufzeit kennt kein URL.');
+  print('       sicherLink() wuerde hier ausnahmslos \'\' liefern — auch fuer https.');
+  print('       Die negativen Faelle waeren gruen, ohne etwas geprueft zu haben.');
+  print('       Fuer echte Abdeckung im Browser laufen lassen.');
+} else {
+  print('\n--- Adressen ---');
+  eq('https bleibt', sicherLink('https://youtube.com/x', BASIS), 'https://youtube.com/x');
+  ok('http bleibt', sicherLink('http://a.test/', BASIS).startsWith('http://'));
+  eq('javascript: wird verworfen', sicherLink('javascript:alert(1)', BASIS), '');
+  eq('javascript: mit Grossbuchstaben ebenso', sicherLink('JavaScript:alert(1)', BASIS), '');
+  eq('javascript: mit fuehrendem Leerraum ebenso', sicherLink('  javascript:alert(1)', BASIS), '');
+  eq('data: wird verworfen', sicherLink('data:text/html,<script>1</script>', BASIS), '');
+  eq('vbscript: wird verworfen', sicherLink('vbscript:msgbox', BASIS), '');
+  eq('leer bleibt leer', sicherLink('', BASIS), '');
+  eq('null bleibt leer', sicherLink(null, BASIS), '');
+  eq('Unsinn ohne Schema wird relativ aufgeloest',
+    sicherLink('video', BASIS), 'https://example.test/app/video');
+  ok('Anfuehrungszeichen in der Adresse werden maskiert',
+    !sicherLink('https://a.test/"onmouseover="alert(1)', BASIS).includes('"'));
+}
 
-print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);
+print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen${weg ? `, ${weg} UEBERSPRUNGEN` : ''} ==========\n`);

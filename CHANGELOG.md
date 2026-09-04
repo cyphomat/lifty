@@ -10,7 +10,7 @@ sonst merkt die installierte App nichts von einer neuen Fassung.
 
 ---
 
-## 2026-09-01.82
+## 2026-09-02.6
 
 ### Neu
 - **Unplugged.** Fünfzehn Minuten, nur Körpergewicht, im Zweifel leise. Der Jam braucht

@@ -77,13 +77,27 @@ const vorStunden = h => { const d = new Date(Date.now() - h*3600000); const z=n=
   return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}:00`; };
 
 const fahrten = [
-  { id:'a1', date:tage(0), zeit:vorStunden(3), name:'Zwift — VO2max Blocks', minutes:50, km:24, load:96 },
-  { id:'a1b', date:tage(1),  name:'Zwift — Watopia Flat',  minutes:55, km:31.5, load:78 },
-  { id:'a2', date:tage(4),  name:'Feierabendrunde',        minutes:90, km:52,   load:121 },
-  { id:'a3', date:tage(8),  name:'Zwift — Alpe du Zwift',  minutes:70, km:22,   load:96 },
-  { id:'a4', date:tage(15), name:'Lange Runde',            minutes:150,km:88,   load:180 },
-  { id:'a5', date:tage(22), name:'Zwift — Gruppenfahrt',   minutes:50, km:15.3, load:73 }
+  { id:'a1', date:tage(0), zeit:vorStunden(3), name:'Zwift — VO2max Blocks', minutes:50, km:24, load:96, intensitaet:1.08, np:268, watt:241, hf:152, effizienz:1.76, entkopplung:8.4, pwhrMin:5 },
+  { id:'a1b', date:tage(1),  name:'Zwift — Watopia Flat',  minutes:55, km:31.5, load:78, intensitaet:0.71, np:172, watt:165, hf:131, effizienz:1.31, entkopplung:5.2, pwhrMin:14 },
+  { id:'a2', date:tage(4),  name:'Feierabendrunde',        minutes:90, km:52,   load:121, intensitaet:0.76, np:184, watt:176, hf:142, effizienz:1.30, entkopplung:4.6, pwhrMin:17 },
+  { id:'a3', date:tage(8),  name:'Zwift — Alpe du Zwift',  minutes:70, km:22,   load:96, intensitaet:0.79, np:192, watt:184, hf:150, effizienz:1.28, entkopplung:6.1, pwhrMin:9 },
+  { id:'a4', date:tage(15), name:'Lange Runde',            minutes:150,km:88,   load:180, intensitaet:0.64, np:156, watt:148, hf:126, effizienz:1.24, entkopplung:3.9, pwhrMin:12 },
+  // Der Fall, um den es geht: geplant war Grundlage, gefahren wurde Schwelle.
+  // Diese eine Fahrt traegt die Intensitaet ABSICHTLICH so, wie intervals.icu
+  // sie liefert: als Prozentzahl. So laeuft der Umrechnungspfad bei jedem
+  // Screenshot mit. Wer hier "91.18" gegen die 0.xx daneben aufraeumt, macht
+  // den Bug von 2026-09-02 wieder auf ("gefahren mit 9118%").
+  { id:'a5', date:tage(22), name:'Zwift — Gruppenfahrt',   minutes:50, km:15.3, load:73, intensitaet:91.18, np:221, watt:206, hf:149, effizienz:1.48, entkopplung:7.2, pwhrMin:6 }
 ];
+
+// Watt pro Kilogramm: leichter Zuwachs aus beiden Richtungen — ein paar
+// Watt mehr, ein paar Kilo weniger.
+const wkg = Array.from({ length: 26 }, (_, i) => {
+  const t = i / 25;
+  const eftp = Math.round(232 + t * 11);
+  const weight = Math.round((88.4 - t * 2.9) * 10) / 10;
+  return { date: tage(25 - i), eftp, weight, wkg: Math.round((eftp / weight) * 1000) / 1000 };
+});
 
 const state = {
   version: 1, derivedFrom: logs.length, updated: new Date().toISOString(), next: 'A',
@@ -97,6 +111,21 @@ const state = {
 // Fitness/Ermuedung als Zeitreihe fuer den Verlauf-Chart — sonst zeigt die
 // Tour dort einen Leerzustand, weil das einzelne "form"-Objekt oben nur die
 // aktuelle Ansage speist, keine Kurve.
+// Gewichtsverlauf mit echtem Tagesrauschen — Wasser und Glykogen schwanken
+// staerker als der Trend faellt. Genau deshalb glaettet die App.
+const gewichtsReihe = (() => {
+  const roh = Array.from({ length: 60 }, (_, i) => ({
+    date: tage(59 - i),
+    weight: Math.round((88.4 - i * 0.048 + Math.sin(i * 1.7) * 0.55) * 100) / 100
+  }));
+  return roh.map((p, i) => {
+    const teil = roh.slice(Math.max(0, i - 6), i + 1);
+    return { date: p.date, roh: p.weight,
+             schnitt: Math.round((teil.reduce((s, x) => s + x.weight, 0) / teil.length) * 100) / 100,
+             n: teil.length };
+  });
+})();
+
 const formVerlauf = Array.from({ length: 30 }, (_, i) => {
   const t = i / 29;
   const ctl = Math.round((38 + t * 14) * 10) / 10;
@@ -123,7 +152,7 @@ if (!lokal) {
 localStorage.clear();
 localStorage.setItem('setlist.token', 'demo');
 localStorage.setItem('setlist.cache', JSON.stringify({
-  config, state, fahrten, formVerlauf,
+  config, state, fahrten, formVerlauf, wkg, gewichtsReihe,
   form: { form: 5, stufe: 'frisch', fitness: 52, ermuedung: 47,
           text: 'Ausgeruht. Wenn ein Tag für einen Versuch am oberen Ende taugt, dann dieser.' },
   eftp: 243

@@ -93,14 +93,20 @@ const geplant = [ev, ev2];
 eq('leerer Kalender: alles fehlt', I.fehlendeEvents(geplant, []).length, 2);
 eq('gleiche Kennung wird uebersprungen',
    I.fehlendeEvents(geplant, [{ external_id:'setlist-plan-2026-09-14-ride' }]).length, 1);
-eq('auch Datum plus Name genuegt',
-   I.fehlendeEvents(geplant, [{ start_date_local:'2026-09-14T00:00:00', name:'Sweet Spot' }]).length, 1);
+eq('auch Datum plus Typ genuegt',
+   I.fehlendeEvents(geplant, [{ start_date_local:'2026-09-14T00:00:00', type:'Ride' }]).length, 1);
 eq('beide vorhanden: nichts zu tun',
    I.fehlendeEvents(geplant, [
-     { start_date_local:'2026-09-14T00:00:00', name:'Sweet Spot' },
-     { start_date_local:'2026-09-15T00:00:00', name:'Kraft — Workout B' }]).length, 0);
-eq('fremde Eintraege stoeren nicht',
-   I.fehlendeEvents(geplant, [{ start_date_local:'2026-09-14T00:00:00', name:'Irgendwas anderes' }]).length, 2);
+     { start_date_local:'2026-09-14T00:00:00', type:'Ride' },
+     { start_date_local:'2026-09-15T00:00:00', type:'WeightTraining' }]).length, 0);
+eq('anderer Typ am selben Tag stoert nicht',
+   I.fehlendeEvents(geplant, [{ start_date_local:'2026-09-14T00:00:00', type:'Swim' }]).length, 2);
+// Der Grund fuer den Wechsel vom Namen auf den Typ: rotierte die Radeinheit
+// zwischen zwei Pushes durch, legte der Abgleich einen zweiten Eintrag an.
+eq('umbenannte Radeinheit bleibt derselbe Eintrag',
+   I.fehlendeEvents(geplant, [
+     { start_date_local:'2026-09-14T00:00:00', type:'Ride', name:'Grundlage Z2' },
+     { start_date_local:'2026-09-15T00:00:00', type:'WeightTraining', name:'Kraft — Workout A' }]).length, 0);
 
 print('\n--- Nachtragen von Einheiten prueft dasselbe ---');
 const akt = I.alsAktivitaet(kraft, config);
@@ -134,5 +140,71 @@ eq('eigener Push zaehlt nicht als fremd',
    I.schonErfasst(kraft, [{ start_date_local: mitten, external_id: 'setlist-2026-09-02-strength-A' }]), false);
 eq('ohne Start-/Endzeit nicht pruefbar',
    I.schonErfasst({ date: '2026-09-05', type: 'wod', dauerSekunden: 720 }, [{ start_date_local: mitten }]), false);
+
+print('\n--- Doppelte Fahrten aus zwei Sync-Wegen ---');
+// Der echte Fall vom 01.09.2026: Zwift ueber Strava und daneben ein nackter
+// Health-Eintrag derselben Fahrt. 16 km, nicht 32.
+const zwift = { id:'i1', zeit:'2026-09-01T19:12:00', date:'2026-09-01',
+  name:'Zwift - Group Ride: Bikealicious', minutes:45, km:16, load:63 };
+const health = { id:'i2', zeit:'2026-09-01T19:11:00', date:'2026-09-01',
+  name:'Rad indoor', minutes:46, km:16, load:null };
+
+const eine = I.entdoppeln([zwift, health]);
+eq('aus zwei mach eine', eine.length, 1);
+eq('die reichere Fassung bleibt', eine[0].name, 'Zwift - Group Ride: Bikealicious');
+eq('Last bleibt erhalten', eine[0].load, 63);
+eq('Kilometer werden nicht summiert', eine[0].km, 16);
+eq('die verworfene Kennung ist vermerkt', eine[0].doppel.join(), 'i2');
+ok('Reihenfolge der Eingabe ist egal',
+   I.entdoppeln([health, zwift])[0].load === 63);
+
+print('\n--- Zwei echte Fahrten am selben Tag bleiben zwei ---');
+const frueh = { id:'a', zeit:'2026-09-01T07:00:00', date:'2026-09-01', minutes:45, km:16, load:40 };
+const spaet = { id:'b', zeit:'2026-09-01T19:00:00', date:'2026-09-01', minutes:45, km:16, load:60 };
+eq('kein Zusammenfassen ueber den Tag', I.entdoppeln([frueh, spaet]).length, 2);
+eq('chronologisch sortiert', I.entdoppeln([spaet, frueh])[0].id, 'a');
+eq('direkt hintereinander bleibt getrennt',
+   I.entdoppeln([frueh, { ...spaet, zeit:'2026-09-01T07:45:00' }]).length, 2);
+
+print('\n--- Ohne Uhrzeit wird nicht geraten ---');
+ok('keine Zeit, kein Treffer', !I.selbeFahrt({ minutes:45 }, { minutes:45 }));
+eq('beide bleiben stehen',
+   I.entdoppeln([{ id:'x', date:'2026-09-01', minutes:45 },
+                 { id:'y', date:'2026-09-01', minutes:45 }]).length, 2);
+
+print('\n--- Ueberlappung entscheidet, nicht die exakte Startzeit ---');
+ok('eine Minute Versatz ist dieselbe Fahrt',
+   I.selbeFahrt(zwift, health));
+ok('halb so lange Fahrt im selben Fenster zaehlt als dieselbe',
+   I.selbeFahrt(zwift, { zeit:'2026-09-01T19:20:00', minutes:22 }));
+ok('nur ein Zipfel Ueberlappung reicht nicht',
+   !I.selbeFahrt(zwift, { zeit:'2026-09-01T19:50:00', minutes:45 }));
+eq('leere Liste bleibt leer', I.entdoppeln([]).length, 0);
+
+
+print('\n--- Intensitaet kommt als Prozentzahl, nicht als Anteil ---');
+// Aufgefallen im Verlauf: "gefahren mit 9118% statt hoechstens 75%".
+// 9118 = 91,18 x 100 — der Wert war also schon Prozent.
+eq('91,18 wird zu 0,9118', I.alsAnteil(91.18), 0.9118);
+eq('ein echter Anteil bleibt', I.alsAnteil(0.91), 0.91);
+eq('75 wird zu 0,75', I.alsAnteil(75), 0.75);
+eq('null bleibt null', I.alsAnteil(null), null);
+eq('die Null ist kein Wert', I.alsAnteil(0), null);
+eq('Unsinn ergibt null', I.alsAnteil(NaN), null);
+// Die Grenze bei 3 trennt sauber: darueber ist kein Anteil moeglich,
+// darunter waere es als Prozentwert physiologisch Unsinn.
+eq('2,5 gilt als Anteil', I.alsAnteil(2.5), 2.5);
+eq('300 gilt als Prozent', I.alsAnteil(300), 3);
+
+print('\n--- Und der Zwischenspeicher wird mitgezogen ---');
+const roh = [{ date:'2026-09-01', intensitaet:91.18, minutes:45 },
+             { date:'2026-08-25', intensitaet:0.68, minutes:60 },
+             { date:'2026-08-18', minutes:50 }];
+const norm = I.normalisiere(roh);
+eq('Prozentwert umgerechnet', norm[0].intensitaet, 0.9118);
+eq('Anteil unangetastet', norm[1].intensitaet, 0.68);
+eq('ohne Wert bleibt null', norm[2].intensitaet, null);
+eq('unveraenderte Fahrten werden nicht kopiert', norm[1], roh[1]);
+eq('leere Liste bleibt leer', I.normalisiere([]).length, 0);
 
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

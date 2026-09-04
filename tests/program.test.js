@@ -310,4 +310,44 @@ eq('vollstaendig identisch', JSON.stringify(reihenfolgeA.lifts), JSON.stringify(
 const anpassungFrueh = { ...anpassungSpaet, finished:'2026-08-28T06:00:00.000Z' };
 eq('umgekehrt gewinnt die Einheit', P.deriveState(config, [anpassungFrueh, einheitFrueh]).lifts.squat.weight, 50);
 
+
+print('\n--- Die Radeinheit haengt am Kalender, nicht an der Historie ---');
+// Frueher zaehlte state.history.length mit: jede geloggte Krafteinheit
+// verschob die Radeinheit desselben Dienstags. Der Plan fuer ein festes
+// Datum muss aber stehenbleiben, sonst legt "Plan in Kalender" doppelt an.
+const DI = new Date(2026, 8, 1);
+const leer = P.initialState(config);
+const radLabel = st => P.planWeek(st, config, DI).filter(s => s.type === 'ride').map(s => s.label).join('/');
+const ohneHistorie = radLabel(leer);
+eq('eine Krafteinheit mehr aendert nichts',
+   radLabel({ ...leer, history: [{ date:'2026-08-30', type:'strength' }] }), ohneHistorie);
+eq('auch fuenf weitere Logs aendern nichts',
+   radLabel({ ...leer, history: Array.from({ length: 5 }, (_, i) =>
+     ({ date: `2026-08-2${i}`, type: i % 2 ? 'wod' : 'strength' })) }), ohneHistorie);
+ok('zweimal aufgerufen dasselbe', radLabel(leer) === ohneHistorie);
+
+ok('beide Rad-Slots einer Woche sind verschieden',
+   ohneHistorie.split('/')[0] !== ohneHistorie.split('/')[1], ohneHistorie);
+eq('bei zwei Einheiten und zwei Slots ist der Vorrat jede Woche durch',
+   radLabel(leer), P.planWeek(leer, config, new Date(2026, 8, 8))
+     .filter(s => s.type === 'ride').map(s => s.label).join('/'));
+
+// Rotation ueber Wochen zeigt sich erst bei mehr Einheiten als Slots —
+// Daniels echte Config hat vier Radeinheiten auf zwei Slots, also einen
+// Zweiwochen-Zyklus.
+const vier = { ...config, rides: [
+  { label:'Z2', detail:'ruhig' }, { label:'SST', detail:'zaeh' },
+  { label:'Z2 lang', detail:'sehr ruhig' }, { label:'VO2', detail:'kurz und boese' }] };
+const woche = d => P.planWeek(leer, vier, d).filter(s => s.type === 'ride').map(s => s.label).join('/');
+ok('naechste Woche stehen die anderen zwei dran',
+   woche(new Date(2026, 8, 8)) !== woche(DI), `${woche(DI)} vs ${woche(new Date(2026, 8, 8))}`);
+eq('nach zwei Wochen ist der Vorrat einmal durch',
+   woche(new Date(2026, 8, 15)), woche(DI));
+eq('alle vier kommen in zwei Wochen vor',
+   [...new Set((woche(DI) + '/' + woche(new Date(2026, 8, 8))).split('/'))].length, 4);
+// Ueber die Sommerzeitumstellung hinweg darf die Rotation nicht springen:
+// die Wochen vor und nach dem 25.10.2026 muessen sauber weiterzaehlen.
+eq('Sommerzeit verschiebt die Rotation nicht',
+   woche(new Date(2026, 9, 20)), woche(new Date(2026, 10, 3)));
+
 print(`\n========== Gesamt: ${pass} bestanden, ${fail} fehlgeschlagen ==========\n`);

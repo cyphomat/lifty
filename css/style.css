@@ -395,6 +395,42 @@ dialog::backdrop{background:var(--backdrop)}
 .radbar .h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px}
 .radbar .h .t{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .radbar .h .r{font-family:var(--mono);font-size:13px;color:var(--stahl);font-weight:700}
+/* Korrekturblock. Setzt sich vom Erklaertext ab, weil er eine Aufforderung
+   ist und keine Erlaeuterung — aber ohne Alarmfarbe: ein Fehlversuch ist
+   Information, kein Fehler. */
+.korrektur{margin-top:10px;padding:10px 12px;background:var(--sunken);
+  border-left:2px solid var(--rost)}
+.korrektur .kh{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--rost);margin:0 0 6px}
+.korrektur .kw{font-size:13px;color:var(--muted);margin:0 0 8px;line-height:1.5}
+.korrektur .ks{font-size:13px;line-height:1.55;margin:0 0 10px;padding:8px 10px;
+  background:var(--tint-rost);border:1px solid var(--line)}
+.korrektur .ks b{color:var(--rost);font-family:var(--mono);font-size:11px;
+  letter-spacing:.12em;text-transform:uppercase;margin-right:6px}
+.korrektur .kn{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--dim);margin:0 0 4px}
+.korrektur .kv{margin:3px 0}
+p.quelle{margin-top:10px;color:var(--dim);font-style:italic;line-height:1.5}
+
+/* Intensität je Fahrt. Der Balken ist das Ist, das eingelegte Band die
+   geplante Zone — nebeneinander sieht man sofort, ob die Fahrt daneben lag.
+   Farben ausschließlich über Variablen, sonst bricht die helle Fassung. */
+.isbars{display:flex;gap:4px;align-items:flex-end;height:88px;
+  background:var(--sunken);border:1px solid var(--line);padding:5px}
+.isbar{position:relative;flex:1;height:100%;display:flex;align-items:flex-end}
+.isbar .fill{display:block;width:100%;opacity:.9}
+/* Ohne Plan gibt es nichts zu beurteilen. Der Balken bleibt als Kontext
+   stehen, tritt aber zurueck — sonst ist das Lauteste im Diagramm die
+   Abwesenheit von Information. */
+.isbar.ohnePlan .fill{opacity:.18}
+/* Das Ziel liegt UEBER dem Ist, als Umriss. Als gefuellte Flaeche dahinter
+   war es hinter dem Balken unsichtbar. */
+.isbar .zielband{position:absolute;left:0;right:0;z-index:1;pointer-events:none;
+  border:1px dashed var(--stahl);border-left:none;border-right:none;
+  background:linear-gradient(var(--tint-stahl),var(--tint-stahl))}
+:root[data-theme="light"] .isbar .fill{opacity:1}
+:root[data-theme="light"] .isbar.ohnePlan .fill{opacity:.3}
+
 .fahrt{background:var(--panel);border:1px solid var(--line);border-left:2px solid var(--stahl);
   padding:11px 14px;margin-bottom:7px}
 .fahrt .d{font-family:var(--mono);font-size:12.5px;color:var(--stahl);letter-spacing:.06em}

@@ -208,6 +208,392 @@ export function radStats(rides = []) {
 }
 
 /** Wochenweise Last — zeigt Rhythmus und Lücken deutlicher als eine Liste. */
+/* ---------------------------------------------------------------
+   Watt pro Kilogramm. Die Kurve, die im Defizit steigt, waehrend die
+   absoluten Watt stehenbleiben.
+
+   Beides liegt in intervals.icu: `eftp` und `weight` aus den
+   Wellness-Daten. Es braucht also kein einziges neues Feld — nur die
+   Division, die bisher niemand gemacht hat.                         */
+
+/** Punkte mit beiden Haelften. Tage ohne Gewicht oder ohne eFTP fallen raus. */
+export function wattProKg(wellness = []) {
+  return wellness
+    .filter(w => w.eftp > 0 && w.weight > 0)
+    .map(w => ({
+      date: w.date,
+      wkg: Math.round((w.eftp / w.weight) * 1000) / 1000,
+      eftp: Math.round(w.eftp),
+      weight: Math.round(w.weight * 10) / 10
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/**
+ * Woher die Veraenderung kam. Ein Plus in W/kg kann aus mehr Leistung
+ * stammen oder aus weniger Gewicht — das ist derselbe Zahlenwert und ein
+ * voellig anderer Vorgang. Die Zerlegung ist exakt, nicht geschaetzt:
+ *   b.eftp/b.kg - a.eftp/a.kg
+ *     = (b.eftp - a.eftp)/a.kg  +  b.eftp * (1/b.kg - 1/a.kg)
+ * Der erste Summand ist der Anteil der Leistung, der zweite der des
+ * Gewichts, und zusammen ergeben sie die Differenz ohne Rest.
+ */
+export function wattProKgTrend(punkte = []) {
+  if (punkte.length < 2) return null;
+  const a = punkte[0], b = punkte[punkte.length - 1];
+  const ausLeistung = (b.eftp - a.eftp) / a.weight;
+  const ausGewicht = b.eftp * (1 / b.weight - 1 / a.weight);
+  const r = n => Math.round(n * 1000) / 1000;
+  return {
+    von: a, bis: b,
+    delta: r(b.wkg - a.wkg),
+    ausLeistung: r(ausLeistung),
+    ausGewicht: r(ausGewicht),
+    kgDelta: Math.round((b.weight - a.weight) * 10) / 10,
+    wattDelta: b.eftp - a.eftp,
+    tage: Math.round((new Date(b.date) - new Date(a.date)) / 86400000)
+  };
+}
+
+/**
+ * Zwei Anteile so runden, dass sie die gerundete Summe exakt ergeben.
+ * Getrennt gerundet ergaben +0,12 und +0,09 eine Summe von +0,22 — die
+ * Rechnung stimmt, die Anzeige sah nach Schlamperei aus. Der Rest der
+ * Rundung geht an den zweiten Anteil, statt in einer dritten Zahl zu
+ * verschwinden, die niemand zuordnen kann.
+ */
+export function anteileAufSumme(summe, teilA, stellen = 2) {
+  const f = 10 ** stellen;
+  const s = Math.round(summe * f) / f;
+  const a = Math.round(teilA * f) / f;
+  return { summe: s, a, b: Math.round((s - a) * f) / f };
+}
+
+/* ---------------------------------------------------------------
+   Abnehmen. Sein erklaerter Hauptfokus — und die App kannte bisher
+   beide Haelften der Antwort, ohne sie je zusammenzubringen.
+
+   In `config.ziele.koerper` steht der Massstab von ihm selbst: "Fett
+   runter, Muskeln halten. Solange die Gewichte auf der Stange steigen,
+   stimmt die Richtung." Genau das wird hier gerechnet.
+
+   Was hier NICHT passiert: kein Kalorienziel, kein geschaetzter
+   Grundumsatz, keine Ernaehrungsempfehlung. Die App kennt weder, was er
+   isst, noch was er verbraucht — eine Zahl dafuer waere erfunden, und
+   eine erfundene Zahl ist hier schlimmer als keine.                  */
+
+/**
+ * Gleitender Mittelwert des Koerpergewichts. Der Tageswert ist zu grossen
+ * Teilen Wasser, Glykogen und Salz: zwei Kilo Unterschied zwischen zwei
+ * Morgen sind normal und sagen nichts. Erst der Mittelwert ueber eine Woche
+ * zeigt die Richtung — und nur die ist zu gebrauchen.
+ */
+export function gewichtsReihe(wellness = [], fenster = 7) {
+  const roh = wellness.filter(w => w.weight > 0)
+    .map(w => ({ date: w.date, weight: w.weight }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  return roh.map((p, i) => {
+    const teil = roh.slice(Math.max(0, i - fenster + 1), i + 1);
+    return {
+      date: p.date,
+      roh: p.weight,
+      schnitt: Math.round((teil.reduce((s, x) => s + x.weight, 0) / teil.length) * 100) / 100,
+      n: teil.length
+    };
+  });
+}
+
+/**
+ * Abnehmrate als Steigung einer Ausgleichsgeraden ueber die letzten Tage.
+ *
+ * Bewusst eine Regression und nicht "erster gegen letzten Wert": zwei
+ * Einzelpunkte machen aus einem schweren Abend eine Trendwende. Und
+ * bewusst ein gleitendes Fenster statt der ganzen Historie, sonst
+ * beschreibt die Zahl vor allem, was vor drei Monaten war.
+ */
+export function abnehmRate(reihe = [], tage = 28) {
+  if (reihe.length < 4) return null;
+  const bis = new Date(reihe[reihe.length - 1].date);
+  const ab = new Date(bis); ab.setDate(ab.getDate() - tage);
+  const p = reihe.filter(x => new Date(x.date) >= ab);
+  if (p.length < 4) return null;
+
+  const t0 = new Date(p[0].date).getTime();
+  const xs = p.map(x => (new Date(x.date).getTime() - t0) / 86400000);
+  const ys = p.map(x => x.schnitt);
+  const n = xs.length;
+  const mx = xs.reduce((a, b) => a + b, 0) / n;
+  const my = ys.reduce((a, b) => a + b, 0) / n;
+  const nenner = xs.reduce((s, x) => s + (x - mx) ** 2, 0);
+  if (!nenner) return null;
+  const steigung = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0) / nenner;
+
+  const proWoche = Math.round(steigung * 7 * 100) / 100;
+  const aktuell = p[p.length - 1].schnitt;
+  return {
+    proWoche,                                        // negativ = es geht runter
+    prozentProWoche: aktuell ? Math.round((Math.abs(proWoche) / aktuell) * 1000) / 10 : null,
+    aktuell: Math.round(aktuell * 10) / 10,
+    punkte: n,
+    tage,
+    von: p[0].date, bis: p[p.length - 1].date
+  };
+}
+
+/**
+ * Wohin die Arbeitsgewichte laufen. Summe ueber alle Uebungen, damit ein
+ * einzelner zaeher Lift nicht das ganze Bild dreht — es geht um die Frage,
+ * ob unterm Strich Substanz verlorengeht.
+ */
+export function kraftRichtung(logs = [], tage = 42, heute = new Date()) {
+  const ab = new Date(heute); ab.setDate(ab.getDate() - tage);
+  const kraft = logs.filter(istKraft)
+    .filter(l => new Date(l.date) >= ab)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  if (kraft.length < 2) return null;
+
+  const summe = log => (log.lifts || []).reduce((s, e) => s + (e.weight || 0), 0);
+  const proLift = {};
+  for (const l of kraft) {
+    for (const e of l.lifts || []) {
+      if (!proLift[e.lift]) proLift[e.lift] = { erst: e.weight, letzt: e.weight };
+      else proLift[e.lift].letzt = e.weight;
+    }
+  }
+  const werte = Object.values(proLift);
+  const delta = werte.reduce((s, v) => s + (v.letzt - v.erst), 0);
+  // Die Summe ueber alle Uebungen taugt fuer das Urteil, aber nicht zum
+  // Hinschreiben: "+55 kg" liest sich, als waere er 55 kg staerker
+  // geworden. Wie viele Uebungen gestiegen sind, versteht man sofort.
+  const gestiegen = werte.filter(v => v.letzt > v.erst).length;
+  const gefallen = werte.filter(v => v.letzt < v.erst).length;
+  return {
+    delta: Math.round(delta * 10) / 10,
+    gestiegen, gefallen, uebungen: werte.length,
+    richtung: delta > 1 ? 'rauf' : delta < -1 ? 'runter' : 'flach',
+    einheiten: kraft.length,
+    erste: summe(kraft[0]), letzte: summe(kraft[kraft.length - 1]),
+    proLift
+  };
+}
+
+// Faustregel, keine Vorschrift: unterhalb von rund 0,25 % Koerpergewicht
+// pro Woche verschwindet die Abnahme im Rauschen der Waage, oberhalb von
+// rund 1 % geht ueblicherweise auch Muskulatur mit. Das sind gaengige
+// Richtwerte aus der Trainingsliteratur, keine Messwerte an ihm.
+const RATE = { traege: 0.25, schnell: 1.0 };
+
+/**
+ * Die eine Frage, die er alleine nicht beantworten kann: geht das Gewicht
+ * schnell genug runter, um zu zaehlen — und langsam genug, dass die
+ * Gewichte auf der Stange bleiben?
+ *
+ * Beide Haelften liegen in der App. Getrennt betrachtet sagt keine von
+ * beiden etwas: abnehmen ist immer gut, bis die Lifts einbrechen, und
+ * steigende Gewichte sind immer gut, bis die Waage stehenbleibt.
+ */
+export function abnehmLage(rate, kraft) {
+  if (!rate) return null;
+  const faellt = rate.proWoche < 0;
+  const p = rate.prozentProWoche || 0;
+  const tempo = !faellt ? 'rauf' : p < RATE.traege ? 'traege' : p > RATE.schnell ? 'schnell' : 'passend';
+  const kr = kraft ? kraft.richtung : null;
+
+  let stufe;
+  if (!faellt) stufe = 'rauf';
+  else if (kr === 'runter') stufe = 'teuer';        // das Defizit kostet gerade Substanz
+  else if (tempo === 'schnell') stufe = 'schnell';
+  else if (tempo === 'traege') stufe = 'traege';
+  else if (kr === 'rauf') stufe = 'fenster';        // beides gleichzeitig: genau das Ziel
+  else stufe = 'haltend';
+
+  return { stufe, tempo, kraft: kr, rate, spanne: [RATE.traege, RATE.schnell] };
+}
+
+/**
+ * Minierfolge auf der Waage — abgeleitet, nicht gepflegt, dieselbe
+ * Invariante wie ueberall sonst. Bewusst OHNE Zielgewicht: eins ist
+ * nirgends hinterlegt, und eines zu erfinden waere seine Entscheidung,
+ * nicht meine. Jedes volle Kilo unter dem bisherigen Tiefstwert zaehlt.
+ */
+export function gewichtsErfolge(reihe = [], zielGewicht = null) {
+  if (reihe.length < 2) return null;
+  const start = reihe[0].schnitt;
+  const jetzt = reihe[reihe.length - 1].schnitt;
+  const tief = Math.min(...reihe.map(r => r.schnitt));
+  const runter = Math.round((start - jetzt) * 10) / 10;
+
+  const erreicht = [];
+  const volleKilo = Math.floor(start - tief);
+  if (volleKilo >= 1) erreicht.push({ art: 'kilo', n: volleKilo });
+  const prozent = start ? (start - tief) / start * 100 : 0;
+  if (prozent >= 1) erreicht.push({ art: 'prozent', n: Math.floor(prozent) });
+  const amTief = Math.abs(jetzt - tief) < 0.05;
+  if (amTief) erreicht.push({ art: 'tiefstwert' });
+
+  return {
+    start: Math.round(start * 10) / 10,
+    jetzt: Math.round(jetzt * 10) / 10,
+    tief: Math.round(tief * 10) / 10,
+    runter,
+    amTief,
+    erreicht,
+    // Der naechste volle Kilowert UNTER dem Tiefstwert. Steht die Waage
+    // schon auf einer runden Zahl, ist der naechste Meilenstein der
+    // darunter — sonst waere er in dem Moment schon erreicht.
+    naechstes: Math.floor(tief - 0.0001),
+    zielGewicht: zielGewicht || null,
+    bisZiel: zielGewicht ? Math.round((jetzt - zielGewicht) * 10) / 10 : null
+  };
+}
+
+/* ---------------------------------------------------------------
+   Aerobe Basis: Effizienzfaktor und Entkopplung.
+
+   Beides misst dasselbe von zwei Seiten — wie viel Leistung ein
+   Herzschlag traegt. Der Unterschied ist die Anforderung an die Fahrt:
+   der Effizienzfaktor kommt mit fuenfundvierzig Minuten aus, die
+   Entkopplung braucht eine lange ruhige Strecke am Stueck.
+
+   Deshalb traegt hier der Effizienzfaktor, und die Entkopplung bleibt
+   still, bis genug zusammenhaengende Grundlage dahintersteht. Eine
+   Kurve aus zwei Messpunkten waere kein Trend, sondern Dekoration.   */
+
+/**
+ * Der Effizienzfaktor ist nur innerhalb vergleichbarer Fahrten aussagekraeftig:
+ * eine harte Fahrt hat systematisch einen hoeheren Wert als eine ruhige, weil
+ * die Leistung schneller steigt als der Puls. Eine Kurve ueber alle Fahrten
+ * misst darum vor allem, wie hart die letzte war.
+ *
+ * Statt eine Zielzone vorzuschreiben, sucht diese Funktion das Band, in dem
+ * am meisten gefahren wurde, und vergleicht nur darin. Sie passt sich damit
+ * an, was tatsaechlich passiert — nicht an das, was jemand fuer richtig haelt.
+ */
+export function aerobeEffizienz(fahrten = [], { minMinuten = 25, bandBreite = 0.15, ab = 0.40 } = {}) {
+  const taugt = fahrten.filter(f =>
+    f && f.effizienz > 0 && f.intensitaet > 0 && (f.minutes || 0) >= minMinuten);
+  if (!taugt.length) return { band: null, punkte: [], geprueft: fahrten.length, verworfen: fahrten.length };
+
+  const bandVon = f => ab + Math.floor((f.intensitaet - ab) / bandBreite) * bandBreite;
+  const eimer = new Map();
+  for (const f of taugt) {
+    const k = Math.round(bandVon(f) * 100) / 100;
+    if (!eimer.has(k)) eimer.set(k, []);
+    eimer.get(k).push(f);
+  }
+  // Groesstes Band gewinnt; bei Gleichstand das haertere, weil dort die
+  // juengeren Fahrten liegen und der Trend aktueller ist.
+  const [von, gruppe] = [...eimer.entries()].sort((a, b) => b[1].length - a[1].length || b[0] - a[0])[0];
+
+  return {
+    band: [Math.round(von * 100) / 100, Math.round((von + bandBreite) * 100) / 100],
+    geprueft: fahrten.length,
+    verworfen: fahrten.length - gruppe.length,
+    punkte: gruppe
+      .map(f => ({
+        date: f.date,
+        ef: Math.round(f.effizienz * 1000) / 1000,
+        ist: Math.round(f.intensitaet * 100) / 100,
+        np: f.np || null, hf: f.hf || null, minuten: f.minutes || null
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date))
+  };
+}
+
+/**
+ * Trend ueber die Effizienzpunkte. Unter drei Punkten wird bewusst nichts
+ * ausgerechnet: zwei Werte sind eine Verbindungslinie, kein Verlauf.
+ */
+export function effizienzTrend(punkte = []) {
+  if (punkte.length < 3) return null;
+  const a = punkte[0], b = punkte[punkte.length - 1];
+  const delta = b.ef - a.ef;
+  return {
+    von: a, bis: b, n: punkte.length,
+    delta: Math.round(delta * 1000) / 1000,
+    prozent: Math.round((delta / a.ef) * 1000) / 10,
+    tage: Math.round((new Date(b.date) - new Date(a.date)) / 86400000)
+  };
+}
+
+/**
+ * Entkopplung, aber nur wo sie etwas bedeutet. `pwhrMin` sagt, ueber wie
+ * viele Minuten zusammenhaengender Grundlage intervals.icu den Wert
+ * gebildet hat — darunter ist die Zahl da, aber nicht belastbar.
+ *
+ * Gibt immer auch zurueck, WORAN es fehlt. "Keine Daten" und "die Fahrten
+ * sind zu kurz dafuer" sind zwei verschiedene Auskuenfte, und nur die
+ * zweite sagt einem, was sich aendern muesste.
+ */
+export function entkopplungsReihe(fahrten = [], minZ2Minuten = 20) {
+  const mitWert = fahrten.filter(f => f && f.entkopplung != null);
+  const punkte = mitWert
+    .filter(f => (f.pwhrMin || 0) >= minZ2Minuten)
+    .map(f => ({
+      date: f.date,
+      wert: Math.round(f.entkopplung * 10) / 10,
+      minuten: f.pwhrMin, fahrtMinuten: f.minutes || null
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const beste = mitWert.reduce((m, f) => Math.max(m, f.pwhrMin || 0), 0);
+  return {
+    punkte,
+    schwelle: minZ2Minuten,
+    mitWert: mitWert.length,
+    zuKurz: mitWert.length - punkte.length,
+    besteMinuten: beste,
+    // Genug fuer eine Aussage? Drei Punkte, dieselbe Begruendung wie oben.
+    tragfaehig: punkte.length >= 3
+  };
+}
+
+/* ---------------------------------------------------------------
+   Plan gegen Ist. Die Frage ist nicht "wie stark bist du", sondern
+   "hast du gemacht, was dran war" — und der Fehler, der wirklich
+   etwas kostet, ist die leichte Einheit, die hart gefahren wurde.  */
+
+// Wie weit die Intensitaet neben dem Ziel liegen darf, bevor es zaehlt.
+const TOLERANZ = 0.03;
+
+/**
+ * Eine Fahrt gegen ihren Plan. `planFuer(datum)` liefert `{ label, ftp:
+ * [von, bis], struktur }` oder null — als Funktion uebergeben, damit diese
+ * Datei nichts ueber Wochenplaene wissen muss und pruefbar bleibt.
+ *
+ * Bei Intervallen wird "zu locker" bewusst NICHT geurteilt: der Schnitt
+ * ueber die ganze Fahrt enthaelt Aufwaermen und Pausen und liegt darum
+ * zwangslaeufig unter dem Ziel der Intervalle. Ein Urteil, das die Methode
+ * gar nicht hergibt, waere schlimmer als keins.
+ */
+export function intensitaetsAbgleich(fahrten = [], planFuer = () => null) {
+  return fahrten
+    .filter(f => f && f.intensitaet != null && f.date)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map(f => {
+      const plan = planFuer(f.date);
+      const ist = Math.round(f.intensitaet * 100) / 100;
+      const basis = { date: f.date, ist, minuten: f.minutes || null, name: f.name || null };
+      if (!plan || !Array.isArray(plan.ftp) || plan.ftp.length !== 2) {
+        return { ...basis, stufe: 'ohnePlan', label: plan ? plan.label : null, ziel: null };
+      }
+      const [von, bis] = plan.ftp;
+      const gemein = { ...basis, label: plan.label, ziel: [von, bis], struktur: plan.struktur || 'dauerhaft' };
+      if (ist > bis + TOLERANZ) return { ...gemein, stufe: 'zuHart' };
+      if (ist >= von - TOLERANZ) return { ...gemein, stufe: 'imZiel' };
+      return { ...gemein, stufe: gemein.struktur === 'intervalle' ? 'unklar' : 'zuLocker' };
+    });
+}
+
+/** Zaehlwerk ueber den Abgleich. `quote` laesst aus, was nicht beurteilbar ist. */
+export function abgleichBilanz(eintraege = []) {
+  const z = { imZiel: 0, zuHart: 0, zuLocker: 0, unklar: 0, ohnePlan: 0 };
+  for (const e of eintraege) if (z[e.stufe] !== undefined) z[e.stufe]++;
+  const beurteilt = z.imZiel + z.zuHart + z.zuLocker;
+  return { ...z, gesamt: eintraege.length, beurteilt,
+           quote: beurteilt ? Math.round((z.imZiel / beurteilt) * 100) : null };
+}
+
 export function radWochen(rides = [], wochen = 12, heute = new Date()) {
   const montag = d => {
     const m = new Date(d);
